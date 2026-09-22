@@ -1,0 +1,21 @@
+#import "std";
+
+Person :: struct {
+    name: []char;
+    age: usize;
+}
+
+#default :: () -> Person {
+    return .{ "jonh doe", 30 };
+}
+
+main :: func ()
+{
+    print("Hello World");
+
+    you: Person;
+    me : Person = .{ "dryware", 18 };
+
+    print("\(you.name) : \(you.age)");
+    print("\(me.name)  : \(me.age)");
+}

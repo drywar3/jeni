@@ -1,0 +1,3 @@
+[submodule "vendor/mini.c"]
+	path = vendor/mini.c
+	url = https://github.com/drywar3/mini.c

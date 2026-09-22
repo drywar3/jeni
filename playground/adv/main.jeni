@@ -1,0 +1,12 @@
+
+// Entry point to your package.
+
+#module "utils"; // -> ./utils/root.jeni
+#module "maths"; // -> ./math.jeni
+#module "graphiz"; // -> ./graphiz/root.jeni
+
+std :: #import "std";
+
+main :: () {
+
+}

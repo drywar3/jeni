@@ -1,0 +1,48 @@
+std :: #import "std";
+
+#use std.math;
+mem :: std.mem;
+
+String :: struct {
+   buffer: *char;
+   count:   usize;
+   capacity: usize;
+};
+
+#default : String = string_build("");
+
+STRING_DEFAULT_CAP :: 256uz;
+
+string_build :: func (using data: []char) -> String {
+    initial_capacity := max(STRING_DEFAULT_CAP, length);
+    buffer := allocz(char)(initial_capacity);
+    mem.copy(buffer, ptr, length);
+    return .{ buffer, length, initial_capacity };
+}
+
+string_resize_if_needed :: func (units: usize) #macro {
+    needed := $units + $count;
+    if needed >= $capacity {
+        new_capacity = $capacity * 2;
+        if new_capacity == 0
+            new_capacity = $STRING_DEFAULT_CAP;
+        while new_capacity < needed {
+            new_capacity *= 2;
+        }
+        new_buffer := allocz(char)(new_capacity);
+        mem.copy(new_buffer, $buffer, $count);
+        mem.free($buffer);
+        $buffer = new_buffer;
+        $capacity = new_capacity;
+    }
+}
+
+string_append_char :: func (using s: *String, ch : char) {
+    string_resize_if_needed(2);
+    buffer[count++] = ch;
+    buffer[count]   = 0;
+}
+
+main :: func () {
+    name: String;
+}

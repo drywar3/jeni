@@ -1,0 +1,25 @@
+
+void main() {
+
+    int x = 10;
+    int y = 15;
+
+    char[] name = "dryware";
+
+    // if statement
+    if x > y {
+        printf("X > Y");
+    } else if x < y {
+        printf("X < Y");
+    } else {
+        printf("X == Y");
+    }
+
+    // loops
+    // - For loop
+    for (int c = 0; c < 10; c++) {
+        printf("%d", c, :end="\n");
+    }
+}
+
+import "std";

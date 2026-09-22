@@ -1,0 +1,18 @@
+import "std";
+
+int integer_value = -10;
+uing uinteger_value = 10;
+
+float float_value = 10.0f;
+double double_value = 10.0;
+
+char[] string_value = "Hello World";
+char[] raw_string_value = r"Hello World";
+
+usize size_value = 10uz;
+
+bool boolean_value = true;
+
+int hex_value = 0xffffff;
+int oct_value = 0o2034;
+int bin_value = 0b0100111;

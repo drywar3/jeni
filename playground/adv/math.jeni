@@ -1,0 +1,7 @@
+// utils module is directly accessible from here
+
+max :: func[T] (a: T, b: T) -> T {
+    #if typeid(T) == typeid(int) {
+        return max_int(a, b);
+    }
+}

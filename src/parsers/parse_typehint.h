@@ -1,0 +1,6 @@
+#pragma once
+
+#include "../ast/type.h"
+#include "../parser.h"
+
+Typehint *parser_parse_typehint(Parser *p);
