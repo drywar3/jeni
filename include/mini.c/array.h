@@ -78,6 +78,8 @@ void mini_array_clear(void *array);
         }                                                                      \
     } while (0)
 
+#define mini_array_last(arr) (arr[mini_array_count(arr) - 1])
+
 #if defined(__cplusplus)
 }
 #endif

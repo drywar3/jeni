@@ -2,14 +2,14 @@
 #include "mini.c/bulk_allocator.h"
 #include "mini.c/mini_def.h"
 
-Mini_BulkAllocator mini_blk_create(Mini_Allocator base) {
+Mini_BulkAllocator mini_bka_create(Mini_Allocator base) {
     Mini_BulkAllocator blk = {0};
     blk.base_allocator = base;
     blk.allocations = MINI_ARRAY_INIT(base, void*);
     return blk;
 }
 
-void mini_blk_destroy(Mini_BulkAllocator *blk) {
+void mini_bka_destroy(Mini_BulkAllocator *blk) {
     if (!blk) return;
     for (size_t n = 0; n < mini_array_count(blk->allocations); ++n) {
         void *pointer = blk->allocations[n];
@@ -42,6 +42,6 @@ static void *__realloc (void *_blk, void *ptr, usize size, Mini_SourceLocation s
     MINI_PANIC("attempt to reallocate foriegn pointer");
 }
 
-Mini_Allocator mini_blk_allocator(Mini_BulkAllocator *blk) {
+Mini_Allocator mini_bka_allocator(Mini_BulkAllocator *blk) {
     return mini_create_allocator((void*)blk, __alloc, __realloc, __free);
 }
