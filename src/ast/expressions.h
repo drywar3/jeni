@@ -4,6 +4,7 @@
 #include "misc.h"
 #include "stmt.h"
 #include "type.h"
+#include "../token.h"
 
 #include <mini.c/array.h>
 

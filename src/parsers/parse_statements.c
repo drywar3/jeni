@@ -19,8 +19,8 @@ bool eat_name(Parser *parser, Name *name) {
                                         * cursor   so there is need to substract 1
                                         * to get an   accurate character index
                                         */
-                                     _current.locus.begin - 1,
-                                     locus_length(&_current.locus));
+                                       _current.locus.first_byte,
+                                       locus_length(&_current.locus));
     name->locus   = _current.locus;
     return true;
 }

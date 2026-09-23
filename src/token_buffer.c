@@ -14,22 +14,29 @@ TokenBuffer tokenbuffer_create(const char *path,
 void tokenbuffer_destroy(TokenBuffer *buffer) { MINI_UNREACHABLE("TODO"); }
 
 void tokenbuffer_prepare(TokenBuffer *buffer, int window) {
+    if (lexer_is_done(&buffer->lexer))
+        return;
+
     if (buffer->cursor + window >= mini_array_count(buffer->tokens)) {
         usize needed = (buffer->cursor + window) * 2;
         for (usize n = 0; n < needed; n++) {
             Token token;
             Diagnostic diagnostic;
+
             if (!lexer_next_token(&buffer->lexer, &token, &diagnostic)) {
                 diagpool_report_diag(buffer->diagnostics, diagnostic);
                 continue;
             }
+
             mini_array_append(buffer->tokens, token);
         }
     }
 }
 
 bool tokenbuffer_is_truly_done(const TokenBuffer *buffer) {
-    return lexer_is_done(&buffer->lexer) && buffer->cursor >= mini_array_count(buffer->tokens) - 1;
+    /* when the lexer has reached the end of the content given and the
+     * token buffer is also exhausted then we are truly done */
+    return lexer_is_done(&buffer->lexer) && buffer->cursor >= mini_array_count(buffer->tokens);
 }
 
 Token tokenbuffer_peek(TokenBuffer *buffer, int ahead) {

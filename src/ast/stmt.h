@@ -24,22 +24,20 @@ typedef Statement *StatementPointer;
 
 #define ALLOC_STMT(allocator, kind, locus, derived)                     \
     ({                                                                  \
-        StatementPointer statement = statement_alloc(allocator, kind, locus, sizeof(derived)); \
-        typeof(derived) *derived_ptr = (typeof(derived) *)statement;   \
-        *derived_ptr = derived;                                         \
-        statement;\
+        typeof(derived) derived_tmp  = derived;                         \
+        StatementPointer statement = (StatementPointer)MINI_ALLOC(allocator, typeof(derived_tmp)); \
+        *((typeof(derived_tmp)*)statement) = derived;\
+        statement_ctor(statement, kind, locus);                       \
+        statement;                                                     \
     })
 
-
-static inline Statement *statement_alloc(Mini_Allocator allocator,
-                           StatementKind kind,
-                           Locus locus,
-                           usize size) {
-    Statement *statement = (Statement*)MINI_ALLOC_MANY(allocator, char, size);
-    statement->kind        = kind;
-    statement->locus       = locus;
-    return statement;
+static inline void statement_ctor(StatementPointer this,
+                                  StatementKind kind,
+                                  Locus locus) {
+    this->kind  = kind;
+    this->locus = locus;
 }
+
 
 void statement_destroy(Statement *stmt, Mini_Allocator allocator);
 

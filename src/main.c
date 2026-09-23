@@ -5,6 +5,7 @@
 
 #include "lexer.h"
 #include "parser.h"
+#include "ast/print.h"
 
 int main() {
     const char *input_path = "test.jeni";
@@ -26,8 +27,7 @@ int main() {
         Statement *statement = parser_parse_statement(&parser);
         if (!statement)
             continue;
-        printf("STMT(%p)\n", statement);
-        printf("    -> [%s]\n", statement_name(statement->kind));
+        ast_print(statement, 0);
     }
 
     mini_bka_destroy(&bka);

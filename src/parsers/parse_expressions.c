@@ -8,6 +8,10 @@ ExpressionPointer parse_primary(Parser *p) {
         char *buffer = MINI_ALLOC_MANY(mini_default_allocator(),
                                        char,
                                        locus_length(&token.locus));
+        Mini_StringView value_sv = mini_string_substr(p->tokens.lexer.content,
+                                                      token.locus.first_byte,
+                                                      locus_length(&token.locus));
+        memcpy(buffer, value_sv.data, value_sv.length);
         int64 value = strtoll(buffer, NULL, 10);
         MINI_FREE(mini_default_allocator(), buffer);
         return ALLOC_EXPR(p->allocator, EXPR_Integer, token.locus, ((ExprInteger){ .value = value }));
@@ -16,9 +20,9 @@ ExpressionPointer parse_primary(Parser *p) {
     if (equals(p, TOKEN_Identifier)) {
         Token token = next(p);
         Mini_StringView value = mini_string_substr(p->tokens.lexer.content,
-                                                   token.locus.begin,
+                                                   token.locus.first_byte,
                                                    locus_length(&token.locus));
-        return ALLOC_EXPR(p->allocator, EXPR_Integer, token.locus, ((ExprIdentifier){ .value = value }));
+        return ALLOC_EXPR(p->allocator, EXPR_Identifier, token.locus, ((ExprIdentifier){ .value = value }));
     }
 
     MINI_UNREACHABLE("[%s]", tokenkind_to_string(p->current.kind));
@@ -29,6 +33,7 @@ ExpressionPointer parse_postfix(Parser *p) {
     while (true) {
         if (try_expect(p, TOKEN_SEP_Lparen)) {
             ExprFunctionCall fcall;
+            fcall.callee    = base;
             fcall.arguments = MINI_ARRAY_INIT(p->allocator, AstFunctionCallArgument);
 
             while (!equals(p, TOKEN_SEP_Rparen)) {
@@ -44,6 +49,7 @@ ExpressionPointer parse_postfix(Parser *p) {
                 if (!try_expect(p, TOKEN_SEP_Comma))
                     break;
             }
+
             expect(p, TOKEN_SEP_Rparen);
             base = ALLOC_EXPR(p->allocator,
                               EXPR_FunctionCall,

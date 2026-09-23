@@ -21,15 +21,17 @@ void parser_set_allocator(Parser *parser, Mini_Allocator allocator) {
 }
 
 bool parser_is_done(const Parser *parser) {
-    return tokenbuffer_is_truly_done(&parser->tokens);
+    return (current(parser).kind  == TOKEN_Endoffile ||
+            previous(parser).kind == TOKEN_Endoffile) ||
+        tokenbuffer_is_truly_done(&parser->tokens);
 }
-
-Statement stmt;
 
 Statement *parser_parse_statement(Parser *parser) {
     /* check for a variable declaration */
     if (equals_sequence(parser, TOKEN_Identifier, TOKEN_SEP_Colon)) {
         return parse_variable_declaration(parser);
     }
+
+    /* printf("[%s]\n", tokenkind_to_string(previous(parser).kind)); */
     return NULL;
 }

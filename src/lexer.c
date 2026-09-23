@@ -59,7 +59,7 @@ static bool set_token_and_return(Token *token, TokenKind kind, Locus locus, bool
 }
 
 static Locus lexer_get_locus(const Lexer *lexer) {
-    return locus_create(lexer->line, lexer->prev_col, lexer->col, lexer->path);
+    return locus_create(lexer->line, lexer->prev_col, lexer->col, lexer->prev_offset, lexer->offset, lexer->path);
 }
 
 static size_t decode_utf8_char(const char *str, Codepoint *codepoint) {
@@ -213,6 +213,7 @@ bool lexer_next_token(Lexer *lexer, Token *token, Diagnostic *diagnostic) {
     }
 
     lexer->prev_offset = lexer->offset;
+    lexer->prev_col    = lexer->col;
 
     /* lex an identifier or keyword */
     if (codepoint_isalpha(current(lexer))) {

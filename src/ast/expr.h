@@ -25,20 +25,18 @@ typedef Expression *ExpressionPointer;
 
 #define ALLOC_EXPR(allocator, kind, locus, derived)                     \
     ({                                                                  \
-        ExpressionPointer expression = expression_alloc(allocator, kind, locus, sizeof(derived)); \
-        typeof(derived) *derived_ptr = (typeof(derived) *)expression;     \
-        *derived_ptr = derived;                                         \
-        expression;\
+        typeof(derived) derived_tmp  = derived;                         \
+        ExpressionPointer expression = (ExpressionPointer)MINI_ALLOC(allocator, typeof(derived_tmp)); \
+        *((typeof(derived_tmp)*)expression) = derived;\
+        expression_ctor(expression, kind, locus);                       \
+        expression;                                                     \
     })
 
-static inline Expression *expression_alloc(Mini_Allocator allocator,
-                                           ExpressionKind kind,
-                                           Locus locus,
-                                           usize size) {
-    Expression *expression = (Expression*)MINI_ALLOC_MANY(allocator, char, size);
-    expression->kind        = kind;
-    expression->locus       = locus;
-    return expression;
+static inline void expression_ctor(ExpressionPointer this,
+                                   ExpressionKind kind,
+                                   Locus locus) {
+    this->kind  = kind;
+    this->locus = locus;
 }
 
 void expression_destroy(Expression *stmt, Mini_Allocator allocator);
