@@ -1,6 +1,6 @@
-#include "../ast/statements.h"
-#include "../parser_impl.h"
-#include "../token.h"
+#include "ast/statements.h"
+#include "parser/parser_impl.h"
+#include "parser/token.h"
 
 #include "parse_typehint.h"
 #include "parse_statements.h"
@@ -29,7 +29,7 @@ Statement *parse_variable_declaration(Parser *p) {
     MINI_ASSERT(equals_sequence(p, TOKEN_Identifier, TOKEN_SEP_Colon),
                 "cannot parse a variable declaration");
     Token begin = current(p);
-    StmtVariable variable = {0};
+    StmtVariable variable{};
     if (!eat_name(p, &variable.name))
         MINI_UNREACHABLE();
     /* skip `:` after variable name */

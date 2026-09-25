@@ -1,6 +1,6 @@
 #pragma once
 
-#include "locus.h"
+#include "parser/locus.h"
 #include <mini.c/array.h>
 
 typedef struct {

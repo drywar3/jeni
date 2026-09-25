@@ -1,5 +1,6 @@
 #include "locus.h"
 
+#include <mini.c/mini_def.h>
 
 Locus locus_create(usize line, usize begin, usize end, usize fb, usize lb, const char *path) {
     Locus locus;

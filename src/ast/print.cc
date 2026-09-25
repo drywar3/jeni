@@ -48,7 +48,6 @@ static void print_string(Mini_StringView string) {
 void print_type(const Typehint *typehint, usize indent) {
     (void)typehint;
     (void)indent;
-
     MINI_UNREACHABLE();
 }
 

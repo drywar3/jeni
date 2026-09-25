@@ -8,7 +8,7 @@ void diag_destroy(void *_diag) {
 }
 
 Diagnostic diag_create(DIAG_CTOR) {
-    Diagnostic diagnostic = {0};
+    Diagnostic diagnostic{};
     diagnostic.labels     = MINI_ARRAY_INIT(mini_default_allocator(), Label);
     diagnostic.message    = message;
     diagnostic.severity   = severity;

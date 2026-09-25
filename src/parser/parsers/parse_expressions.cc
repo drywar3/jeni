@@ -1,6 +1,6 @@
 #include "parse_expressions.h"
-#include "../ast/expressions.h"
-#include "../parser_impl.h"
+#include "ast/expressions.h"
+#include "parser/parser_impl.h"
 
 ExpressionPointer parse_primary(Parser *p) {
     if (equals(p, TOKEN_LIT_Int)) {
@@ -85,7 +85,7 @@ ExpressionPointer parse_unary(Parser *p) {
 ExpressionPointer parse_factor(Parser *p) {
     ExpressionPointer left = parse_unary(p);
     while (equals(p, TOKEN_OP_Star) || equals(p, TOKEN_OP_Div)) {
-        ExprBinaryOperation binop = {0};
+        ExprBinaryOperation binop{};
         binop.left  = left;
         binop.op    = (AstOperator)next(p).kind;
         binop.right = parse_unary(p);
@@ -100,7 +100,7 @@ ExpressionPointer parse_factor(Parser *p) {
 ExpressionPointer parse_term(Parser *p) {
     ExpressionPointer left = parse_factor(p);
     while (equals(p, TOKEN_OP_Add) || equals(p, TOKEN_OP_Minus)) {
-        ExprBinaryOperation binop = {0};
+        ExprBinaryOperation binop{};
         binop.left  = left;
         binop.op    = (AstOperator)next(p).kind;
         binop.right = parse_factor(p);
@@ -115,7 +115,7 @@ ExpressionPointer parse_term(Parser *p) {
 ExpressionPointer parse_comparison(Parser *p) {
     ExpressionPointer left = parse_term(p);
     while (equals(p, TOKEN_OP_Greater) || equals(p, TOKEN_OP_Less)) {
-        ExprBinaryOperation binop = {0};
+        ExprBinaryOperation binop{};
         binop.left  = left;
         binop.op    = (AstOperator)next(p).kind;
         binop.right = parse_term(p);
@@ -130,7 +130,7 @@ ExpressionPointer parse_comparison(Parser *p) {
 ExpressionPointer parse_relational(Parser *p) {
     ExpressionPointer left = parse_comparison(p);
     while (equals(p, TOKEN_OP_Equals) || equals(p, TOKEN_OP_NotEquals)) {
-        ExprBinaryOperation binop = {0};
+        ExprBinaryOperation binop{};
         binop.left  = left;
         binop.op    = (AstOperator)next(p).kind;
         binop.right = parse_comparison(p);

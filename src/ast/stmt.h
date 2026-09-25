@@ -1,6 +1,6 @@
 #pragma once
 
-#include "locus.h"
+#include "parser/locus.h"
 #include <mini.c/allocator.h>
 
 typedef enum {
@@ -31,11 +31,11 @@ typedef Statement *StatementPointer;
         statement;                                                     \
     })
 
-static inline void statement_ctor(StatementPointer this,
+static inline void statement_ctor(StatementPointer _this,
                                   StatementKind kind,
                                   Locus locus) {
-    this->kind  = kind;
-    this->locus = locus;
+    _this->kind  = kind;
+    _this->locus = locus;
 }
 
 

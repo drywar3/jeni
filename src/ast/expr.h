@@ -1,6 +1,6 @@
 #pragma once
 
-#include "locus.h"
+#include "parser/locus.h"
 
 typedef enum {
     EXPR_Identifier,
@@ -32,11 +32,11 @@ typedef Expression *ExpressionPointer;
         expression;                                                     \
     })
 
-static inline void expression_ctor(ExpressionPointer this,
+static inline void expression_ctor(ExpressionPointer _this,
                                    ExpressionKind kind,
                                    Locus locus) {
-    this->kind  = kind;
-    this->locus = locus;
+    _this->kind  = kind;
+    _this->locus = locus;
 }
 
 void expression_destroy(Expression *stmt, Mini_Allocator allocator);

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../parser.h"
-#include "../ast/expr.h"
+#include "parser/parser.h"
+#include "ast/expr.h"
 
 ExpressionPointer parser_parse_expression(Parser *parser);

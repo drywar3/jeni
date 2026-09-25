@@ -1,6 +1,6 @@
 #include "parse_typehint.h"
-#include "../parser_impl.h"
-#include "../ast/types.h"
+#include "parser/parser_impl.h"
+#include "ast/types.h"
 
 /* typehint = ["const"] type_spec ;
  *
@@ -19,11 +19,11 @@
  */
 Typehint *parser_parse_typehint(Parser *p) {
     Locus begin            = current(p).locus;
-    Mutability is_constant = try_expect(p, TOKEN_KW_Const);
+    Mutability is_constant = (Mutability)try_expect(p, TOKEN_KW_Const);
 
     /* check for pointer */
     if (try_expect(p, TOKEN_OP_Star)) {
-        TypePointer pointer = {0};
+        TypePointer pointer{};
         pointer.typehint    = parser_parse_typehint(p);
         return ALLOC_TYPE(p->allocator,
                           TYPEHINT_Pointer,
@@ -42,25 +42,25 @@ Typehint *parser_parse_typehint(Parser *p) {
                                   TYPEHINT_Integer,
                                   locus_merge(begin, previous(p).locus),
                                   is_constant,
-                                  (TypeInteger){ .kind = AST_TYPE_INT_Int });
+                                  (TypeInteger){ .kind = TypeInteger::AST_TYPE_INT_Int });
             } else if (mini_sv_equals_cstr(name.value, "uint")) {
                 return ALLOC_TYPE(p->allocator,
                                   TYPEHINT_Integer,
                                   locus_merge(begin, previous(p).locus),
                                   is_constant,
-                                  (TypeInteger){ .kind = AST_TYPE_INT_Uint });
+                                  (TypeInteger){ .kind = TypeInteger::AST_TYPE_INT_Uint });
             } else if (mini_sv_equals_cstr(name.value, "usize")) {
                 return ALLOC_TYPE(p->allocator,
                                   TYPEHINT_Integer,
                                   locus_merge(begin, previous(p).locus),
                                   is_constant,
-                                  (TypeInteger){ .kind = AST_TYPE_INT_Usize });
+                                  (TypeInteger){ .kind = TypeInteger::AST_TYPE_INT_Usize });
             } else if (mini_sv_equals_cstr(name.value, "isize")) {
                 return ALLOC_TYPE(p->allocator,
                                   TYPEHINT_Integer,
                                   locus_merge(begin, previous(p).locus),
                                   is_constant,
-                                  (TypeInteger){ .kind = AST_TYPE_INT_Isize });
+                                  (TypeInteger){ .kind = TypeInteger::AST_TYPE_INT_Isize });
             } else MINI_UNREACHABLE("TODO");
         }
     }

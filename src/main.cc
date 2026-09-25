@@ -7,6 +7,7 @@
 #include "parser/parser.h"
 #include "ast/ast.h"
 #include "ast/print.h"
+#include "semantics/sema.h"
 
 int main(int argc, char **argv) {
     if (argc < 2) {
@@ -36,6 +37,9 @@ int main(int argc, char **argv) {
             continue;
         program_add(&program, statement);
     }
+
+    SemanticContext sema = semactx_init(allocator, &diagnostics);
+    semactx_resolve(&sema, &program);
 
     mini_bka_destroy(&bka);
     return 0;

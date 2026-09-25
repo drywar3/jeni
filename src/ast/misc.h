@@ -1,7 +1,7 @@
 #pragma once
 
 #include <mini.c/string_view.h>
-#include "locus.h"
+#include "parser/locus.h"
 
 typedef struct Name {
     Mini_StringView value;
