@@ -2,11 +2,10 @@
 #include "parser_impl.h"
 #include "parsers/parse_statements.h"
 
-Parser parser_create(const char *path,
+Parser parser_create(SourceId id,
                      const Mini_String content,
                      DiagnosticPool *diagnostics) {
-    Parser parser = {0};
-    parser.tokens      = tokenbuffer_create(path, content, diagnostics);
+    Parser parser = { .tokens = tokenbuffer_create(id, content, diagnostics) };
     parser.diagnostics = diagnostics;
     parser.allocator   = mini_default_allocator();
     tokenbuffer_prepare(&parser.tokens, 10);
@@ -37,4 +36,8 @@ Statement *parser_parse_statement(Parser *parser) {
 
     /* printf("[%s]\n", tokenkind_to_string(previous(parser).kind)); */
     return NULL;
+}
+
+void parser_destroy(Parser *parser) {
+    tokenbuffer_destroy(&parser->tokens);
 }

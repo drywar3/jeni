@@ -7,14 +7,14 @@
 #include "diagnostic.h"
 
 typedef struct {
-    const char *path;
+    SourceId source_id;
     Mini_String content;
     usize line;
     usize col, prev_col;
     usize offset, prev_offset;
 } Lexer;
 
-Lexer lexer_create(const char *path, const Mini_String content);
+Lexer lexer_create(SourceId id, const Mini_String content);
 
 bool lexer_next_token(Lexer *lexer, Token *token, Diagnostic *diag);
 

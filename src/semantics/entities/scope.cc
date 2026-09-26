@@ -1,7 +1,7 @@
 #include "semantics/entities/scope.h"
 
-Scope scope_init(ScopeKind kind, Scope::Parent parent) {
-    Scope scope{ .symbols = Scope::Map() };
+Scope scope_init(ScopeKind kind, Scope::Parent parent, Mini_Allocator allocator) {
+    Scope scope{ .symbols = Scope::Map(allocator) };
     scope.kind = kind;
     scope.parent = parent;
     return scope;

@@ -16,8 +16,10 @@ target_include_directories(JeniCompiler PRIVATE
 )
 target_compile_options(JeniCompiler PRIVATE
   -Wno-c99-designator
-  -ftime-trace)
-target_link_libraries(JeniCompiler PRIVATE mini.c)
+  -ftime-trace
+  #  -fsanitize=address -fno-omit-frame-pointer -g
+)
+target_link_libraries(JeniCompiler PRIVATE mini.cc)
 set_target_properties(JeniCompiler PROPERTIES
   RUNTIME_OUTPUT_NAME "jeni"
 )

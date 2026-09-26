@@ -11,7 +11,7 @@ typedef struct TokenBuffer {
     int cursor;
 } TokenBuffer;
 
-TokenBuffer tokenbuffer_create(const char *path, const Mini_String content, DiagnosticPool *diagnostics);
+TokenBuffer tokenbuffer_create(SourceId id, const Mini_String content, DiagnosticPool *diagnostics);
 void tokenbuffer_destroy(TokenBuffer *buffer);
 
 void tokenbuffer_prepare(TokenBuffer *buffer, int window);

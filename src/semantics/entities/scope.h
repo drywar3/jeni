@@ -29,7 +29,7 @@ typedef struct Scope {
 
 using ScopeStorage = DenseMap<Locus, Scope>;
 
-Scope scope_init(ScopeKind kind, Scope::Parent parent);
+Scope scope_init(ScopeKind kind, Scope::Parent parent, Mini_Allocator allocator = mini_default_allocator());
 std::optional<SymbolId> scope_get_symbol(Scope *scope, Mini_StringView name);
 bool scope_has_symbol(const Scope *scope, Mini_StringView name);
 void scope_put(Scope *scope, Mini_StringView name, SymbolId id);

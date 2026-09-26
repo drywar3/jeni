@@ -16,7 +16,9 @@ typedef struct {
     Mini_Allocator allocator;
 } Parser;
 
-Parser parser_create(const char *path, const Mini_String content, DiagnosticPool *diagnostics);
+Parser parser_create(SourceId id, const Mini_String content, DiagnosticPool *diagnostics);
+void parser_destroy(Parser *parser);
+
 void parser_set_allocator(Parser *parser, Mini_Allocator allocator);
 bool parser_is_done(const Parser *parser);
 

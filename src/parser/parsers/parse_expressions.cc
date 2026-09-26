@@ -8,11 +8,12 @@ ExpressionPointer parse_primary(Parser *p) {
         Token token = next(p);
         char *buffer = MINI_ALLOC_MANY(mini_default_allocator(),
                                        char,
-                                       locus_length(&token.locus));
+                                       locus_length(&token.locus) + 1);
         Mini_StringView value_sv = mini_string_substr(p->tokens.lexer.content,
                                                       token.locus.first_byte,
                                                       locus_length(&token.locus));
         memcpy(buffer, value_sv.data, value_sv.length);
+        buffer[value_sv.length] = '\0';
         int64 value = strtoll(buffer, NULL, 10);
         MINI_FREE(mini_default_allocator(), buffer);
         return ALLOC_EXPR(p->allocator, EXPR_Integer, token.locus, ((ExprInteger){ .value = value }));

@@ -2,6 +2,7 @@
 
 #include <mini.c/map_defs.h>
 #include <mini.c/string_view.h>
+#include <mini.cc/string_view.h>
 
 #include "misc/map.h"
 
@@ -38,3 +39,13 @@ struct Hash<Mini_StringView> {
 inline bool operator==(const Mini_StringView& a, const Mini_StringView& b) {
     return mini_sv_equals(a, b);
 }
+
+/*
+ * specialization of [std::hash] for [mini::StringView]
+ */
+template <>
+struct Hash<mini::StringView> {
+    std::size_t operator()(const mini::StringView& s) const noexcept {
+        return mini_strview_hash(&s.base());
+    }
+};

@@ -33,6 +33,5 @@ bool discover_variable(SemanticContext *sema, StatementPointer stmt) {
                                            variable->name.value,
                                            variable->name.locus,
                                            symbol);
-    printf("%.*s || ID(%zu)\n", SVARG(variable->name.value), id.id);
     return true;
 }

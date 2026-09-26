@@ -27,9 +27,8 @@ static const char *severity_prefix(Severity sev) {
 void diag_report(const Diagnostic *diagnostic, const SourceManager *sm) {
     if (mini_array_count(diagnostic->labels) == 0) return;
 
-    constexpr usize CONTEXT_LINES = 2; // Number of context lines shown above target line
+    constexpr usize CONTEXT_LINES = 2;
 
-    // Primary label or message header
     Label primary_label = diagnostic->labels[0];
     const SourceFile *file = sourcemgr_get_source(sm, primary_label.locus.source_id);
 
@@ -40,7 +39,6 @@ void diag_report(const Diagnostic *diagnostic, const SourceManager *sm) {
            primary_label.locus.begin,
            diagnostic->message);
 
-    // Iterate through labels (primary & attached secondary spans)
     for (usize n = 0; n < mini_array_count(diagnostic->labels); n++) {
         Label label = diagnostic->labels[n];
         const SourceFile *src = sourcemgr_get_source(sm, label.locus.source_id);
@@ -52,7 +50,6 @@ void diag_report(const Diagnostic *diagnostic, const SourceManager *sm) {
 
         printf("      │\n");
 
-        // 1. Context lines above
         for (usize l_idx = start_line_idx; l_idx < target_line_idx; l_idx++) {
             mini::StringView ctx_line = source_file_get_line_text(src, l_idx);
             printf("%5zu │   %.*s\n",
@@ -61,7 +58,6 @@ void diag_report(const Diagnostic *diagnostic, const SourceManager *sm) {
                    ctx_line.base().data);
         }
 
-        // 2. Target line
         mini::StringView line_str = source_file_get_line_text(src, target_line_idx);
         printf("%5zu │   %.*s\n",
                target_line_idx + 1,
@@ -70,13 +66,11 @@ void diag_report(const Diagnostic *diagnostic, const SourceManager *sm) {
 
         printf("      │   ");
 
-        // Padding before column start
         usize col_start = label.locus.begin > 0 ? label.locus.begin - 1 : 0;
         for (usize i = 0; i < col_start; i++) {
             putchar(' ');
         }
 
-        // Underline range span (e.g. ~~~~^~~~~)
         usize span_len = (label.locus.end > label.locus.begin)
                          ? (label.locus.end - label.locus.begin)
                          : 1;
@@ -87,7 +81,6 @@ void diag_report(const Diagnostic *diagnostic, const SourceManager *sm) {
             else putchar('~');
         }
 
-        // Inline annotation text
         if (label.text && label.text[0] != '\0') {
             printf(" %s", label.text);
         } else if (label.is_primary && diagnostic->message) {

@@ -1,17 +1,18 @@
 #include "token_buffer.h"
 
-TokenBuffer tokenbuffer_create(const char *path,
+TokenBuffer tokenbuffer_create(SourceId id,
                                const Mini_String content,
                                DiagnosticPool *diagnostics) {
-    TokenBuffer buffer = {0};
-    buffer.lexer       = lexer_create(path, content);
+    TokenBuffer buffer = { .lexer = lexer_create(id, content) };
     buffer.tokens      = MINI_ARRAY_INIT(mini_default_allocator(), Token);
     buffer.diagnostics = diagnostics;
     buffer.cursor      = 0;
     return buffer;
 }
 
-void tokenbuffer_destroy(TokenBuffer *buffer) { MINI_UNREACHABLE("TODO"); }
+void tokenbuffer_destroy(TokenBuffer *buffer) {
+    mini_array_destroy(buffer->tokens);
+}
 
 void tokenbuffer_prepare(TokenBuffer *buffer, int window) {
     if (lexer_is_done(&buffer->lexer))

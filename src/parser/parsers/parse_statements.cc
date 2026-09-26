@@ -70,7 +70,7 @@ Statement *parse_variable_declaration(Parser *p) {
                                     current(p).locus,
                                     "invalid token",
                                     "expected `:`, `=` or `;`");
-                    return NULL;
+                    next(p);
                     MUT_Mutable;
             });
 

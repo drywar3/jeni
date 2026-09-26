@@ -43,7 +43,7 @@ public:
 
     /* check if [key] exists in [key_to_index_] */
     bool contains(const Key& key) const {
-        return key_to_index_.find(key) != key_to_index_.end();
+        return key_to_index_.find(key) != nullptr;
     }
 
     /* get dense index corresponding to [key] (returns [std::nullopt] if missing) */

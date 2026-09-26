@@ -43,9 +43,8 @@ static const TokenSpec PUNCTUATIONS[] = {
 };
 static const usize PUNCT_COUNT = sizeof(PUNCTUATIONS)/sizeof(PUNCTUATIONS[0]);
 
-Lexer lexer_create(const char *path, const Mini_String content) {
-    Lexer lexer = {0};
-    lexer.path  = path;
+Lexer lexer_create(SourceId id, const Mini_String content) {
+    Lexer lexer = { .source_id = id };
     lexer.content = content;
     lexer.line    = 1;
     lexer.col     = lexer.prev_col = 1;
@@ -59,7 +58,7 @@ static bool set_token_and_return(Token *token, TokenKind kind, Locus locus, bool
 }
 
 static Locus lexer_get_locus(const Lexer *lexer) {
-    return locus_create(lexer->line, lexer->prev_col, lexer->col, lexer->prev_offset, lexer->offset, lexer->path);
+    return locus_create(lexer->line, lexer->prev_col, lexer->col, lexer->prev_offset, lexer->offset, lexer->source_id);
 }
 
 static size_t decode_utf8_char(const char *str, Codepoint *codepoint) {
@@ -286,5 +285,5 @@ bool lexer_is_done(const Lexer *lexer) {
     if (lexer == NULL)
         return true;
     // todo: something seems off here :|
-    return lexer->offset >= mini_string_count(lexer->content) - 1;
+    return lexer->offset >= mini_string_count(lexer->content);
 }

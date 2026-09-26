@@ -2,9 +2,9 @@
 
 #include <cstring>
 
+#include "source.h"
 #include "misc/misc.h"
 #include "misc/map.h"
-
 /*
  * type alias matching C [usize] to [std::size_t]
  */
@@ -14,7 +14,7 @@ typedef struct {
     usize line;
     usize begin, end;
     usize first_byte, last_byte;
-    const char *file_path;
+    SourceId source_id;
 } Locus;
 
 /*
@@ -26,17 +26,11 @@ inline bool operator==(const Locus& a, const Locus& b) {
         a.begin != b.begin ||
         a.end != b.end ||
         a.first_byte != b.first_byte ||
-        a.last_byte != b.last_byte) {
+        a.last_byte != b.last_byte ||
+        a.source_id != b.source_id) {
         return false;
     }
-
-    if (a.file_path == b.file_path) {
-        return true;
-    }
-    if (!a.file_path || !b.file_path) {
-        return false;
-    }
-    return std::strcmp(a.file_path, b.file_path) == 0;
+    return true;
 }
 
 /*
@@ -52,21 +46,12 @@ struct Hash<Locus> {
         hash_combine(seed, Hash<usize>{}(loc.end));
         hash_combine(seed, Hash<usize>{}(loc.first_byte));
         hash_combine(seed, Hash<usize>{}(loc.last_byte));
-
-        /*
-         * hash string content if [file_path] is non-null, else hash zero
-         */
-        if (loc.file_path) {
-            /* [std::string_view] hashes string content without allocating */
-            hash_combine(seed, Hash<Mini_StringView>{}(mini_sv_from_cstr(loc.file_path)));
-        } else {
-            hash_combine(seed, 0);
-        }
+        hash_combine(seed, Hash<usize>{}((usize)loc.source_id));
 
         return seed;
     }
 };
 
-Locus locus_create(usize line, usize begin, usize end, usize fb, usize lb, const char *path);
+Locus locus_create(usize line, usize begin, usize end, usize fb, usize lb, SourceId id);
 usize locus_length(const Locus *locus);
 Locus locus_merge(Locus locus, Locus other);
