@@ -8,65 +8,65 @@
 
 #include <mini.c/array.h>
 
-typedef struct ExprInteger {
+struct ExprInteger {
     Expression base;
     int64      value;
-} ExprInteger;
+};
 
-typedef struct ExprIdentifier {
+struct ExprIdentifier {
     Expression base;
     Mini_StringView value;
-} ExprIdentifier;
+};
 
-typedef struct AstFunctionParameter {
+struct AstFunctionParameter {
     Name      name;
     Typehint *typehint;
-} AstFunctionParameter;
+};
 
-typedef struct AstFunctionPrototype {
-    MINI_ARRAY(AstFunctionParameter) parameters;
+struct AstFunctionPrototype {
+    using Parameters = MINI_ARRAY(AstFunctionParameter);
+    Parameters parameters;
     Typehint *return_type;
-} AstFunctionPrototype;
+};
 
-typedef struct ExprFunction {
+struct ExprFunction {
     Expression base;
+
     AstFunctionPrototype prototype;
     Statement           *body;
-} ExprFunction;
+    bool                 body_is_defined;
+};
 
-typedef enum AstOperator {
-    AST_BINOP_Add = TOKEN_OP_Add,
-    AST_BINOP_Sub = TOKEN_OP_Minus,
-    AST_BINOP_Mul = TOKEN_OP_Star,
-    AST_BINOP_Div = TOKEN_OP_Div,
-    AST_BINOP_Gt  = TOKEN_OP_Greater,
-    AST_BINOP_Lt  = TOKEN_OP_Less,
-    AST_BINOP_Equals = TOKEN_OP_Equals,
-    AST_BINOP_NotEquals = TOKEN_OP_NotEquals,
-} AstOperator;
+enum struct AstOperator : uint {
+    Add = TOKEN_OP_Add,
+    Sub = TOKEN_OP_Minus,
+    Mul = TOKEN_OP_Star,
+    Equals = TOKEN_OP_Equals,
+    NotEquals = TOKEN_OP_NotEquals,
+};
 
-typedef struct ExprBinaryOperation {
+struct ExprBinaryOperation {
     Expression base;
     AstOperator op;
     ExpressionPointer left;
     ExpressionPointer right;
-} ExprBinaryOperation;
+};
 
-typedef struct ExprUnaryOperation {
+struct ExprUnaryOperation {
     Expression base;
     AstOperator op;
     ExpressionPointer expression;
-} ExprUnaryOperation;
+};
 
-typedef struct AstFunctionCallArgument {
+struct AstFunctionCallArgument {
     bool is_positional;
     ExpressionPointer argument;
     /* some_function_name(:some_parameter_name argument) */
     Name name;
-} AstFunctionCallArgument;
+};
 
-typedef struct ExprFunctionCall {
+struct ExprFunctionCall {
     Expression base;
     ExpressionPointer callee;
     MINI_ARRAY(AstFunctionCallArgument) arguments;
-} ExprFunctionCall;
+};

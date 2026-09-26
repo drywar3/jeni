@@ -52,7 +52,10 @@ INLINE bool eat_sequence_impl(Parser *parser, int count, TokenKind *kinds) {
 INLINE bool expect(Parser *parser, TokenKind kind) {
     if (!equals(parser, kind)) {
         diagpool_report(parser->diagnostics, DIAG_Error, current(parser).locus,
-                        "", "");
+                        "invalid token", mini_string_build(parser->allocator,
+                                                           "expected `%s` got `%s` instead",
+                                                           tokenkind_to_string(kind),
+                                                           tokenkind_to_string(current(parser).kind)));
         return false;
     }
     next(parser);

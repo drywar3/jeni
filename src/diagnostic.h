@@ -30,8 +30,12 @@ typedef struct {
 Diagnostic diag_create(DIAG_CTOR);
 Diagnostic diag_add_label(Diagnostic diagnostic, Label label);
 
+void diag_report(const Diagnostic *diagnostic);
+
 DiagnosticPool diagpool_create();
 void diagpool_report(DiagnosticPool *pool, DIAG_CTOR);
 void diagpool_report_diag(DiagnosticPool *pool, Diagnostic diagnostic);
+
+bool diagpool_is_empty(DiagnosticPool *pool);
 
 void diagpool_destroy(DiagnosticPool *pool);

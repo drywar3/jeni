@@ -5,7 +5,7 @@
 #include "expr.h"
 #include "type.h"
 
-typedef struct {
+struct StmtVariable {
     Statement base;
 
     Name        name;
@@ -14,4 +14,11 @@ typedef struct {
     Typehint   *typehint;
     bool        is_initialized;
     Expression *initializer;
-} StmtVariable;
+};
+
+struct StmtBlock {
+    using Body = MINI_ARRAY(StatementPointer);
+    Statement base;
+
+    Body body;
+};

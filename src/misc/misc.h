@@ -21,6 +21,10 @@ static inline usize mini_strview_hash(const Mini_StringView *s) {
     return hash;
 }
 
+static inline Mini_String mini_fmt(Mini_Allocator allocator, const char *fmt, ...) {
+    MINI_UNREACHABLE("TODO");
+}
+
 /*
  * specialization of [std::hash] for [Mini_StringView]
  */

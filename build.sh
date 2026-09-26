@@ -2,6 +2,7 @@
 MODE="build"
 TEST_DIR="./tests"
 EXE_ARGS=""
+USE_VALGRIND="no"
 
 debug () {
     printf "note: debugging with 'gf2'\n"
@@ -19,8 +20,15 @@ build () {
 
 run () {
     build
-    printf ">> program-output:\n"
-    ./build/jeni $EXE_ARGS
+    printf ">> program-output"
+
+    if [ $USE_VALGRIND == "yes" ]; then
+        printf "(valgrind):\n"
+        valgrind --leak-check=full ./build/jeni $EXE_ARGS
+    else
+        printf ":\n"
+        ./build/jeni $EXE_ARGS
+    fi
     printf ">> done"
 }
 
@@ -62,8 +70,11 @@ for arg in $@; do
     elif [ $arg == "--" ]; then
         EXE_ARGS=${@:((index + 1))}
         break
+    elif [ $arg == "-valgrind" ]; then
+        USE_VALGRIND="yes"
     else
         printf "error: invalid argument: '$arg'\n";
+        exit 1
     fi
     ((index++))
 done

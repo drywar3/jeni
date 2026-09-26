@@ -1,6 +1,7 @@
 #include "parse_expressions.h"
 #include "ast/expressions.h"
 #include "parser/parser_impl.h"
+#include "parser/parsers/parse_function.h"
 
 ExpressionPointer parse_primary(Parser *p) {
     if (equals(p, TOKEN_LIT_Int)) {
@@ -144,7 +145,7 @@ ExpressionPointer parse_relational(Parser *p) {
 
 ExpressionPointer parser_parse_expression(Parser *p) {
     if (equals(p, TOKEN_KW_Func)) {
-        MINI_UNREACHABLE();
+        return parse_function(p);
     }
 
     return parse_relational(p);

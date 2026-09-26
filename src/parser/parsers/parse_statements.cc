@@ -6,6 +6,16 @@
 #include "parse_statements.h"
 #include "parse_expressions.h"
 
+static bool expression_requires_terminator(ExpressionPointer expr) {
+    MINI_ASSERT(expr, "invalid expression");
+    switch (expr->kind) {
+    case EXPR_Function:
+        return false;
+    default:
+        return true;
+    }
+}
+
 bool eat_name(Parser *parser, Name *name) {
     if (!equals(parser, TOKEN_Identifier)) {
         MINI_UNREACHABLE("[%s] instead",
@@ -65,12 +75,32 @@ Statement *parse_variable_declaration(Parser *p) {
             });
 
         variable.initializer = parser_parse_expression(p);
+        variable.is_initialized = true;
     }
 
-    expect(p, TOKEN_SEP_Semicolon);
+    if (!variable.is_initialized || (variable.is_initialized && expression_requires_terminator(variable.initializer))) {
+        expect(p, TOKEN_SEP_Semicolon);
+    }
+
     Statement *stmt = ALLOC_STMT(p->allocator,
                                 STMT_Variable,
                                 locus_merge(begin.locus, previous(p).locus),
                                 variable);
     return stmt;
+}
+
+StatementPointer parse_block(Parser *p) {
+    Token begin = next(p); /* consume `{` */
+    StmtBlock block{};
+    block.body  = MINI_ARRAY_INIT(p->allocator, StatementPointer);
+    while (!equals(p, TOKEN_SEP_Rbrace) && !parser_is_done(p)) {
+        StatementPointer stmt = parser_parse_statement(p);
+        if (stmt)
+            mini_array_append(block.body, stmt);
+    }
+    expect(p, TOKEN_SEP_Rbrace);
+    return ALLOC_STMT(p->allocator,
+                      STMT_Block,
+                      locus_merge(begin.locus, previous(p).locus),
+                      block);
 }

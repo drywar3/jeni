@@ -32,6 +32,9 @@ Statement *parser_parse_statement(Parser *parser) {
         return parse_variable_declaration(parser);
     }
 
+    if (equals(parser, TOKEN_SEP_Lbrace))
+        return parse_block(parser);
+
     /* printf("[%s]\n", tokenkind_to_string(previous(parser).kind)); */
     return NULL;
 }

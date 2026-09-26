@@ -3,8 +3,8 @@
 #include <mini.c/bulk_allocator.h>
 #include <stdio.h>
 
-#include "parser/lexer.h"
-#include "parser/parser.h"
+#include "lexer.h"
+#include "parser.h"
 #include "ast/ast.h"
 #include "ast/print.h"
 

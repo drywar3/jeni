@@ -42,3 +42,18 @@ void diagpool_destroy(DiagnosticPool *pool) {
 void diagpool_report_diag(DiagnosticPool *pool, Diagnostic diagnostic) {
     mini_array_append(pool->diagnostics, diagnostic);
 }
+
+bool diagpool_is_empty(DiagnosticPool *pool) {
+    return mini_array_count(pool->diagnostics) == 0;
+}
+
+void diag_report(const Diagnostic *diagnostic) {
+    for (usize n = 0; n < mini_array_count(diagnostic->labels); n++) {
+        Label label = diagnostic->labels[n];
+        printf("%s:%zu:%zu: error: ", label.locus.file_path, label.locus.line, label.locus.begin);
+        if (label.is_primary)
+            printf("%s:", diagnostic->message);
+        printf("\n");
+        printf("  -> %s\n", label.text);
+    }
+}

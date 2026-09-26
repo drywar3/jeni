@@ -38,6 +38,14 @@ int main(int argc, char **argv) {
         program_add(&program, statement);
     }
 
+    if (!diagpool_is_empty(&diagnostics)) {
+        for (usize n = 0; n < mini_array_count(diagnostics.diagnostics); n++) {
+            const Diagnostic *diagnostic = &diagnostics.diagnostics[n];
+            diag_report(diagnostic);
+        }
+        return 1;
+    }
+
     SemanticContext sema = semactx_init(allocator, &diagnostics);
     semactx_resolve(&sema, &program);
 
