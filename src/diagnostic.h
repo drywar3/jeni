@@ -5,11 +5,11 @@
 
 #include <mini.c/array.h>
 
-typedef struct {
+struct Label {
     const char *text;
     Locus locus;
-    bool is_primary;
-} Label;
+    bool is_primary = false;
+};
 
 typedef enum {
     DIAG_Error,
