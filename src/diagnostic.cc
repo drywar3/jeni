@@ -1,6 +1,102 @@
 #include "diagnostic.h"
+#include "source.h"
+#include <cstdio>
 
-#include <mini.c/default_allocator.h>
+static mini::StringView source_file_get_line_text(const SourceFile *file, usize line_idx) {
+    if (line_idx >= mini_array_count(file->line_starts)) {
+        return mini::StringView{"", 0};
+    }
+
+    usize start = file->line_starts[line_idx];
+    usize end = (line_idx + 1 < mini_array_count(file->line_starts))
+                ? file->line_starts[line_idx + 1] - 1  // skip trailing '\n'
+                : mini_string_count(file->content);
+
+    return mini::StringView{&file->content[start], end - start};
+}
+
+static const char *severity_prefix(Severity sev) {
+    switch (sev) {
+        case DIAG_Error:   return "   ERROR";
+        case DIAG_Warning: return "   WARNING";
+        case DIAG_Note:    return "   NOTE";
+    }
+    return "   DIAG";
+}
+
+void diag_report(const Diagnostic *diagnostic, const SourceManager *sm) {
+    if (mini_array_count(diagnostic->labels) == 0) return;
+
+    constexpr usize CONTEXT_LINES = 2; // Number of context lines shown above target line
+
+    // Primary label or message header
+    Label primary_label = diagnostic->labels[0];
+    const SourceFile *file = sourcemgr_get_source(sm, primary_label.locus.source_id);
+
+    printf("%s [%s:%zu:%zu] %s\n",
+           severity_prefix(diagnostic->severity),
+           file->path,
+           primary_label.locus.line,
+           primary_label.locus.begin,
+           diagnostic->message);
+
+    // Iterate through labels (primary & attached secondary spans)
+    for (usize n = 0; n < mini_array_count(diagnostic->labels); n++) {
+        Label label = diagnostic->labels[n];
+        const SourceFile *src = sourcemgr_get_source(sm, label.locus.source_id);
+
+        usize target_line_idx = label.locus.line > 0 ? label.locus.line - 1 : 0;
+        usize start_line_idx = (target_line_idx >= CONTEXT_LINES)
+                               ? target_line_idx - CONTEXT_LINES
+                               : 0;
+
+        printf("      │\n");
+
+        // 1. Context lines above
+        for (usize l_idx = start_line_idx; l_idx < target_line_idx; l_idx++) {
+            mini::StringView ctx_line = source_file_get_line_text(src, l_idx);
+            printf("%5zu │   %.*s\n",
+                   l_idx + 1,
+                   (int)ctx_line.base().length,
+                   ctx_line.base().data);
+        }
+
+        // 2. Target line
+        mini::StringView line_str = source_file_get_line_text(src, target_line_idx);
+        printf("%5zu │   %.*s\n",
+               target_line_idx + 1,
+               (int)line_str.base().length,
+               line_str.base().data);
+
+        printf("      │   ");
+
+        // Padding before column start
+        usize col_start = label.locus.begin > 0 ? label.locus.begin - 1 : 0;
+        for (usize i = 0; i < col_start; i++) {
+            putchar(' ');
+        }
+
+        // Underline range span (e.g. ~~~~^~~~~)
+        usize span_len = (label.locus.end > label.locus.begin)
+                         ? (label.locus.end - label.locus.begin)
+                         : 1;
+
+        usize mid = span_len / 2;
+        for (usize i = 0; i < span_len; i++) {
+            if (i == mid) putchar('^');
+            else putchar('~');
+        }
+
+        // Inline annotation text
+        if (label.text && label.text[0] != '\0') {
+            printf(" %s", label.text);
+        } else if (label.is_primary && diagnostic->message) {
+            printf(" %s", diagnostic->message);
+        }
+        printf("\n");
+    }
+    printf("      │\n\n");
+}
 
 void diag_destroy(void *_diag) {
     Diagnostic *diag = (Diagnostic*)_diag;
@@ -45,15 +141,4 @@ void diagpool_report_diag(DiagnosticPool *pool, Diagnostic diagnostic) {
 
 bool diagpool_is_empty(DiagnosticPool *pool) {
     return mini_array_count(pool->diagnostics) == 0;
-}
-
-void diag_report(const Diagnostic *diagnostic) {
-    for (usize n = 0; n < mini_array_count(diagnostic->labels); n++) {
-        Label label = diagnostic->labels[n];
-        printf("%s:%zu:%zu: error: ", label.locus.file_path, label.locus.line, label.locus.begin);
-        if (label.is_primary)
-            printf("%s:", diagnostic->message);
-        printf("\n");
-        printf("  -> %s\n", label.text);
-    }
 }
