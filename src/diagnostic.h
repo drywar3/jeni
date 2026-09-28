@@ -18,7 +18,7 @@ typedef enum {
 } Severity;
 
 typedef struct {
-    Severity    severity;
+    Severity severity;
     const char *message;
     MINI_ARRAY(Label) labels;
 } Diagnostic;
@@ -27,7 +27,8 @@ typedef struct {
     MINI_ARRAY(Diagnostic) diagnostics;
 } DiagnosticPool;
 
-#define DIAG_CTOR Severity severity, Locus locus, const char *message, const char *text
+#define DIAG_CTOR                                                              \
+    Severity severity, Locus locus, const char *message, const char *text
 
 Diagnostic diag_create(DIAG_CTOR);
 Diagnostic diag_add_label(Diagnostic diagnostic, Label label);
