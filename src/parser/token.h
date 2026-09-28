@@ -56,7 +56,7 @@ typedef enum {
 
 typedef struct {
     TokenKind kind;
-    Locus     locus;
+    Locus locus;
 } Token;
 
 Token token_create(TokenKind kind, Locus locus);

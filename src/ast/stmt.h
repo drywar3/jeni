@@ -17,27 +17,27 @@ typedef enum {
 
 typedef struct {
     StatementKind kind;
-    Locus         locus;
+    Locus locus;
 } Statement;
 
 typedef Statement *StatementPointer;
 
-#define ALLOC_STMT(allocator, kind, locus, derived)                     \
-    ({                                                                  \
-        typeof(derived) derived_tmp  = derived;                         \
-        StatementPointer statement = (StatementPointer)MINI_ALLOC(allocator, typeof(derived_tmp)); \
-        *((typeof(derived_tmp)*)statement) = derived;\
-        statement_ctor(statement, kind, locus);                       \
-        statement;                                                     \
+#define ALLOC_STMT(allocator, kind, locus, derived)                            \
+    ({                                                                         \
+        typeof(derived) derived_tmp = derived;                                 \
+        StatementPointer statement =                                           \
+            (StatementPointer)MINI_ALLOC(allocator, typeof(derived_tmp));      \
+        *((typeof(derived_tmp) *)statement) = derived;                         \
+        statement_ctor(statement, kind, locus);                                \
+        statement;                                                             \
     })
 
-static inline void statement_ctor(StatementPointer _this,
-                                  StatementKind kind,
-                                  Locus locus) {
+static inline void statement_ctor(StatementPointer _this, StatementKind kind,
+                                  Locus locus)
+{
     _this->kind  = kind;
     _this->locus = locus;
 }
-
 
 void statement_destroy(Statement *stmt, Mini_Allocator allocator);
 

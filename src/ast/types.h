@@ -11,7 +11,7 @@ typedef struct TypePointer {
 typedef struct TypeArray {
     Typehint base;
     ExpressionPointer element_count;
-    TypehintPointer   element_type;
+    TypehintPointer element_type;
 } TypeArray;
 
 typedef struct TypeInteger {

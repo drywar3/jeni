@@ -15,7 +15,8 @@
 // ============================================================================
 
 template <typename T> struct Hash {
-    std::size_t operator()(const T &key) const {
+    std::size_t operator()(const T &key) const
+    {
         const unsigned char *bytes =
             reinterpret_cast<const unsigned char *>(&key);
         std::size_t hash = 14695981039346656037ULL;
@@ -28,15 +29,18 @@ template <typename T> struct Hash {
 };
 
 template <typename T> struct Hash<T *> {
-    std::size_t operator()(T *ptr) const {
+    std::size_t operator()(T *ptr) const
+    {
         std::uintptr_t val = reinterpret_cast<std::uintptr_t>(ptr);
         return Hash<std::uintptr_t>{}(val);
     }
 };
 
 template <> struct Hash<const char *> {
-    std::size_t operator()(const char *str) const {
-        if (!str) return 0;
+    std::size_t operator()(const char *str) const
+    {
+        if (!str)
+            return 0;
         std::size_t hash = 14695981039346656037ULL;
         while (*str) {
             hash ^= static_cast<unsigned char>(*str++);
@@ -60,23 +64,29 @@ class HashMap {
 
         template <typename K, typename V>
         Node(K &&k, V &&v, Node *n = nullptr)
-            : key(std::forward<K>(k)), value(std::forward<V>(v)), next(n) {}
+            : key(std::forward<K>(k)), value(std::forward<V>(v)), next(n)
+        {
+        }
     };
 
     // Generic Iterator Template for Const/Non-Const Support
-    template <bool IsConst>
-    class IteratorImpl {
+    template <bool IsConst> class IteratorImpl {
       private:
-        using MapPtr  = typename std::conditional<IsConst, const HashMap*, HashMap*>::type;
-        using NodePtr = typename std::conditional<IsConst, const Node*, Node*>::type;
-        using NodeRef = typename std::conditional<IsConst, const Node&, Node&>::type;
+        using MapPtr = typename std::conditional<IsConst, const HashMap *,
+                                                 HashMap *>::type;
+        using NodePtr =
+            typename std::conditional<IsConst, const Node *, Node *>::type;
+        using NodeRef =
+            typename std::conditional<IsConst, const Node &, Node &>::type;
 
         MapPtr map_;
         std::size_t bucket_;
         NodePtr node_;
 
-        void advance_to_valid() {
-            if (!map_ || !map_->buckets_) return;
+        void advance_to_valid()
+        {
+            if (!map_ || !map_->buckets_)
+                return;
             while (node_ == nullptr && ++bucket_ < map_->capacity_) {
                 node_ = map_->buckets_[bucket_];
             }
@@ -84,8 +94,10 @@ class HashMap {
 
       public:
         IteratorImpl(MapPtr map, std::size_t bucket, NodePtr node)
-            : map_(map), bucket_(bucket), node_(node) {
-            if (node_ == nullptr && map_ && map_->buckets_ && bucket_ < map_->capacity_) {
+            : map_(map), bucket_(bucket), node_(node)
+        {
+            if (node_ == nullptr && map_ && map_->buckets_ &&
+                bucket_ < map_->capacity_) {
                 advance_to_valid();
             }
         }
@@ -93,7 +105,8 @@ class HashMap {
         NodeRef operator*() const { return *node_; }
         NodePtr operator->() const { return node_; }
 
-        IteratorImpl &operator++() {
+        IteratorImpl &operator++()
+        {
             if (node_) {
                 node_ = node_->next;
                 if (!node_) {
@@ -103,12 +116,14 @@ class HashMap {
             return *this;
         }
 
-        bool operator==(const IteratorImpl &other) const {
+        bool operator==(const IteratorImpl &other) const
+        {
             return node_ == other.node_ && bucket_ == other.bucket_ &&
                    map_ == other.map_;
         }
 
-        bool operator!=(const IteratorImpl &other) const {
+        bool operator!=(const IteratorImpl &other) const
+        {
             return !(*this == other);
         }
     };
@@ -124,11 +139,13 @@ class HashMap {
     HashFunc hasher_;
     Mini_Allocator allocator_;
 
-    std::size_t get_bucket_index(const Key &key, std::size_t cap) const {
+    std::size_t get_bucket_index(const Key &key, std::size_t cap) const
+    {
         return hasher_(key) % cap;
     }
 
-    void check_and_rehash() {
+    void check_and_rehash()
+    {
         if (capacity_ == 0 || !buckets_) {
             rehash(16);
             return;
@@ -144,7 +161,8 @@ class HashMap {
                      Mini_Allocator allocator     = mini_default_allocator())
         : capacity_(initial_capacity < 4 ? 4 : initial_capacity), size_(0),
           max_load_factor_(max_load_factor), hasher_(HashFunc()),
-          allocator_(allocator) {
+          allocator_(allocator)
+    {
         buckets_ = MINI_ALLOC_MANY(allocator_, Node *, capacity_);
         std::memset(buckets_, 0, sizeof(Node *) * capacity_);
     }
@@ -152,17 +170,21 @@ class HashMap {
     explicit HashMap(Mini_Allocator allocator,
                      std::size_t initial_capacity = 16,
                      float max_load_factor        = 0.75f)
-        : HashMap(initial_capacity, max_load_factor, allocator) {}
+        : HashMap(initial_capacity, max_load_factor, allocator)
+    {
+    }
 
     HashMap(std::initializer_list<std::pair<Key, Value>> list,
             Mini_Allocator allocator = mini_default_allocator())
-        : HashMap(list.size() * 2, 0.75f, allocator) {
+        : HashMap(list.size() * 2, 0.75f, allocator)
+    {
         for (const auto &item : list) {
             insert(item.first, item.second);
         }
     }
 
-    ~HashMap() {
+    ~HashMap()
+    {
         clear();
         if (buckets_) {
             MINI_FREE(allocator_, buckets_);
@@ -173,11 +195,13 @@ class HashMap {
     HashMap(const HashMap &other)
         : capacity_(other.capacity_ < 4 ? 4 : other.capacity_), size_(0),
           max_load_factor_(other.max_load_factor_), hasher_(other.hasher_),
-          allocator_(other.allocator_) {
+          allocator_(other.allocator_)
+    {
         buckets_ = MINI_ALLOC_MANY(allocator_, Node *, capacity_);
         std::memset(buckets_, 0, sizeof(Node *) * capacity_);
         for (std::size_t i = 0; i < other.capacity_; ++i) {
-            if (!other.buckets_) break;
+            if (!other.buckets_)
+                break;
             Node *current = other.buckets_[i];
             while (current) {
                 insert(current->key, current->value);
@@ -186,7 +210,8 @@ class HashMap {
         }
     }
 
-    HashMap &operator=(const HashMap &other) {
+    HashMap &operator=(const HashMap &other)
+    {
         if (this != &other) {
             HashMap temp(other);
             swap(temp);
@@ -198,13 +223,15 @@ class HashMap {
     HashMap(HashMap &&other) noexcept
         : buckets_(other.buckets_), capacity_(other.capacity_),
           size_(other.size_), max_load_factor_(other.max_load_factor_),
-          hasher_(std::move(other.hasher_)), allocator_(other.allocator_) {
+          hasher_(std::move(other.hasher_)), allocator_(other.allocator_)
+    {
         other.buckets_  = nullptr;
         other.capacity_ = 0;
         other.size_     = 0;
     }
 
-    HashMap &operator=(HashMap &&other) noexcept {
+    HashMap &operator=(HashMap &&other) noexcept
+    {
         if (this != &other) {
             clear();
             if (buckets_) {
@@ -225,7 +252,8 @@ class HashMap {
         return *this;
     }
 
-    void swap(HashMap &other) noexcept {
+    void swap(HashMap &other) noexcept
+    {
         std::swap(buckets_, other.buckets_);
         std::swap(capacity_, other.capacity_);
         std::swap(size_, other.size_);
@@ -235,8 +263,10 @@ class HashMap {
     }
 
     // Lookup & Access
-    Value *find(const Key &key) {
-        if (capacity_ == 0 || !buckets_) return nullptr;
+    Value *find(const Key &key)
+    {
+        if (capacity_ == 0 || !buckets_)
+            return nullptr;
         std::size_t idx = get_bucket_index(key, capacity_);
         Node *current   = buckets_[idx];
 
@@ -249,8 +279,10 @@ class HashMap {
         return nullptr;
     }
 
-    const Value *find(const Key &key) const {
-        if (capacity_ == 0 || !buckets_) return nullptr;
+    const Value *find(const Key &key) const
+    {
+        if (capacity_ == 0 || !buckets_)
+            return nullptr;
         std::size_t idx = get_bucket_index(key, capacity_);
         Node *current   = buckets_[idx];
 
@@ -266,8 +298,10 @@ class HashMap {
     bool contains(const Key &key) const { return find(key) != nullptr; }
 
     // Optimized Single-Pass operator[]
-    Value &operator[](const Key &key) {
-        if (capacity_ == 0 || !buckets_) rehash(16);
+    Value &operator[](const Key &key)
+    {
+        if (capacity_ == 0 || !buckets_)
+            rehash(16);
 
         std::size_t idx = get_bucket_index(key, capacity_);
         Node *current   = buckets_[idx];
@@ -283,14 +317,16 @@ class HashMap {
         idx = get_bucket_index(key, capacity_);
 
         Node *new_node_mem = MINI_ALLOC(allocator_, Node);
-        Node *new_node     = new (new_node_mem) Node(key, Value(), buckets_[idx]);
-        buckets_[idx]      = new_node;
+        Node *new_node = new (new_node_mem) Node(key, Value(), buckets_[idx]);
+        buckets_[idx]  = new_node;
         ++size_;
         return new_node->value;
     }
 
-    Value &operator[](Key &&key) {
-        if (capacity_ == 0 || !buckets_) rehash(16);
+    Value &operator[](Key &&key)
+    {
+        if (capacity_ == 0 || !buckets_)
+            rehash(16);
 
         std::size_t idx = get_bucket_index(key, capacity_);
         Node *current   = buckets_[idx];
@@ -306,15 +342,18 @@ class HashMap {
         idx = get_bucket_index(key, capacity_);
 
         Node *new_node_mem = MINI_ALLOC(allocator_, Node);
-        Node *new_node     = new (new_node_mem) Node(std::move(key), Value(), buckets_[idx]);
-        buckets_[idx]      = new_node;
+        Node *new_node =
+            new (new_node_mem) Node(std::move(key), Value(), buckets_[idx]);
+        buckets_[idx] = new_node;
         ++size_;
         return new_node->value;
     }
 
     // Insertion & Modification
-    template <typename K, typename V> bool emplace(K &&key, V &&value) {
-        if (capacity_ == 0 || !buckets_) rehash(16);
+    template <typename K, typename V> bool emplace(K &&key, V &&value)
+    {
+        if (capacity_ == 0 || !buckets_)
+            rehash(16);
 
         std::size_t idx = get_bucket_index(key, capacity_);
         Node *current   = buckets_[idx];
@@ -331,24 +370,27 @@ class HashMap {
         idx = get_bucket_index(key, capacity_);
 
         Node *new_node_mem = MINI_ALLOC(allocator_, Node);
-        Node *new_node     = new (new_node_mem) Node(std::forward<K>(key),
-                                                     std::forward<V>(value),
-                                                     buckets_[idx]);
+        Node *new_node     = new (new_node_mem)
+            Node(std::forward<K>(key), std::forward<V>(value), buckets_[idx]);
         buckets_[idx] = new_node;
         ++size_;
         return true;
     }
 
-    bool insert(const Key &key, const Value &value) {
+    bool insert(const Key &key, const Value &value)
+    {
         return emplace(key, value);
     }
 
-    bool insert(Key &&key, Value &&value) {
+    bool insert(Key &&key, Value &&value)
+    {
         return emplace(std::move(key), std::move(value));
     }
 
-    bool erase(const Key &key) {
-        if (capacity_ == 0 || !buckets_) return false;
+    bool erase(const Key &key)
+    {
+        if (capacity_ == 0 || !buckets_)
+            return false;
         std::size_t idx = get_bucket_index(key, capacity_);
         Node *current   = buckets_[idx];
         Node *prev      = nullptr;
@@ -371,7 +413,8 @@ class HashMap {
         return false;
     }
 
-    void clear() {
+    void clear()
+    {
         if (!buckets_)
             return;
 
@@ -393,15 +436,19 @@ class HashMap {
         size_ = 0;
     }
 
-    void rehash(std::size_t new_capacity) {
-        if (new_capacity < size_) new_capacity = size_;
-        if (new_capacity < 4)     new_capacity = 4;
+    void rehash(std::size_t new_capacity)
+    {
+        if (new_capacity < size_)
+            new_capacity = size_;
+        if (new_capacity < 4)
+            new_capacity = 4;
 
         Node **new_buckets = MINI_ALLOC_MANY(allocator_, Node *, new_capacity);
         std::memset(new_buckets, 0, sizeof(Node *) * new_capacity);
 
         for (std::size_t i = 0; i < capacity_; ++i) {
-            if (!buckets_) break;
+            if (!buckets_)
+                break;
             Node *current = buckets_[i];
             while (current) {
                 Node *next          = current->next;
@@ -425,25 +472,34 @@ class HashMap {
     std::size_t capacity() const { return capacity_; }
     bool empty() const { return size_ == 0; }
 
-    Iterator begin() {
-        if (size_ == 0 || !buckets_) return end();
+    Iterator begin()
+    {
+        if (size_ == 0 || !buckets_)
+            return end();
         for (std::size_t i = 0; i < capacity_; ++i) {
-            if (buckets_[i]) return Iterator(this, i, buckets_[i]);
+            if (buckets_[i])
+                return Iterator(this, i, buckets_[i]);
         }
         return end();
     }
 
     Iterator end() { return Iterator(this, capacity_, nullptr); }
 
-    ConstIterator begin() const {
-        if (size_ == 0 || !buckets_) return end();
+    ConstIterator begin() const
+    {
+        if (size_ == 0 || !buckets_)
+            return end();
         for (std::size_t i = 0; i < capacity_; ++i) {
-            if (buckets_[i]) return ConstIterator(this, i, buckets_[i]);
+            if (buckets_[i])
+                return ConstIterator(this, i, buckets_[i]);
         }
         return end();
     }
 
-    ConstIterator end() const { return ConstIterator(this, capacity_, nullptr); }
+    ConstIterator end() const
+    {
+        return ConstIterator(this, capacity_, nullptr);
+    }
     ConstIterator cbegin() const { return begin(); }
     ConstIterator cend() const { return end(); }
 };

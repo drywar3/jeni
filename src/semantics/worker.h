@@ -1,19 +1,19 @@
 #pragma once
 
-typedef struct SemanticContext SemanticContext;
+struct SemanticContext;
 
-typedef enum WorkerStatus {
+enum struct WorkerStatus {
     /* the statement/expression was able to be processed completely */
-    WORKER_Done,
+    Done,
     /* the statement/expression was not able to be processed but did not fail */
-    WORKER_Pending,
+    Pending,
     /* the statement/expression was not able to be processed due to an error */
-    WORKER_Failed,
-} WorkerStatus;
+    Failed,
+};
 
 typedef WorkerStatus (*WorkerFunc)(SemanticContext *ctx, void *data);
 
-typedef struct Worker {
+struct Worker {
     void *data;
     WorkerFunc func;
-} Worker;
+};

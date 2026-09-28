@@ -5,7 +5,6 @@
 #include <mini.c/bulk_allocator.h>
 #include <mini.c/debug_allocator.h>
 
-
 #include "source.h"
 #include "ast/ast.h"
 #include "ast/print.h"
@@ -13,28 +12,28 @@
 #include "parser/parser.h"
 #include "semantics/sema.h"
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
     if (argc < 2) {
         printf("usage: %s <input>\n", argv[0]);
         return 1;
     }
 
-
-    Mini_BulkAllocator bka = mini_bka_create(mini_default_allocator());
+    Mini_BulkAllocator bka   = mini_bka_create(mini_default_allocator());
     Mini_Allocator allocator = mini_bka_allocator(&bka);
-    auto _bka = mini::AttachDtor(bka, mini_bka_destroy);
+    auto _bka                = mini::AttachDtor(bka, mini_bka_destroy);
 
     const char *input_path = argv[1];
 
     SourceManager sources = sourcemgr_init();
     auto _sources         = mini::AttachDtor(sources, sourcemgr_destroy);
-    SourceId root_file    = sourcemgr_open_file(&sources, input_path, allocator);
+    SourceId root_file = sourcemgr_open_file(&sources, input_path, allocator);
 
     DiagnosticPool diagnostics = diagpool_create();
-    auto diagnostics_          = mini::AttachDtor(diagnostics, diagpool_destroy);
+    auto diagnostics_ = mini::AttachDtor(diagnostics, diagpool_destroy);
 
     const Mini_String &content = sourcemgr_get_content(&sources, root_file);
-    Parser parser              = parser_create(root_file, content, &diagnostics);
+    Parser parser = parser_create(root_file, content, &diagnostics);
     parser_set_allocator(&parser, allocator);
 
     Program program = program_init(allocator);
@@ -46,7 +45,6 @@ int main(int argc, char **argv) {
     }
     parser_destroy(&parser);
 
-
     if (!diagpool_is_empty(&diagnostics)) {
         for (usize n = 0; n < mini_array_count(diagnostics.diagnostics); n++) {
             const Diagnostic *diagnostic = &diagnostics.diagnostics[n];
@@ -55,7 +53,10 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    SemanticContext sema = semactx_init(allocator, &diagnostics);
+    SemanticStorage storage = semastore_init(allocator);
+    semastore_init_builtin_types(&storage);
+
+    SemanticContext sema = semactx_init(allocator, &diagnostics, &storage);
     semactx_resolve(&sema, &program);
 
     if (!diagpool_is_empty(&diagnostics)) {

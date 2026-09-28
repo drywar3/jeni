@@ -21,12 +21,10 @@ typedef struct {
  * equality operator required for [std::unordered_map] lookup.
  * uses [std::strcmp] for [file_path] pointer equality fallback.
  */
-inline bool operator==(const Locus& a, const Locus& b) {
-    if (a.line != b.line ||
-        a.begin != b.begin ||
-        a.end != b.end ||
-        a.first_byte != b.first_byte ||
-        a.last_byte != b.last_byte ||
+inline bool operator==(const Locus &a, const Locus &b)
+{
+    if (a.line != b.line || a.begin != b.begin || a.end != b.end ||
+        a.first_byte != b.first_byte || a.last_byte != b.last_byte ||
         a.source_id != b.source_id) {
         return false;
     }
@@ -36,9 +34,9 @@ inline bool operator==(const Locus& a, const Locus& b) {
 /*
  * specialization of [std::hash] for [Locus]
  */
-template <>
-struct Hash<Locus> {
-    std::size_t operator()(const Locus& loc) const noexcept {
+template <> struct Hash<Locus> {
+    std::size_t operator()(const Locus &loc) const noexcept
+    {
         std::size_t seed = 0;
 
         hash_combine(seed, Hash<usize>{}(loc.line));
@@ -52,6 +50,7 @@ struct Hash<Locus> {
     }
 };
 
-Locus locus_create(usize line, usize begin, usize end, usize fb, usize lb, SourceId id);
+Locus locus_create(usize line, usize begin, usize end, usize fb, usize lb,
+                   SourceId id);
 usize locus_length(const Locus *locus);
 Locus locus_merge(Locus locus, Locus other);

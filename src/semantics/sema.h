@@ -4,24 +4,35 @@
 #include "ast/ast.h"
 #include "misc/map.h"
 #include "diagnostic.h"
+#include "semantics/entities/type.h"
 #include "semantics/entities/scope.h"
 
 #include <mini.c/mini_def.h>
 #include <mini.c/array.h>
 
-constexpr ScopeId GLOBAL_SCOPE{0};
+struct SemanticStorage {
+    sema::ScopeStorage  scopes;
+    sema::SymbolStorage symbols;
+    sema::TypeStorage   types;
+};
 
-typedef struct SemanticContext {
-    /* maps [symbol id] -> pending workers */    /* maps [symbol id] -> pending symbol ids */
+struct SemanticContext {
+    /* maps [symbol id] -> pending workers */ /* maps [symbol id] -> pending
+                                                 symbol ids */
     HashMap<usize, MINI_ARRAY(Worker)> pending_workers;
 
     DiagnosticPool *diagnostics;
     Mini_Allocator allocator;
-    ScopeStorage   scopes;
-    SymbolStorage  symbols;
+    SemanticStorage *store;
 
-    ScopeId        current_scope;
-} SemanticContext;
+    sema::ScopeId global_scope;
+    sema::ScopeId current_scope;
+};
 
-SemanticContext semactx_init(Mini_Allocator allocator, DiagnosticPool *diagnostics);
+SemanticStorage semastore_init(Mini_Allocator allocator);
+void semastore_init_builtin_types(SemanticStorage *store);
+
+SemanticContext semactx_init(Mini_Allocator allocator,
+                             DiagnosticPool *diagnostics,
+                             SemanticStorage *store);
 void semactx_resolve(SemanticContext *sema, Program *program);

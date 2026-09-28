@@ -5,7 +5,7 @@
 
 typedef struct Name {
     Mini_StringView value;
-    Locus           locus;
+    Locus locus;
 } Name;
 
 typedef enum Mutability {
@@ -13,6 +13,7 @@ typedef enum Mutability {
     MUT_Mutable  = 0,
 } Mutability;
 
-static inline Name name_create(Mini_StringView value, Locus locus) {
-    return (Name) { value, locus };
+static inline Name name_create(Mini_StringView value, Locus locus)
+{
+    return (Name){value, locus};
 }

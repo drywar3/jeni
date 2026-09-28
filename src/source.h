@@ -8,9 +8,9 @@
 enum struct SourceId : usize {};
 
 struct SourceFile {
-    Mini_String   path;
-    Mini_String   canon_path;
-    Mini_String   content;
+    Mini_String path;
+    Mini_String canon_path;
+    Mini_String content;
     MINI_ARRAY(usize) line_starts;
 };
 
@@ -20,9 +20,10 @@ struct SourceManager {
 };
 
 SourceManager sourcemgr_init();
-void          sourcemgr_destroy(SourceManager *sm);
+void sourcemgr_destroy(SourceManager *sm);
 
-SourceId sourcemgr_open_file(SourceManager *sm, mini::StringView file_path, Mini_Allocator allocator);
+SourceId sourcemgr_open_file(SourceManager *sm, mini::StringView file_path,
+                             Mini_Allocator allocator);
 
 const Mini_String &sourcemgr_get_content(SourceManager *sm, SourceId id);
 const SourceFile *sourcemgr_get_source(const SourceManager *sm, SourceId);

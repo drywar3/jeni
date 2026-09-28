@@ -9,14 +9,15 @@
 #include <mini.c/allocator.h>
 
 typedef struct {
-    TokenBuffer     tokens;
+    TokenBuffer tokens;
     DiagnosticPool *diagnostics;
     Token current, previous;
 
     Mini_Allocator allocator;
 } Parser;
 
-Parser parser_create(SourceId id, const Mini_String content, DiagnosticPool *diagnostics);
+Parser parser_create(SourceId id, const Mini_String content,
+                     DiagnosticPool *diagnostics);
 void parser_destroy(Parser *parser);
 
 void parser_set_allocator(Parser *parser, Mini_Allocator allocator);

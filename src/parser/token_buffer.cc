@@ -1,20 +1,22 @@
 #include "token_buffer.h"
 
-TokenBuffer tokenbuffer_create(SourceId id,
-                               const Mini_String content,
-                               DiagnosticPool *diagnostics) {
-    TokenBuffer buffer = { .lexer = lexer_create(id, content) };
+TokenBuffer tokenbuffer_create(SourceId id, const Mini_String content,
+                               DiagnosticPool *diagnostics)
+{
+    TokenBuffer buffer = {.lexer = lexer_create(id, content)};
     buffer.tokens      = MINI_ARRAY_INIT(mini_default_allocator(), Token);
     buffer.diagnostics = diagnostics;
     buffer.cursor      = 0;
     return buffer;
 }
 
-void tokenbuffer_destroy(TokenBuffer *buffer) {
+void tokenbuffer_destroy(TokenBuffer *buffer)
+{
     mini_array_destroy(buffer->tokens);
 }
 
-void tokenbuffer_prepare(TokenBuffer *buffer, int window) {
+void tokenbuffer_prepare(TokenBuffer *buffer, int window)
+{
     if (lexer_is_done(&buffer->lexer))
         return;
 
@@ -34,13 +36,16 @@ void tokenbuffer_prepare(TokenBuffer *buffer, int window) {
     }
 }
 
-bool tokenbuffer_is_truly_done(const TokenBuffer *buffer) {
+bool tokenbuffer_is_truly_done(const TokenBuffer *buffer)
+{
     /* when the lexer has reached the end of the content given and the
      * token buffer is also exhausted then we are truly done */
-    return lexer_is_done(&buffer->lexer) && buffer->cursor >= mini_array_count(buffer->tokens);
+    return lexer_is_done(&buffer->lexer) &&
+           buffer->cursor >= mini_array_count(buffer->tokens);
 }
 
-Token tokenbuffer_peek(TokenBuffer *buffer, int ahead) {
+Token tokenbuffer_peek(TokenBuffer *buffer, int ahead)
+{
     if (tokenbuffer_is_truly_done(buffer)) {
         // eof
         return mini_array_last(buffer->tokens);
@@ -53,7 +58,8 @@ Token tokenbuffer_peek(TokenBuffer *buffer, int ahead) {
     return buffer->tokens[buffer->cursor + ahead];
 }
 
-Token tokenbuffer_advance(TokenBuffer *buffer) {
+Token tokenbuffer_advance(TokenBuffer *buffer)
+{
     buffer->cursor += 1;
     Token current = tokenbuffer_peek(buffer, 0);
     tokenbuffer_prepare(buffer, 2);

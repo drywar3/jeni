@@ -3,15 +3,18 @@
 #include "parser/parsers/parse_function.h"
 #include "parser/parsers/parse_typehint.h"
 
-bool parse_function_parameters(Parser *p, AstFunctionPrototype::Parameters *parameters) {
+bool parse_function_parameters(Parser *p,
+                               AstFunctionPrototype::Parameters parameters)
+{
     expect(p, TOKEN_SEP_Lparen);
     while (!equals(p, TOKEN_SEP_Rparen)) {
         AstFunctionParameter parameter;
-        if (!eat_name(p, &parameter.name)) MINI_UNREACHABLE("TODO");
+        if (!eat_name(p, &parameter.name))
+            MINI_UNREACHABLE("TODO");
         expect(p, TOKEN_SEP_Colon);
         parameter.typehint = parser_parse_typehint(p);
         if (parameters)
-            mini_array_append(*parameters, parameter);
+            mini_array_append(parameters, parameter);
         if (!try_expect(p, TOKEN_SEP_Comma))
             break;
     }
@@ -19,11 +22,14 @@ bool parse_function_parameters(Parser *p, AstFunctionPrototype::Parameters *para
     return true;
 }
 
-ExpressionPointer parse_function(Parser *p) {
+ExpressionPointer parse_function(Parser *p)
+{
     Token begin = next(p); /* consume `func` keyword */
 
     ExprFunction function{};
-    if (!parse_function_parameters(p, nullptr)) MINI_UNREACHABLE("TODO");
+    function.prototype.parameters = MINI_ARRAY_INIT(p->allocator, AstFunctionParameter);
+    if (!parse_function_parameters(p, function.prototype.parameters))
+        MINI_UNREACHABLE("TODO");
 
     if (equals(p, TOKEN_SEP_Lbrace)) {
         function.body_is_defined = true;
@@ -35,5 +41,6 @@ ExpressionPointer parse_function(Parser *p) {
         function.body            = nullptr;
     }
 
-    return ALLOC_EXPR(p->allocator, EXPR_Function, locus_merge(begin.locus, previous(p).locus), function);
+    return ALLOC_EXPR(p->allocator, EXPR_Function,
+                      locus_merge(begin.locus, previous(p).locus), function);
 }

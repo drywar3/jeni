@@ -8,28 +8,37 @@
 #include <mini.c/string_view.h>
 #include <optional>
 
-enum struct ScopeKind {
-    Global,
-    Function,
-    Block,
-};
+namespace sema
+{
+    constexpr auto INVALID_SCOPE = (ScopeId)0;
 
-typedef struct ScopeFunction {
-} ScopeFunction;
+    enum struct ScopeKind {
+        Global,
+        Function,
+        Block,
+        Invalid,
+    };
 
-typedef struct Scope {
-    using Map = ::Map<Mini_StringView, SymbolId>;
-    using Parent = std::optional<ScopeId>;
+    typedef struct ScopeFunction {
+    } ScopeFunction;
 
-    ScopeFunction function;
-    ScopeKind     kind;
-    Map           symbols;
-    Scope::Parent parent;
-} Scope;
+    typedef struct Scope {
+        using Map    = ::Map<Mini_StringView, SymbolId>;
+        using Parent = std::optional<ScopeId>;
 
-using ScopeStorage = DenseMap<Locus, Scope>;
+        ScopeFunction function;
+        ScopeKind kind;
+        Map symbols;
+        Scope::Parent parent;
+    } Scope;
 
-Scope scope_init(ScopeKind kind, Scope::Parent parent, Mini_Allocator allocator = mini_default_allocator());
-std::optional<SymbolId> scope_get_symbol(Scope *scope, Mini_StringView name);
-bool scope_has_symbol(const Scope *scope, Mini_StringView name);
-void scope_put(Scope *scope, Mini_StringView name, SymbolId id);
+    using ScopeStorage = DenseMap<Locus, Scope>;
+
+    Scope scope_init(ScopeKind kind, Scope::Parent parent,
+                     Mini_Allocator allocator = mini_default_allocator());
+    std::optional<SymbolId> scope_get_symbol(Scope *scope,
+                                             Mini_StringView name);
+    bool scope_has_symbol(const Scope *scope, Mini_StringView name);
+    void scope_put(Scope *scope, Mini_StringView name, SymbolId id);
+
+} // namespace sema

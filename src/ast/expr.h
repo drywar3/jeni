@@ -18,23 +18,24 @@ typedef enum {
 
 typedef struct {
     ExpressionKind kind;
-    Locus         locus;
+    Locus locus;
 } Expression;
 
 typedef Expression *ExpressionPointer;
 
-#define ALLOC_EXPR(allocator, kind, locus, derived)                     \
-    ({                                                                  \
-        typeof(derived) derived_tmp  = derived;                         \
-        ExpressionPointer expression = (ExpressionPointer)MINI_ALLOC(allocator, typeof(derived_tmp)); \
-        *((typeof(derived_tmp)*)expression) = derived;\
-        expression_ctor(expression, kind, locus);                       \
-        expression;                                                     \
+#define ALLOC_EXPR(allocator, kind, locus, derived)                            \
+    ({                                                                         \
+        typeof(derived) derived_tmp = derived;                                 \
+        ExpressionPointer expression =                                         \
+            (ExpressionPointer)MINI_ALLOC(allocator, typeof(derived_tmp));     \
+        *((typeof(derived_tmp) *)expression) = derived;                        \
+        expression_ctor(expression, kind, locus);                              \
+        expression;                                                            \
     })
 
-static inline void expression_ctor(ExpressionPointer _this,
-                                   ExpressionKind kind,
-                                   Locus locus) {
+static inline void expression_ctor(ExpressionPointer _this, ExpressionKind kind,
+                                   Locus locus)
+{
     _this->kind  = kind;
     _this->locus = locus;
 }

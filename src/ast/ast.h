@@ -8,7 +8,6 @@ typedef struct Program {
     MINI_ARRAY(StatementPointer) ast;
 } Program;
 
-
 Program program_init(Mini_Allocator allocator);
 void program_add(Program *program, StatementPointer stmt);
 

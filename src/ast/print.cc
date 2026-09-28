@@ -3,13 +3,15 @@
 #include "statements.h"
 #include "expressions.h"
 
-static void print_indent(usize indent) {
+static void print_indent(usize indent)
+{
     for (usize n = 0; n < indent; n++) {
         printf("    ");
     }
 }
 
-static void print_string(Mini_StringView string) {
+static void print_string(Mini_StringView string)
+{
     printf("\"");
 
     for (usize n = 0; n < string.length; n++) {
@@ -45,13 +47,15 @@ static void print_string(Mini_StringView string) {
     printf("\"");
 }
 
-void print_type(const Typehint *typehint, usize indent) {
+void print_type(const Typehint *typehint, usize indent)
+{
     (void)typehint;
     (void)indent;
     MINI_UNREACHABLE();
 }
 
-void print_expr(const Expression *expr, usize indent) {
+void print_expr(const Expression *expr, usize indent)
+{
     switch (expr->kind) {
     case EXPR_Integer: {
         const ExprInteger *integer = (const ExprInteger *)expr;
@@ -69,8 +73,7 @@ void print_expr(const Expression *expr, usize indent) {
     } break;
 
     case EXPR_Identifier: {
-        const ExprIdentifier *identifier =
-            (const ExprIdentifier *)expr;
+        const ExprIdentifier *identifier = (const ExprIdentifier *)expr;
 
         printf("{\n");
 
@@ -87,8 +90,7 @@ void print_expr(const Expression *expr, usize indent) {
     } break;
 
     case EXPR_FunctionCall: {
-        const ExprFunctionCall *function_call =
-            (const ExprFunctionCall *)expr;
+        const ExprFunctionCall *function_call = (const ExprFunctionCall *)expr;
 
         printf("{\n");
 
@@ -103,8 +105,7 @@ void print_expr(const Expression *expr, usize indent) {
         print_indent(indent + 1);
         printf("\"arguments\": [");
 
-        const usize count =
-            mini_array_count(function_call->arguments);
+        const usize count = mini_array_count(function_call->arguments);
 
         if (count > 0)
             printf("\n");
@@ -112,10 +113,7 @@ void print_expr(const Expression *expr, usize indent) {
         for (usize n = 0; n < count; n++) {
             print_indent(indent + 2);
 
-            print_expr(
-                       function_call->arguments[n].argument,
-                       indent + 2
-                      );
+            print_expr(function_call->arguments[n].argument, indent + 2);
 
             if (n + 1 < count)
                 printf(",");
@@ -137,11 +135,11 @@ void print_expr(const Expression *expr, usize indent) {
     }
 }
 
-void ast_print(const Statement *statement, usize indent) {
+void ast_print(const Statement *statement, usize indent)
+{
     switch (statement->kind) {
     case STMT_Variable: {
-        const StmtVariable *variable =
-            (const StmtVariable *)statement;
+        const StmtVariable *variable = (const StmtVariable *)statement;
 
         printf("{\n");
 

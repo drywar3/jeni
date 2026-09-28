@@ -73,6 +73,12 @@ run_tests() {
     printf "note: running tests finished (%d passed, %d failed)\n" "$passed" "$failed"
 }
 
+format () {
+    for file in `find ./src/ -type f -name '*.cc'` `find ./src/ -type f -name '*.h'`; do
+        clang-format -i $file
+    done
+}
+
 # Parse command line options
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -80,6 +86,7 @@ while [[ $# -gt 0 ]]; do
         -build)     MODE="build" ;;
         -debug)     MODE="debug" ;;
         -run-tests) MODE="tests" ;;
+        -format)    MODE="format" ;;
         -valgrind)  USE_VALGRIND="yes" ;;
         -f)         FRESH_BUILD="yes" ;;
         --)
@@ -100,4 +107,5 @@ case "$MODE" in
     build) build ;;
     tests) run_tests ;;
     debug) debug ;;
+    format) format ;;
 esac
