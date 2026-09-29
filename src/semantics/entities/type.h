@@ -21,6 +21,7 @@ namespace sema
             Array,
             Pointer,
             Slice,
+            Function,
         } kind;
 
         constexpr TypeKind(V v) : kind(v) {}
@@ -41,12 +42,20 @@ namespace sema
     struct Type;
     using TypeStorage = DenseMap<Locus, Type>;
 
+    enum class TypeId : usize {};
+
+    struct FunctionType {
+        using Parameters = MINI_ARRAY(TypeId);
+        Parameters parameters;
+        TypeId return_type;
+    };
+
     struct Type {
         TypeKind kind;
 
         union {
-
-        } data;
+            FunctionType function;
+        };
 
         bool operator==(const Type &other) const { return kind == other.kind; }
 
@@ -54,7 +63,13 @@ namespace sema
         constexpr Type() : kind(TypeKind::Error) {}
         constexpr Type(TypeKind kind) : kind(kind) {}
 
-        Mini_String display(Mini_Allocator a, TypeStorage &types) const
+        static auto Function(FunctionType::Parameters parameters, TypeId return_type) {
+            auto type = Type(TypeKind::Function);
+            type.function = FunctionType{parameters, return_type};
+            return type;
+        }
+
+            Mini_String display(Mini_Allocator a, TypeStorage &types) const
         {
             switch (kind) {
             case TypeKind::String:
@@ -70,8 +85,6 @@ namespace sema
             }
         }
     };
-
-    enum class TypeId : usize {};
 
     struct TypeInfo {
         TypeId id;

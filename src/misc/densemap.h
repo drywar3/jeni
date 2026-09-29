@@ -67,7 +67,7 @@ template <typename Key, typename Value> struct DenseMap {
     const Value *find(const Key &key) const
     {
         auto it = key_to_index_.find(key);
-        return (it != key_to_index_.end()) ? &values_[it->second] : nullptr;
+        return (it != nullptr) ? &values_[*it] : nullptr;
     }
 
     usize add_value(Value value)

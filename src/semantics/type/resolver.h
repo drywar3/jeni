@@ -8,6 +8,7 @@
 
 namespace sema
 {
+    TypeId register_or_get_type(SemanticContext *sema, sema::Type type);
     WorkerStatus resolve_typehint(SemanticContext *sema,
                                   const TypehintPointer typehint,
                                   /* target locus to link resolved type to */

@@ -1,12 +1,14 @@
 #include "ast/statements.h"
 #include "semantics/impl.h"
 #include "ast/expressions.h"
+#include "semantics/type/ids.h"
 #include "semantics/type/resolver.h"
 #include "semantics/checks/check_stmt.h"
 #include "semantics/checks/check_function_definition.h"
 
 WorkerStatus check_function_prototype(SemanticContext *sema,
-                                      AstFunctionPrototype *proto)
+                                      AstFunctionPrototype *proto,
+                                      sema::Symbol *symbol)
 {
     MINI_ASSERT(proto != nullptr, );
     MINI_ASSERT(proto->parameters != nullptr, );
@@ -21,11 +23,21 @@ WorkerStatus check_function_prototype(SemanticContext *sema,
         }
     }
 
+    if (proto->return_type) {
+        WorkerStatus status = sema::resolve_typehint(sema, proto->return_type, proto->return_type->locus);
+        if (status != WorkerStatus::Done)
+            return status;
+    }
+
     auto current_scope = sema->current_scope;
+
+    MINI_ARRAY(sema::TypeId) parameter_type_ids =
+        MINI_ARRAY_INIT(sema->allocator, sema::TypeId);
 
     for (usize n = 0; n < mini_array_count(proto->parameters); ++n) {
         AstFunctionParameter &parameter = proto->parameters[n];
         sema::TypeId id = sema::get_type_at_locus(sema, parameter.name.locus);
+        mini_array_append(parameter_type_ids, id);
 
         sema::Symbol param_symbol{};
         param_symbol.name          = parameter.name.value;
@@ -37,9 +49,15 @@ WorkerStatus check_function_prototype(SemanticContext *sema,
         sema::register_symbol_in(sema, current_scope, parameter.name.value,
                                  parameter.name.locus, param_symbol);
     }
-    if (proto->return_type) {
-        sema::resolve_typehint(sema, proto->return_type, std::nullopt);
-    }
+
+    sema::TypeId return_type   = sema::type_id::Void;
+    if (proto->return_type)
+        return_type = sema::get_type_at_locus(sema, proto->return_type->locus);
+
+    sema::TypeId function_type =
+        sema::register_or_get_type(sema, sema::Type::Function(parameter_type_ids, return_type));
+    symbol->as.variable.type_id = function_type;
+    sema::link_locus_to_type(sema, symbol->locus, function_type);
     return WorkerStatus::Done;
 }
 
@@ -49,13 +67,17 @@ WorkerStatus sema::check_function_definition(SemanticContext *sema,
     MINI_ASSERT(variable != nullptr, );
     MINI_ASSERT(variable->initializer != nullptr, );
     MINI_ASSERT(variable->initializer->kind == EXPR_Function, );
+
+    auto *symbol = sema::find_symbol_in(sema, sema->current_scope, variable->name.value);
     ExprFunction *function = (ExprFunction *)variable->initializer;
     sema::enter_scope(sema, sema::ScopeKind::Block);
+
     if (WorkerStatus check_proto =
-            check_function_prototype(sema, &function->prototype);
+        check_function_prototype(sema, &function->prototype, symbol);
         check_proto != WorkerStatus::Done) {
         return check_proto;
     }
+
     check_statement(sema, function->body);
     sema::leave_scope(sema);
     return WorkerStatus::Done;

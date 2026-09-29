@@ -11,6 +11,7 @@
 #include "parser/lexer.h"
 #include "parser/parser.h"
 #include "semantics/sema.h"
+#include "hir/convert.h"
 
 int main(int argc, char **argv)
 {
@@ -66,6 +67,9 @@ int main(int argc, char **argv)
         }
         return 1;
     }
+
+    hir::Context hir         = hir::ctx_init(allocator, &storage);
+    hir::Program hir_program = hir::program_from_raw(&hir, program);
 
     return 0;
 }

@@ -3,7 +3,7 @@
 #include "semantics/type/resolver.h"
 #include "semantics/entities/type.h"
 
-static sema::TypeId register_or_get_type(SemanticContext *sema, sema::Type type)
+sema::TypeId sema::register_or_get_type(SemanticContext *sema, sema::Type type)
 {
     usize index = 0;
     for (const auto &_type : sema->store->types) {
