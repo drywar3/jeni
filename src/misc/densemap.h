@@ -87,6 +87,9 @@ template <typename Key, typename Value> struct DenseMap {
     Value &at_index(std::size_t index) { return values_[index]; }
     const Value &at_index(std::size_t index) const { return values_[index]; }
 
+    Value *at_index_ptr(std::size_t index) { return &values_[index]; }
+    const Value *at_index_ptr(std::size_t index) const { return &values_[index]; }
+
     /* --- capacity & iteration --- */
 
     std::size_t size() const { return mini_array_count(values_); }

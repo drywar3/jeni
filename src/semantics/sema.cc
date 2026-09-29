@@ -10,7 +10,8 @@ SemanticStorage semastore_init(Mini_Allocator allocator)
         .types   = sema::TypeStorage(allocator),
     };
     /* invalid scope */
-    storage.scopes.add_value(sema::scope_init(sema::ScopeKind::Invalid, std::nullopt, allocator));
+    storage.scopes.add_value(
+        sema::scope_init(sema::ScopeKind::Invalid, std::nullopt, allocator));
     return storage;
 }
 
@@ -46,19 +47,19 @@ void semactx_resolve(SemanticContext *sema, Program *program)
 using namespace sema::type_id;
 
 constexpr sema::Type TYPES[] = {
-    [(int)Void]   = sema::Type{sema::TypeKind::Void},
-    [(int)Int]    = sema::Type{sema::TypeKind::Int},
-    [(int)Uint]   = sema::Type{sema::TypeKind::Uint},
-    [(int)String] = sema::Type{sema::TypeKind::String},
-    [(int)Char]   = sema::Type{sema::TypeKind::Char},
-    [(int)Bool]   = sema::Type{sema::TypeKind::Bool},
+    [(int)Error]  = sema::Type(sema::TypeKind::Error),
+    [(int)Void]   = sema::Type(sema::TypeKind::Void),
+    [(int)Int]    = sema::Type(sema::TypeKind::Int),
+    [(int)Uint]   = sema::Type(sema::TypeKind::Uint),
+    [(int)String] = sema::Type(sema::TypeKind::String),
+    [(int)Char]   = sema::Type(sema::TypeKind::Char),
+    [(int)Bool]   = sema::Type(sema::TypeKind::Bool),
 };
 
 void semastore_init_builtin_types(SemanticStorage *store)
 {
     MINI_ARRAY(sema::Type) type_store = store->types.values();
-    for (usize n = (int)sema::type_id::Void; n < (usize)sema::type_id::_LAST_;
-         n++) {
-        mini_array_insert(type_store, n, TYPES[n]);
+    for (usize n = 0; n < (usize)sema::type_id::_LAST_; n++) {
+        store->types.add_value(TYPES[n]);
     }
 }

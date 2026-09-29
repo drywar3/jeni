@@ -4,13 +4,11 @@
 
 #include <utility>
 
-constexpr
-std::initializer_list<std::pair<const char *, int>>
-TYPES = {
-    { "int",   TypeInteger::AST_TYPE_INT_Int },
-    { "uint",  AST_TYPE_INT_Uint },
-    { "isize", AST_TYPE_INT_Isize },
-    { "usize", AST_TYPE_INT_Usize },
+constexpr std::initializer_list<std::pair<const char *, int>> TYPES = {
+    {"int", TypeInteger::AST_TYPE_INT_Int},
+    {"uint", TypeInteger::AST_TYPE_INT_Uint},
+    {"isize", TypeInteger::AST_TYPE_INT_Isize},
+    {"usize", TypeInteger::AST_TYPE_INT_Usize},
 };
 
 /* typehint = ["const"] type_spec ;
@@ -48,29 +46,21 @@ Typehint *parser_parse_typehint(Parser *p)
             Name name;
             MINI_ASSERT(eat_name(p, &name), "");
 
-            for ()
-            if (mini_sv_equals_cstr(name.value, "int")) {
-                return ALLOC_TYPE(
-                    p->allocator, TYPEHINT_Integer,
-                    locus_merge(begin, previous(p).locus), is_constant,
-                    (TypeInteger){.kind = TypeInteger::AST_TYPE_INT_Int});
-            } else if (mini_sv_equals_cstr(name.value, "uint")) {
-                return ALLOC_TYPE(
-                    p->allocator, TYPEHINT_Integer,
-                    locus_merge(begin, previous(p).locus), is_constant,
-                    (TypeInteger){.kind = TypeInteger::AST_TYPE_INT_Uint});
-            } else if (mini_sv_equals_cstr(name.value, "usize")) {
-                return ALLOC_TYPE(
-                    p->allocator, TYPEHINT_Integer,
-                    locus_merge(begin, previous(p).locus), is_constant,
-                    (TypeInteger){.kind = TypeInteger::AST_TYPE_INT_Usize});
-            } else if (mini_sv_equals_cstr(name.value, "isize")) {
-                return ALLOC_TYPE(
-                    p->allocator, TYPEHINT_Integer,
-                    locus_merge(begin, previous(p).locus), is_constant,
-                    (TypeInteger){.kind = TypeInteger::AST_TYPE_INT_Isize});
-            } else
-                MINI_UNREACHABLE("TODO");
+            /* check for integer types */
+            for (const auto [t, k] : TYPES) {
+                if (mini_sv_equals_cstr(name.value, t)) {
+                    return ALLOC_TYPE(
+                        p->allocator, TYPEHINT_Integer,
+                        locus_merge(begin, previous(p).locus), is_constant,
+                        (TypeInteger){.kind = (TypeInteger::Kind)k});
+                }
+            }
+
+            if (mini_sv_equals_cstr(name.value, "string")) {
+                return ALLOC_TYPE(p->allocator, TYPEHINT_String,
+                                  locus_merge(begin, previous(p).locus),
+                                  is_constant, TypeString{});
+            }
         }
     }
     MINI_UNREACHABLE("TODO");

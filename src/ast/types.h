@@ -3,6 +3,10 @@
 #include "type.h"
 #include "expr.h"
 
+struct TypeString {
+    Typehint base;
+};
+
 typedef struct TypePointer {
     Typehint base;
     TypehintPointer typehint;
@@ -16,7 +20,7 @@ typedef struct TypeArray {
 
 typedef struct TypeInteger {
     Typehint base;
-    enum {
+    enum Kind {
         AST_TYPE_INT_Int,
         AST_TYPE_INT_Uint,
         AST_TYPE_INT_Usize,

@@ -11,5 +11,5 @@ namespace sema::type_id
     constexpr auto Bool   = (TypeId)4;
     constexpr auto Char   = (TypeId)5;
     constexpr auto String = (TypeId)6;
-    constexpr auto _LAST_ = (TypeId)6;
+    constexpr auto _LAST_ = (TypeId)7;
 } // namespace sema::type_id

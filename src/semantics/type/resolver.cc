@@ -1,4 +1,5 @@
 #include "semantics/impl.h"
+#include "semantics/type/ids.h"
 #include "semantics/type/resolver.h"
 #include "semantics/entities/type.h"
 
@@ -24,8 +25,11 @@ WorkerStatus sema::resolve_typehint(SemanticContext *sema,
 
     switch (typehint->kind) {
     case TYPEHINT_Integer: {
-        id = register_or_get_type(sema, Type{TypeKind::Int});
+        id = sema::type_id::Int;
     } break;
+    case TYPEHINT_String:
+        id = sema::type_id::String;
+        break;
     default:
         MINI_UNREACHABLE("TODO");
     }

@@ -10,9 +10,18 @@ sema::Scope sema::scope_init(ScopeKind kind, Scope::Parent parent,
 }
 
 std::optional<sema::SymbolId> sema::scope_get_symbol(Scope *scope,
-                                                     Mini_StringView name)
+                                                     mini::StringView name)
 {
-    if (auto *ptr = scope->symbols.find(name); ptr != nullptr) {
+    if (auto *ptr = scope->symbols.find(name.base()); ptr != nullptr) {
+        return *ptr;
+    }
+    return std::nullopt;
+}
+
+const std::optional<sema::SymbolId>
+sema::scope_get_symbol(const Scope *scope, mini::StringView name)
+{
+    if (const auto *ptr = scope->symbols.find(name.base()); ptr != nullptr) {
         return *ptr;
     }
     return std::nullopt;

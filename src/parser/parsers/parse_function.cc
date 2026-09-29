@@ -27,7 +27,8 @@ ExpressionPointer parse_function(Parser *p)
     Token begin = next(p); /* consume `func` keyword */
 
     ExprFunction function{};
-    function.prototype.parameters = MINI_ARRAY_INIT(p->allocator, AstFunctionParameter);
+    function.prototype.parameters =
+        MINI_ARRAY_INIT(p->allocator, AstFunctionParameter);
     if (!parse_function_parameters(p, function.prototype.parameters))
         MINI_UNREACHABLE("TODO");
 

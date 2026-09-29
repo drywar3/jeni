@@ -5,9 +5,7 @@ Person :: struct {
     age: usize;
 }
 
-#default :: () -> Person {
-    return .{ "jonh doe", 30 };
-}
+#default : Person : .{ "jonh doe", 30 };
 
 main :: func ()
 {

@@ -30,17 +30,14 @@ static bool use_color()
     return cached == 1;
 }
 
-static const char *paint(const char *code)
-{
-    return use_color() ? code : "";
-}
+static const char *paint(const char *code) { return use_color() ? code : ""; }
 
-#define C_RESET  "\033[0m"
-#define C_RED    "\033[0;31m"
+#define C_RESET "\033[0m"
+#define C_RED "\033[0;31m"
 #define C_YELLOW "\033[0;33m"
-#define C_BRED   "\033[1;31m"
-#define C_BYEL   "\033[1;33m"
-#define C_BCYAN  "\033[1;36m"
+#define C_BRED "\033[1;31m"
+#define C_BYEL "\033[1;33m"
+#define C_BCYAN "\033[1;36m"
 
 /* ------------------------------------------------------------------ */
 /* source access                                                       */
@@ -66,7 +63,8 @@ static LineSpan source_file_get_line(const SourceFile *file, usize line_idx)
         return LineSpan{"", 0};
     }
 
-    usize end = (line_idx + 1 < line_count) ? file->line_starts[line_idx + 1] : total;
+    usize end =
+        (line_idx + 1 < line_count) ? file->line_starts[line_idx + 1] : total;
     if (end > total) {
         end = total;
     }
@@ -79,7 +77,8 @@ static LineSpan source_file_get_line(const SourceFile *file, usize line_idx)
     return LineSpan{&file->content[start], end - start};
 }
 
-static void print_source_line(const SourceFile *file, usize line_num, usize gutter)
+static void print_source_line(const SourceFile *file, usize line_num,
+                              usize gutter)
 {
     LineSpan line = source_file_get_line(file, line_num - 1);
     printf(" %*zu | %.*s\n", (int)gutter, line_num, (int)line.len, line.ptr);
@@ -179,13 +178,15 @@ static void underline_locus(Locus locus, LineSpan line, char head, char tail)
 }
 
 static void render_label(const Label *label, const SourceFile *file,
-                         usize gutter, bool render_context, bool render_line_text)
+                         usize gutter, bool render_context,
+                         bool render_line_text)
 {
     const Locus locus    = label->locus;
     const usize line_num = locus.line > 0 ? locus.line : 1;
 
     if (render_context && line_num > 1) {
-        usize first = (line_num > CONTEXT_LINES) ? (line_num - CONTEXT_LINES) : 1;
+        usize first =
+            (line_num > CONTEXT_LINES) ? (line_num - CONTEXT_LINES) : 1;
         for (usize n = first; n < line_num; ++n) {
             print_source_line(file, n, gutter);
         }
@@ -246,10 +247,7 @@ static const char *label_color(const Label &l)
     return l.is_primary ? C_RED : C_YELLOW;
 }
 
-static bool label_has_text(const Label &l)
-{
-    return l.text && *l.text;
-}
+static bool label_has_text(const Label &l) { return l.text && *l.text; }
 
 static void put_pad(LineSpan line, usize col)
 {
@@ -258,7 +256,8 @@ static void put_pad(LineSpan line, usize col)
 
 /* Which label owns this column? Primary wins overlaps, otherwise the
  * label that starts later (it is the more specific one). */
-static const Label *label_at(const Label *labels, usize count, LineSpan line, usize col)
+static const Label *label_at(const Label *labels, usize count, LineSpan line,
+                             usize col)
 {
     const Label *best = nullptr;
     for (usize i = 0; i < count; ++i) {
@@ -282,9 +281,10 @@ static void print_label_row(const Label *labels, usize count, usize hang_idx,
 {
     printf(" %*s | ", (int)gutter, "");
 
-    const usize stems      = hang_idx < count ? hang_idx : count;
-    const usize hang_start = hang_idx < count ? label_start(labels[hang_idx]) : (usize)-1;
-    usize col              = 0;
+    const usize stems = hang_idx < count ? hang_idx : count;
+    const usize hang_start =
+        hang_idx < count ? label_start(labels[hang_idx]) : (usize)-1;
+    usize col = 0;
 
     for (usize i = 0; i < stems; ++i) {
         const Label &l = labels[i];
@@ -317,7 +317,7 @@ static void render_line_labels(const Label *labels, usize count,
     const usize line_num = labels[0].locus.line > 0 ? labels[0].locus.line : 1;
     const LineSpan line  = source_file_get_line(file, line_num - 1);
 
-    usize width = 0;
+    usize width   = 0;
     bool any_text = false;
     for (usize i = 0; i < count; ++i) {
         usize end = label_start(labels[i]) + label_span(labels[i], line);
@@ -362,14 +362,16 @@ static void render_group(const Label *labels, usize count,
     usize prev_line = 0;
 
     for (usize i = 0; i < count;) {
-        const usize line_num = labels[i].locus.line > 0 ? labels[i].locus.line : 1;
-        usize j              = i + 1;
+        const usize line_num =
+            labels[i].locus.line > 0 ? labels[i].locus.line : 1;
+        usize j = i + 1;
         while (j < count && labels[j].locus.line == labels[i].locus.line) {
             ++j;
         }
 
-        const SourceFile *file = sourcemgr_get_source(sm, labels[i].locus.source_id);
-        const bool first       = (i == 0);
+        const SourceFile *file =
+            sourcemgr_get_source(sm, labels[i].locus.source_id);
+        const bool first = (i == 0);
 
         if (!first) {
             for (usize ln = prev_line + 1; ln < line_num; ++ln) {
@@ -381,7 +383,8 @@ static void render_group(const Label *labels, usize count,
             render_label(&labels[i], file, gutter, first, true);
         } else {
             if (first && line_num > 1) {
-                usize from = line_num > CONTEXT_LINES ? line_num - CONTEXT_LINES : 1;
+                usize from =
+                    line_num > CONTEXT_LINES ? line_num - CONTEXT_LINES : 1;
                 for (usize n = from; n < line_num; ++n) {
                     print_source_line(file, n, gutter);
                 }
@@ -443,13 +446,15 @@ void diag_report(const Diagnostic *diagnostic, const SourceManager *sm)
     auto current_source = primary_label.locus.source_id;
     for (usize i = 0; i < label_count;) {
         usize j = i + 1;
-        while (j < label_count && labels_share_group(labels[j - 1], labels[j])) {
+        while (j < label_count &&
+               labels_share_group(labels[j - 1], labels[j])) {
             ++j;
         }
 
         const Label &first = labels[i];
         if (first.locus.source_id != current_source) {
-            const SourceFile *file = sourcemgr_get_source(sm, first.locus.source_id);
+            const SourceFile *file =
+                sourcemgr_get_source(sm, first.locus.source_id);
             printf(" %*s--> %s:%zu:%zu\n", (int)gutter, "", file->path,
                    first.locus.line, first.locus.begin);
             current_source = first.locus.source_id;

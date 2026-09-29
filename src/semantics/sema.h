@@ -11,9 +11,9 @@
 #include <mini.c/array.h>
 
 struct SemanticStorage {
-    sema::ScopeStorage  scopes;
+    sema::ScopeStorage scopes;
     sema::SymbolStorage symbols;
-    sema::TypeStorage   types;
+    sema::TypeStorage types;
 };
 
 struct SemanticContext {
@@ -27,6 +27,14 @@ struct SemanticContext {
 
     sema::ScopeId global_scope;
     sema::ScopeId current_scope;
+
+    auto &types() { return store->types; }
+    auto &scopes() { return store->scopes; }
+    auto &symbols() { return store->symbols; }
+
+    const auto &types() const { return store->types; }
+    const auto &scopes() const { return store->scopes; }
+    const auto &symbols() const { return store->symbols; }
 };
 
 SemanticStorage semastore_init(Mini_Allocator allocator);

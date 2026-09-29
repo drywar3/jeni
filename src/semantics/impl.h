@@ -14,21 +14,20 @@ namespace sema
     ScopeId leave_scope(SemanticContext *sema);
 
     bool symbol_is_defined(SemanticContext *sema, ScopeId scope,
-                           Mini_StringView name);
+                           mini::StringView name);
 
-    SymbolPointer find_symbol_in(SemanticContext *sema, ScopeId scope,
-                                 Mini_StringView name);
-    const SymbolPointer find_symbol_in(const SemanticContext *sema,
-                                       ScopeId scope, Mini_StringView name);
+    Symbol *find_symbol_in(SemanticContext *sema, ScopeId scope,
+                           mini::StringView name);
+    const Symbol *find_symbol_in(const SemanticContext *sema, ScopeId scope,
+                                 mini::StringView name);
 
-    SymbolPointer eagerly_find_symbol_in(SemanticContext *sema, ScopeId scope,
-                                         Mini_StringView name);
-    const SymbolPointer eagerly_find_symbol_in(const SemanticContext *sema,
-                                               ScopeId scope,
-                                               Mini_StringView name);
+    Symbol *eagerly_find_symbol_in(SemanticContext *sema, ScopeId scope,
+                                   mini::StringView name);
+    const Symbol *eagerly_find_symbol_in(const SemanticContext *sema,
+                                         ScopeId scope, mini::StringView name);
 
     SymbolId register_symbol_in(SemanticContext *sema, ScopeId scope_id,
-                                Mini_StringView name, Locus locus,
+                                mini::StringView name, Locus locus,
                                 Symbol symbol);
 
     void link_locus_to_type(SemanticContext *sema, Locus locus, TypeId id);

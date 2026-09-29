@@ -26,7 +26,8 @@ namespace sema
 
     struct SymbolVariable {
         bool is_initialized;
-        std::optional<sema::TypeInfo> type_info;
+        std::optional<sema::TypeId> type_id;
+        Mutability mutability;
     };
 
     struct Symbol {
@@ -42,7 +43,6 @@ namespace sema
         } as;
     };
 
-    typedef Symbol *SymbolPointer;
     using SymbolStorage = DenseMap<Locus, Symbol>;
 
 } // namespace sema

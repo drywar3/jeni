@@ -1,13 +1,8 @@
-a := 10;
-b := 20;
-c := 30;
-d := 40;
-e := 50;
-f := 60;
 
-PI :: 10;
+a :: b;
+b :: 10;
 
-foobar :: func () {
-   x : string = 10;
-   x := 100;
+foobar :: func (a: int, b : string) {
+   x := a;
+   y : int = b;
 }

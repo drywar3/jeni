@@ -1,5 +1,6 @@
 #include "semantics/impl.h"
 #include "ast/statements.h"
+#include "semantics/type/coercer.h"
 #include "semantics/type/resolver.h"
 #include "semantics/checks/check_stmt.h"
 #include "semantics/checks/check_expr.h"
@@ -7,7 +8,8 @@
 
 #include <mini.cc/dtor.h>
 
-static bool discover_variable(SemanticContext *sema, StatementPointer stmt, sema::ScopeId scope);
+static bool discover_variable(SemanticContext *sema, StatementPointer stmt,
+                              sema::ScopeId scope);
 
 bool discover_statement(SemanticContext *sema, StatementPointer stmt)
 {
@@ -49,7 +51,7 @@ WorkerStatus check_variable(SemanticContext *sema, void *data)
             return WorkerStatus::Failed;
     }
 
-    sema::SymbolPointer symbol =
+    sema::Symbol *symbol =
         sema::find_symbol_in(sema, current_scope, varname.value);
     MINI_ASSERT(symbol != nullptr, "invalid symbol");
     /* avoid resolving the same symbol twice */
@@ -59,24 +61,40 @@ WorkerStatus check_variable(SemanticContext *sema, void *data)
     MINI_ASSERT(symbol->resolve_state == sema::SymbolState::Unresolved,
                 "symbol is already resolved");
 
-    symbol->resolve_state = sema::SymbolState::Resolving;
+    symbol->resolve_state         = sema::SymbolState::Resolving;
     ExpressionPointer initializer = variable->initializer;
 
     if (variable->is_initialized && initializer->kind == EXPR_Function)
         return sema::check_function_definition(sema, variable);
 
+    if (variable->is_initialized) {
+        WorkerStatus init_status = sema::check_expression(sema, initializer);
+        if (init_status != WorkerStatus::Done)
+            return init_status;
+    }
+
     if (variable->type_is_defined) {
         TypehintPointer typehint = variable->typehint;
-        if (auto s = sema::resolve_typehint(sema, typehint,
-                                            variable->name.locus);
+        if (auto s =
+                sema::resolve_typehint(sema, typehint, variable->name.locus);
             s != WorkerStatus::Done)
             return s;
-    } else {
+
         if (variable->is_initialized) {
-            if (auto status = sema::check_expression(sema, initializer);
-                status == WorkerStatus::Done) {
+            auto recieved_type =
+                sema::get_type_at_locus(sema, initializer->locus);
+            auto expected_type =
+                sema::get_type_at_locus(sema, variable->name.locus);
+            if (!sema::coerce_type_into(sema, expected_type, recieved_type,
+                                        typehint->locus, initializer->locus)) {
+                return WorkerStatus::Failed;
             }
+
+            symbol->as.variable.type_id = expected_type;
         }
+    } else {
+        auto inferred_type = sema::get_type_at_locus(sema, initializer->locus);
+        symbol->as.variable.type_id = inferred_type;
     }
 
     symbol->resolve_state = sema::SymbolState::Resolved;
@@ -84,22 +102,22 @@ WorkerStatus check_variable(SemanticContext *sema, void *data)
     return status;
 }
 
-bool discover_variable(SemanticContext *sema, StatementPointer stmt, sema::ScopeId scope)
+bool discover_variable(SemanticContext *sema, StatementPointer stmt,
+                       sema::ScopeId scope)
 {
     MINI_ASSERT(stmt->kind == STMT_Variable, );
     StmtVariable *variable = (StmtVariable *)stmt;
 
-    if (sema::symbol_is_defined(sema, scope,
-                                variable->name.value)) {
-        const auto *first = sema::find_symbol_in(sema, scope,
-                                                 variable->name.value);
+    if (sema::symbol_is_defined(sema, scope, variable->name.value)) {
+        const auto *first =
+            sema::find_symbol_in(sema, scope, variable->name.value);
 
         if (first->resolve_state == sema::SymbolState::Resolved &&
-            first->locus == stmt->locus) {
+            first->locus == variable->name.locus) {
             return true;
         }
 
-        Diagnostic diag   = diag_create(
+        Diagnostic diag = diag_create(
             DIAG_Error, variable->name.locus, "variable redeclaration",
             mini_string_build(sema->allocator,
                               "symbol `%.*s` is already defined",
@@ -116,9 +134,8 @@ bool discover_variable(SemanticContext *sema, StatementPointer stmt, sema::Scope
     symbol.locus                      = variable->name.locus;
     symbol.resolve_state              = sema::SymbolState::Unresolved;
     symbol.as.variable.is_initialized = variable->is_initialized;
-    sema::SymbolId id =
-        sema::register_symbol_in(sema, scope, variable->name.value,
-                                 variable->name.locus, symbol);
+    sema::SymbolId id                 = sema::register_symbol_in(
+        sema, scope, variable->name.value, variable->name.locus, symbol);
     return true;
 }
 
@@ -128,7 +145,8 @@ WorkerStatus check_block(SemanticContext *sema, void *data)
     WorkerStatus status = WorkerStatus::Done;
 
     sema::ScopeId previous_scope = sema->current_scope;
-    sema::ScopeId current_scope  = sema::find_scope_by_locus(sema, block->base.locus);
+    sema::ScopeId current_scope =
+        sema::find_scope_by_locus(sema, block->base.locus);
 
     if (current_scope != sema::INVALID_SCOPE) {
         sema->current_scope = current_scope;
@@ -137,9 +155,8 @@ WorkerStatus check_block(SemanticContext *sema, void *data)
         sema::link_locus_to_scope(sema, block->base.locus, current_scope);
     }
 
-    auto scope_end = mini::AttachDtor(block, [&](auto s) {
-        sema->current_scope = previous_scope;
-    });
+    auto scope_end = mini::AttachDtor(
+        block, [&](auto s) { sema->current_scope = previous_scope; });
 
     for (usize n = 0; n < mini_array_count(block->body); ++n) {
         StatementPointer stmt = block->body[n];
