@@ -2,7 +2,7 @@
 
 #include "parser/locus.h"
 
-typedef enum {
+enum ExpressionKind {
     EXPR_Identifier,
     EXPR_Integer,
     EXPR_String,
@@ -14,12 +14,16 @@ typedef enum {
     EXPR_Cast,
     EXPR_Function,
     EXPR_FunctionCall,
-} ExpressionKind;
+};
 
-typedef struct {
+struct Expression {
     ExpressionKind kind;
     Locus locus;
-} Expression;
+
+    bool is(ExpressionKind kind) const {
+        return this->kind == kind;
+    }
+};
 
 typedef Expression *ExpressionPointer;
 

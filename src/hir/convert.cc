@@ -15,17 +15,18 @@ hir::Program hir::program_from_raw(Context *ctx, ::Program ast)
     auto *program = MINI_ARRAY_INIT(ctx->allocator, hir::Statement *);
     for (usize n = 0; n < mini_array_count(ast.ast); ++n) {
         const ::Statement *stmt = ast.ast[n];
-        auto *hir_stmt          = convert_statement(ctx, stmt);
+        auto *hir_stmt          = hir::convert_statement(ctx, stmt);
         mini_array_append(program, hir_stmt);
     }
     return program;
 }
 
-static hir::Statement *convert_statement(hir::Context *ctx,
-                                         const Statement *stmt)
+hir::Statement *hir::convert_statement(hir::Context *ctx,
+                                       const ::Statement *stmt)
 {
     switch (stmt->kind) {
     case STMT_Variable: return convert_variable_stmt(ctx, stmt);
+    case STMT_Block:    return convert_block(ctx, (StmtBlock*)stmt);
     default: MINI_UNREACHABLE();
     }
 }

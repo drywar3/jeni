@@ -5,6 +5,7 @@
 #include "ast/misc.h"
 #include "hir/types/stmt.h"
 #include "semantics/sema.h"
+#include "ast/statements.h"
 
 namespace hir
 {
@@ -25,12 +26,28 @@ namespace hir
         template<typename T>
         hir::Statement *new_stmt(hir::Statement::Kind kind, T obj) {
             hir::Statement *stmt = MINI_ALLOC(allocator, hir::Statement);
+            stmt->kind           = kind;
             T *mem               = (T*)&stmt->as;
             *mem = obj;
             return stmt;
+        }
+
+        template<typename T>
+        hir::Expression *new_expr(hir::Expression::Kind kind, sema::TypeId type_id, T obj) {
+            hir::Expression *expr = MINI_ALLOC(allocator, hir::Expression);
+            expr->kind            = kind;
+            expr->type_id         = type_id;
+            T *mem                = (T*)&expr->as;
+            *mem = obj;
+            return expr;
         }
     };
 
     Context ctx_init(Mini_Allocator allocator, const SemanticStorage *store);
     Program program_from_raw(Context *ctx, ::Program ast);
+    hir::Statement *convert_statement(hir::Context *ctx,
+                                      const ::Statement *stmt);
+
+    hir::Expression *convert_expression(hir::Context *ctx, const ::Expression *expression);
+    hir::Statement *convert_block(hir::Context *ctx, StmtBlock *block);
 } // namespace hir

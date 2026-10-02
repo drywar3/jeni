@@ -2,6 +2,8 @@
 
 #include <mini.cc/string_view.h>
 
+#include "semantics/entities/type.h"
+
 namespace hir
 {
     namespace expr
@@ -22,9 +24,11 @@ namespace hir
         };
 
         Kind kind;
+        sema::TypeId type_id;
+
         union {
             expr::Integer    integer;
             expr::Identifier identifier;
-        };
+        } as;
     };
 } // namespace hir
