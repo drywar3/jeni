@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <mini.c/fs.h>
-#include <mini.cc/dtor.h>
+#include <mini.cc/scope_guard.h>
 #include <mini.c/string.h>
 #include <mini.c/bulk_allocator.h>
 #include <mini.c/debug_allocator.h>
@@ -8,10 +8,10 @@
 #include "source.h"
 #include "ast/ast.h"
 #include "ast/print.h"
+#include "hir/convert.h"
 #include "parser/lexer.h"
 #include "parser/parser.h"
 #include "semantics/sema.h"
-#include "hir/convert.h"
 
 int main(int argc, char **argv)
 {
@@ -22,16 +22,19 @@ int main(int argc, char **argv)
 
     Mini_BulkAllocator bka   = mini_bka_create(mini_default_allocator());
     Mini_Allocator allocator = mini_bka_allocator(&bka);
-    auto _bka                = mini::AttachDtor(bka, mini_bka_destroy);
 
     const char *input_path = argv[1];
 
     SourceManager sources = sourcemgr_init();
-    auto _sources         = mini::AttachDtor(sources, sourcemgr_destroy);
     SourceId root_file = sourcemgr_open_file(&sources, input_path, allocator);
 
     DiagnosticPool diagnostics = diagpool_create();
-    auto diagnostics_ = mini::AttachDtor(diagnostics, diagpool_destroy);
+
+    auto scope_guard = mini::ScopeGuard([&]() {
+        sourcemgr_destroy(&sources);
+        diagpool_destroy(&diagnostics);
+        mini_bka_destroy(&bka);
+    });
 
     const Mini_String &content = sourcemgr_get_content(&sources, root_file);
     Parser parser = parser_create(root_file, content, &diagnostics);

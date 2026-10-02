@@ -22,6 +22,7 @@ namespace sema
         Resolved,
         Resolving,
         Unresolved,
+        Failed,
     };
 
     struct SymbolVariable {

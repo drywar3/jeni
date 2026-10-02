@@ -6,6 +6,8 @@
 #include "semantics/checks/check_stmt.h"
 #include "semantics/checks/check_function_definition.h"
 
+#include <mini.cc/dtor.h>
+
 WorkerStatus check_function_prototype(SemanticContext *sema,
                                       AstFunctionPrototype *proto,
                                       sema::Symbol *symbol)
@@ -62,7 +64,7 @@ WorkerStatus check_function_prototype(SemanticContext *sema,
 }
 
 WorkerStatus sema::check_function_definition(SemanticContext *sema,
-                                             StmtVariable *variable)
+                                             StmtVariable *variable, bool is_resumption)
 {
     MINI_ASSERT(variable != nullptr, );
     MINI_ASSERT(variable->initializer != nullptr, );
@@ -71,6 +73,9 @@ WorkerStatus sema::check_function_definition(SemanticContext *sema,
     auto *symbol = sema::find_symbol_in(sema, sema->current_scope, variable->name.value);
     ExprFunction *function = (ExprFunction *)variable->initializer;
     sema::enter_scope(sema, sema::ScopeKind::Block);
+    auto scope_guard = mini::AttachDtor(sema, [&](auto *s) {
+        sema::leave_scope(sema);
+    });
 
     if (WorkerStatus check_proto =
         check_function_prototype(sema, &function->prototype, symbol);
@@ -78,7 +83,5 @@ WorkerStatus sema::check_function_definition(SemanticContext *sema,
         return check_proto;
     }
 
-    check_statement(sema, function->body);
-    sema::leave_scope(sema);
-    return WorkerStatus::Done;
+    return check_statement(sema, function->body, is_resumption);
 }

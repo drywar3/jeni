@@ -30,6 +30,9 @@ namespace sema
                                 mini::StringView name, Locus locus,
                                 Symbol symbol);
 
+    std::optional<SymbolId> get_id_of_symbol(SemanticContext *sema, ScopeId scope_id, mini::StringView name);
+    std::optional<SymbolId> eagerly_get_id_of_symbol(SemanticContext *sema, ScopeId scope_id, mini::StringView name);
+
     void link_locus_to_type(SemanticContext *sema, Locus locus, TypeId id);
     TypeId get_type_at_locus(SemanticContext *sema, Locus locus);
 

@@ -6,7 +6,8 @@
 #include "semantics/checks/check_expr.h"
 #include "semantics/checks/check_function_definition.h"
 
-#include <mini.cc/dtor.h>
+#include <mini.cc/array.h>
+#include <mini.cc/scope_guard.h>
 
 static bool discover_variable(SemanticContext *sema, StatementPointer stmt,
                               sema::ScopeId scope);
@@ -21,30 +22,47 @@ bool discover_statement(SemanticContext *sema, StatementPointer stmt)
     }
 }
 
-WorkerStatus check_block(SemanticContext *sema, void *data);
-WorkerStatus check_variable(SemanticContext *sema, void *data);
+WorkerStatus check_block(SemanticContext *sema, void *data, bool is_resumption);
+WorkerStatus check_variable(SemanticContext *sema, void *data, bool is_resumption);
 
-WorkerStatus check_statement(SemanticContext *sema, void *data)
+WorkerStatus check_statement(SemanticContext *sema, void *data, bool is_resumption)
 {
     StatementPointer stmt = (StatementPointer)data;
     switch (stmt->kind) {
     case STMT_Variable:
-        return check_variable(sema, stmt);
+        return check_variable(sema, stmt, is_resumption);
     case STMT_Block:
-        return check_block(sema, stmt);
+        return check_block(sema, stmt, is_resumption);
     default:
         MINI_UNREACHABLE();
     }
 }
 
-WorkerStatus check_variable(SemanticContext *sema, void *data)
+WorkerStatus check_variable(SemanticContext *sema, void *data, bool is_resumption)
 {
-    WorkerStatus status         = WorkerStatus::Done;
-    sema::ScopeId current_scope = sema->current_scope;
-
     StmtVariable *variable = (StmtVariable *)data;
     MINI_ASSERT(variable->base.kind == STMT_Variable, );
+
     Name varname = variable->name;
+
+    /* attempt to resume in the scope of the previous resumption */
+    sema::ScopeId previous_scope = sema->current_scope;
+    sema::ScopeId current_scope  =sema::find_scope_by_locus(
+                                                            sema, varname.locus);;
+
+    if (current_scope != sema::INVALID_SCOPE) {
+        sema->current_scope = current_scope;
+    } else {
+        /* else we can just continue in the current scope */
+        current_scope = sema->current_scope;
+        sema::link_locus_to_scope(sema, varname.locus, current_scope); /* link it so we remember in any next resumes */
+    }
+
+    sema->current_scope = current_scope;
+
+    auto scope_guard = mini::ScopeGuard([&]{
+        sema->current_scope = previous_scope;
+    });
 
     if (current_scope != sema->global_scope) {
         if (!discover_variable(sema, (StatementPointer)variable, current_scope))
@@ -53,22 +71,26 @@ WorkerStatus check_variable(SemanticContext *sema, void *data)
 
     sema::Symbol *symbol =
         sema::find_symbol_in(sema, current_scope, varname.value);
+
     MINI_ASSERT(symbol != nullptr, "invalid symbol");
+
     /* avoid resolving the same symbol twice */
     if (symbol->resolve_state == sema::SymbolState::Resolved)
         return WorkerStatus::Done;
-
-    MINI_ASSERT(symbol->resolve_state == sema::SymbolState::Unresolved,
-                "symbol is already resolved");
 
     symbol->resolve_state         = sema::SymbolState::Resolving;
     ExpressionPointer initializer = variable->initializer;
 
     if (variable->is_initialized && initializer->kind == EXPR_Function)
-        return sema::check_function_definition(sema, variable);
+        return sema::check_function_definition(sema, variable, is_resumption);
+
 
     if (variable->is_initialized) {
         WorkerStatus init_status = sema::check_expression(sema, initializer);
+        if (init_status == WorkerStatus::Failed) {
+            symbol->resolve_state = sema::SymbolState::Failed;
+        }
+
         if (init_status != WorkerStatus::Done)
             return init_status;
     }
@@ -98,8 +120,9 @@ WorkerStatus check_variable(SemanticContext *sema, void *data)
     }
 
     symbol->resolve_state = sema::SymbolState::Resolved;
+    sema->wake_up_workers(*sema::get_id_of_symbol(sema, current_scope, symbol->name));
 
-    return status;
+    return WorkerStatus::Done;
 }
 
 bool discover_variable(SemanticContext *sema, StatementPointer stmt,
@@ -112,7 +135,8 @@ bool discover_variable(SemanticContext *sema, StatementPointer stmt,
         const auto *first =
             sema::find_symbol_in(sema, scope, variable->name.value);
 
-        if (first->resolve_state == sema::SymbolState::Resolved &&
+        if ((first->resolve_state == sema::SymbolState::Resolved ||
+             first->resolve_state == sema::SymbolState::Resolving) &&
             first->locus == variable->name.locus) {
             return true;
         }
@@ -139,39 +163,45 @@ bool discover_variable(SemanticContext *sema, StatementPointer stmt,
     return true;
 }
 
-WorkerStatus check_block(SemanticContext *sema, void *data)
+WorkerStatus check_block(SemanticContext *sema, void *data, bool is_resumption)
 {
     StmtBlock *block    = (StmtBlock *)data;
-    WorkerStatus status = WorkerStatus::Done;
-
     sema::ScopeId previous_scope = sema->current_scope;
     sema::ScopeId current_scope =
         sema::find_scope_by_locus(sema, block->base.locus);
 
     if (current_scope != sema::INVALID_SCOPE) {
         sema->current_scope = current_scope;
+        MINI_ASSERT(is_resumption,);
     } else {
         current_scope = sema::enter_scope(sema, sema::ScopeKind::Block);
         sema::link_locus_to_scope(sema, block->base.locus, current_scope);
     }
 
-    auto scope_end = mini::AttachDtor(
-        block, [&](auto s) { sema->current_scope = previous_scope; });
+    auto scope_end = mini::ScopeGuard([&]{ sema->current_scope = previous_scope; });
 
-    for (usize n = 0; n < mini_array_count(block->body); ++n) {
+    usize start = 0;
+    if (sema->block_has_save_point(block->base.locus)) {
+        start = sema->get_block_save_point(block->base.locus);
+    }
+
+    for (usize n = start; n < mini_array_count(block->body); ++n) {
         StatementPointer stmt = block->body[n];
-        auto s                = check_statement(sema, stmt);
-        switch (s) {
-        case WorkerStatus::Failed:
-            status = s;
-            break;
-        case WorkerStatus::Done:
-            continue;
-        case WorkerStatus::Pending:
+        WorkerStatus s        = check_statement(sema, stmt, is_resumption);
+
+        if (s == WorkerStatus::Pending) {
+            for (sema::SymbolId id : mini::iterate(s.waiting_on)) {
+                sema->register_worker(id, Worker{(void*)stmt, check_statement});
+            }
+            sema->set_block_save_point(block->base.locus, n);
             return s;
-        default:
-            MINI_UNREACHABLE();
+        }
+
+        if (s != WorkerStatus::Done) {
+            sema->set_block_save_point(block->base.locus, n + 1);
+            return s;
         }
     }
-    return status;
+
+    return WorkerStatus::Done;
 }

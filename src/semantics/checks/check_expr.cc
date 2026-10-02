@@ -38,9 +38,17 @@ static WorkerStatus check_identifier(SemanticContext *sema,
 
     if (auto symbol = sema::eagerly_find_symbol_in(sema, current_scope, name);
         symbol != nullptr) {
+        /* todo: switch instead? */
         if (symbol->resolve_state == sema::SymbolState::Unresolved) {
             WorkerStatus status = WorkerStatus::Pending;
+            status.wait_for(*sema::eagerly_get_id_of_symbol(sema, current_scope, name));
             return status;
+        } else if (symbol->resolve_state == sema::SymbolState::Resolving) {
+            auto diag = diag_create(DIAG_Error, locus,
+                                    "cyclic dependency detected",
+                                    "here");
+            sema::report(sema, diag);
+            return WorkerStatus::Failed;
         }
         sema::link_locus_to_type(sema, locus, *symbol->as.variable.type_id);
     } else {

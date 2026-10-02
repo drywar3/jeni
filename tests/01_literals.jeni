@@ -1,7 +1,10 @@
 
-b :: 10;
-a :: b;
+a : int : b;
 
-foobar :: func (a : int, b : string) {
-   x : string = b;
+foobar :: func (a : int, c : string) {
+   x := 10;
+   y := 10;
 }
+
+
+b :: 10;

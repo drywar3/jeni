@@ -116,3 +116,31 @@ const sema::Symbol *sema::eagerly_find_symbol_in(const SemanticContext *sema,
     }
     return nullptr;
 }
+
+std::optional<sema::SymbolId> sema::get_id_of_symbol(SemanticContext *sema,
+                                                     ScopeId scope_id,
+                                                     mini::StringView name)
+{
+    const sema::Scope &scope = sema->scopes().at_index(usize(scope_id));
+    if (scope_has_symbol(&scope, name.base())) {
+        const auto symbol_id = scope_get_symbol(&scope, name.base());
+        return symbol_id;
+    }
+    return std::nullopt;
+}
+
+std::optional<sema::SymbolId> sema::eagerly_get_id_of_symbol(SemanticContext *sema,
+                                                             ScopeId start,
+                                                             mini::StringView name)
+{
+    std::optional<ScopeId> current = start;
+    while (current.has_value()) {
+        const sema::Scope &scope = sema->scopes().at_index((usize)*current);
+        if (scope_has_symbol(&scope, name.base())) {
+            const auto symbol_id = scope_get_symbol(&scope, name.base());
+            return symbol_id;
+        }
+        current = scope.parent;
+    }
+    return std::nullopt;
+}

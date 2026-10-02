@@ -19,6 +19,7 @@ struct WorkerStatus {
     operator V() const { return kind; }
 
     MINI_ARRAY(sema::SymbolId) waiting_on;
+    bool is_handled = false;
 
     ~WorkerStatus() {
         mini_array_destroy(waiting_on);
@@ -62,9 +63,13 @@ struct WorkerStatus {
         mini_array_append(waiting_on, id);
         return *this;
     }
+
+    void handled(bool value) {
+        is_handled = value;
+    }
 };
 
-typedef WorkerStatus (*WorkerFunc)(SemanticContext *ctx, void *data);
+typedef WorkerStatus (*WorkerFunc)(SemanticContext *ctx, void *data, bool is_resumption);
 
 struct Worker {
     void *data;

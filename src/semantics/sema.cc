@@ -2,6 +2,8 @@
 #include "semantics/type/ids.h"
 #include "semantics/checks/check_stmt.h"
 
+#include <mini.cc/array.h>
+
 SemanticStorage semastore_init(Mini_Allocator allocator)
 {
     SemanticStorage storage{
@@ -20,8 +22,8 @@ SemanticContext semactx_init(Mini_Allocator allocator,
                              SemanticStorage *store)
 {
     SemanticContext sema{.current_scope = {},
-                         .pending_workers =
-                             HashMap<usize, MINI_ARRAY(Worker)>(allocator)};
+                         .pending_workers = HashMap<sema::SymbolId, MINI_ARRAY(Worker)>(allocator),
+                         .block_save_points = SemanticContext::BlockSavePoints(allocator)};
     sema.allocator    = allocator;
     sema.diagnostics  = diagnostics;
     sema.store        = store;
@@ -41,6 +43,35 @@ void semactx_resolve(SemanticContext *sema, Program *program)
     for (usize n = 0; n < mini_array_count(program->ast); ++n) {
         StatementPointer stmt = program->ast[n];
         WorkerStatus status   = check_statement(sema, (void *)stmt);
+
+        if (status == WorkerStatus::Pending && !status.is_handled) {
+            for (sema::SymbolId id : mini::iterate(status.waiting_on)) {
+                sema->register_worker(id, Worker{(void*)stmt, check_statement});
+            }
+            // sema->register_worker(status.waiting_on[0], Worker{(void*)stmt, check_statement});
+        }
+    }
+
+    while (!sema->pending_workers.empty()) {
+        for (auto [id, workers, x] : sema->pending_workers) {
+            sema::Symbol *symbol = sema->symbols().at_index_ptr(usize(id));
+            if (symbol->resolve_state == sema::SymbolState::Resolved) {
+                for (usize n = 0; n < mini_array_count(workers); ++n) {
+                    Worker worker = workers[n];
+                    WorkerStatus status = worker.func(sema, worker.data, true);
+                    if (status == WorkerStatus::Done || status == WorkerStatus::Failed) {
+                        mini_array_remove(workers, n);
+                    }
+                }
+            } else if (symbol->resolve_state == sema::SymbolState::Failed) {
+                sema->pending_workers.erase(id);
+                continue;
+            }
+
+            if (mini_array_count(workers) == 0) {
+                sema->pending_workers.erase(id);
+            }
+        }
     }
 }
 
