@@ -6,6 +6,7 @@
 #include <mini.c/debug_allocator.h>
 
 #include "source.h"
+#include "lir/lir.h"
 #include "ast/ast.h"
 #include "ast/print.h"
 #include "hir/convert.h"
@@ -74,5 +75,10 @@ int main(int argc, char **argv)
     hir::Context hir         = hir::ctx_init(allocator, &storage);
     hir::Program hir_program = hir::program_from_raw(&hir, program);
 
+
+    lir::Context context = lir::ctx_init(allocator, &storage);
+    lir::Module  mod     = lir::module_init(&context);
+
+    lir::inflate_module(&mod, hir_program);
     return 0;
 }

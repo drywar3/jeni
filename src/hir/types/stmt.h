@@ -4,6 +4,7 @@
 #include "semantics/entities/type.h"
 
 #include <mini.cc/string_view.h>
+#include <mini.cc/array.h>
 
 namespace hir
 {
@@ -37,13 +38,13 @@ namespace hir
         };
 
         struct Block {
-            using Body = MINI_ARRAY(Statement*);
+            using Body = mini::Array<Statement*>;
             Body body;
         };
     } // namespace stmt
 
     struct Statement {
-        enum struct Kind {
+        enum Kind {
             Variable,
             Function,
             Block,

@@ -4,12 +4,13 @@
 hir::Statement *hir::convert_block(hir::Context *ctx, StmtBlock *block)
 {
     hir::stmt::Block hir_block;
-    hir_block.body = MINI_ARRAY_INIT(ctx->allocator, hir::Statement *);
+    hir_block.body = hir::stmt::Block::Body(ctx->allocator);
 
     for (usize n = 0; n < mini_array_count(block->body); ++n) {
         const ::Statement *stmt = block->body[n];
-        mini_array_append(hir_block.body, hir::convert_statement(ctx, stmt));
+        hir_block.body.append(hir::convert_statement(ctx, stmt));
     }
 
-    return ctx->new_stmt(hir::Statement::Kind::Block, block);
+    auto *stmt = ctx->new_stmt(hir::Statement::Kind::Block, hir_block);
+    return stmt;
 }

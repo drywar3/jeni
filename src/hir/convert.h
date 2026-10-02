@@ -23,12 +23,15 @@ namespace hir
         const auto &scopes() const { return store->scopes; }
         const auto &symbols() const { return store->symbols; }
 
-        template<typename T>
+        template <typename T>
         hir::Statement *new_stmt(hir::Statement::Kind kind, T obj) {
+            static_assert(sizeof(T) <= sizeof(hir::Statement::as), "Type T exceeds union storage size");
+
             hir::Statement *stmt = MINI_ALLOC(allocator, hir::Statement);
-            stmt->kind           = kind;
-            T *mem               = (T*)&stmt->as;
-            *mem = obj;
+            stmt->kind = kind;
+
+            ::new (static_cast<void*>(&stmt->as)) T(std::move(obj));
+
             return stmt;
         }
 
@@ -37,6 +40,7 @@ namespace hir
             hir::Expression *expr = MINI_ALLOC(allocator, hir::Expression);
             expr->kind            = kind;
             expr->type_id         = type_id;
+
             T *mem                = (T*)&expr->as;
             *mem = obj;
             return expr;
