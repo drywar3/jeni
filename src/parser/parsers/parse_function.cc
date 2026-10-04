@@ -5,20 +5,37 @@
 #include "parser/token.h"
 
 bool parse_function_parameters(Parser *p,
-                               AstFunctionPrototype::Parameters parameters)
+                               AstFunctionPrototype *prototype)
 {
+    auto &parameters = prototype->parameters;
     expect(p, TOKEN_SEP_Lparen);
+
     while (!equals(p, TOKEN_SEP_Rparen)) {
-        AstFunctionParameter parameter;
-        if (!eat_name(p, &parameter.name))
-            MINI_UNREACHABLE("TODO");
-        expect(p, TOKEN_SEP_Colon);
-        parameter.typehint = parser_parse_typehint(p);
-        if (parameters)
-            mini_array_append(parameters, parameter);
+        if (try_expect(p, TOKEN_SEP_Vararg)) {
+            /* after hitting the variadic mark, we do not expect any arguments again */
+            prototype->is_variadic = true;
+            break;
+        }
+
+        AstFunctionParameter parameter{};
+        if (!eat_name(p, &parameter.name)) {
+            parser_report(p, diag_create(Severity::Error, current(p).locus,
+                                         "invalid token",
+                                         "expected parameter name"));
+            if (!skip_until_one_of(p, true, TOKEN_SEP_Comma, TOKEN_SEP_Rparen))
+                return false;
+        } else {
+            expect(p, TOKEN_SEP_Colon);
+            parameter.typehint = parser_parse_typehint(p);
+            parameters.append(parameter);
+        }
+
         if (!try_expect(p, TOKEN_SEP_Comma))
             break;
     }
+
+    /* todo: consider reporting a better suited diagnostic for the case where the
+    *        parameter list continues even after the varidic mark (if present) */
     expect(p, TOKEN_SEP_Rparen);
     return true;
 }
@@ -29,8 +46,8 @@ ExpressionPointer parse_function(Parser *p)
 
     ExprFunction function{};
     function.prototype.parameters =
-        MINI_ARRAY_INIT(p->allocator, AstFunctionParameter);
-    if (!parse_function_parameters(p, function.prototype.parameters))
+        AstFunctionPrototype::Parameters(p->allocator);
+    if (!parse_function_parameters(p, &function.prototype))
         MINI_UNREACHABLE("TODO");
 
     if (try_expect(p, TOKEN_OP_Arrow)) {

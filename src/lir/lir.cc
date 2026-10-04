@@ -47,11 +47,12 @@ static lir::Global lower_glob_function(lir::Buildr *b,
                                        const hir::Statement *stmt)
 {
     const hir::stmt::Function &function = stmt->as.function;
+
     lir::TypePtr return_type =
         lir::lower_type(b, function.prototype.return_type);
 
     lir::Global::Function g_function =
-        lir::function_init(b, function.name, return_type);
+        lir::function_init(b, function.name, return_type, function.prototype.is_variadic);
     lir::Buildr new_builder = g_function.buildr(b->mod);
 
     new_builder.new_block();

@@ -1,4 +1,5 @@
 #include "lir/lir.h"
+#include "semantics/entities/type.h"
 
 lir::TypePtr lir::lower_type(Buildr *builder, sema::TypeId type_id)
 {
@@ -15,7 +16,16 @@ lir::TypePtr lir::lower_type(Buildr *builder, sema::TypeId type_id)
     case sema::TypeKind::String:
         type.kind = lir::Type::Kind::String;
         break;
-    default: MINI_UNREACHABLE();
+    case sema::TypeKind::Pointer: {
+        auto inner = lir::lower_type(builder, type_layout.pointer.target_type);
+        return lir::Type::PointerTo(builder->allocator(),
+                                    type_layout.pointer.mutability, inner);
+    } break;
+    case sema::TypeKind::Char:
+        type.kind = lir::Type::Kind::Int8;
+        break;
+    default:
+        MINI_UNREACHABLE();
     }
 
     return Box(builder->allocator(), type);

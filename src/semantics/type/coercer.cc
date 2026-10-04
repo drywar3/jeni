@@ -5,6 +5,7 @@ enum struct CoerceResult {
     Ok,
     Invalid,
     IntegerSignChange,
+    ConstCast,
 };
 
 CoerceResult check_type_coercesion(SemanticContext *sema,
@@ -27,10 +28,9 @@ CoerceResult check_type_coercesion(SemanticContext *sema,
         return CoerceResult::IntegerSignChange;
     }
 
-    if (target.kind == sema::TypeKind::Pointer ||
+    if (target.kind == sema::TypeKind::Pointer &&
         source.kind == sema::TypeKind::Pointer)
         MINI_UNREACHABLE("TODO");
-
     return CoerceResult::Invalid;
 }
 
@@ -82,9 +82,9 @@ bool sema::coerce_type_into(SemanticContext *sema, TypeId target_id,
 {
     CoerceResult cr = check_type_coercesion(sema, target_id, source_id);
 
-    Severity dlvl = DIAG_Warning;
+    Severity dlvl = Severity::Warning;
     if (strict)
-        dlvl = DIAG_Error;
+        dlvl = Severity::Error;
 
     if (cr != CoerceResult::Ok)
         render_coersion_error(sema, cr, dlvl, target_id, source_id,

@@ -3,6 +3,7 @@
 #include "lir/types/function.h"
 #include "lir/types/instruction.h"
 #include "lir/types/value.h"
+#include "mini.cc/string_view.h"
 
 const SemanticStorage *lir::Buildr::store() const
 {
@@ -16,6 +17,11 @@ Mini_Allocator lir::Buildr::allocator() const
 lir::ValueId lir::Buildr::create_integer(int64 value)
 {
     return valuestore_index(&mod->context->values, Value::Integer(value));
+}
+
+lir::ValueId lir::Buildr::create_cstring(mini::StringView value)
+{
+    return valuestore_index(&mod->context->values, Value::CString(value));
 }
 
 std::optional<lir::Local> lir::Buildr::find_local(mini::StringView name)

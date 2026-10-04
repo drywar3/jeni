@@ -67,6 +67,10 @@ struct WorkerStatus {
     void handled(bool value) {
         is_handled = value;
     }
+
+    bool is_failed() const {
+        return kind == V::Failed;
+    }
 };
 
 typedef WorkerStatus (*WorkerFunc)(SemanticContext *ctx, void *data, bool is_resumption);

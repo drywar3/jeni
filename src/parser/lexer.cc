@@ -1,37 +1,38 @@
 #include "lexer.h"
 
-#include <mini.c/string_view.h>
 #include "token.h"
+#include <mini.c/string_view.h>
 
 typedef uint32 Codepoint;
 
-typedef struct {
+struct TokenSpec {
     const char *text;
     TokenKind kind;
-} TokenSpec;
+};
 
 static const TokenSpec KEYWORDS[] = {
     {"func", TOKEN_KW_Func},
     {"return", TOKEN_KW_Return},
+    {"const", TOKEN_KW_Const},
 };
 static const usize KEYWORD_COUNT = sizeof(KEYWORDS) / sizeof(KEYWORDS[0]);
 
 static const TokenSpec PUNCTUATIONS[] = {
-    { "---", TOKEN_SEP_Nobody}, 
+    {"---", TOKEN_SEP_Nobody}, {"...", TOKEN_SEP_Vararg },
 
-    {"++", TOKEN_OP_Inc},    {"--", TOKEN_OP_Dec},
-    {"==", TOKEN_OP_Equals}, {"!=", TOKEN_OP_NotEquals},
+    {"++", TOKEN_OP_Inc},      {"--", TOKEN_OP_Dec},
+    {"==", TOKEN_OP_Equals},   {"!=", TOKEN_OP_NotEquals},
     {"->", TOKEN_OP_Arrow},
 
-    {"+", TOKEN_OP_Add},     {"-", TOKEN_OP_Minus},
-    {"*", TOKEN_OP_Star},    {"/", TOKEN_OP_Div},
-    {"=", TOKEN_OP_Assign},  {">", TOKEN_OP_Greater},
-    {"<", TOKEN_OP_Less},    {"!", TOKEN_OP_Bang},
+    {"+", TOKEN_OP_Add},       {"-", TOKEN_OP_Minus},
+    {"*", TOKEN_OP_Star},      {"/", TOKEN_OP_Div},
+    {"=", TOKEN_OP_Assign},    {">", TOKEN_OP_Greater},
+    {"<", TOKEN_OP_Less},      {"!", TOKEN_OP_Bang},
 
-    {"{", TOKEN_SEP_Lbrace}, {"[", TOKEN_SEP_Lbracket},
-    {"(", TOKEN_SEP_Lparen}, {")", TOKEN_SEP_Rparen},
-    {"}", TOKEN_SEP_Rbrace}, {"]", TOKEN_SEP_Rbracket},
-    {":", TOKEN_SEP_Colon},  {";", TOKEN_SEP_Semicolon},
+    {"{", TOKEN_SEP_Lbrace},   {"[", TOKEN_SEP_Lbracket},
+    {"(", TOKEN_SEP_Lparen},   {")", TOKEN_SEP_Rparen},
+    {"}", TOKEN_SEP_Rbrace},   {"]", TOKEN_SEP_Rbracket},
+    {":", TOKEN_SEP_Colon},    {";", TOKEN_SEP_Semicolon},
     {",", TOKEN_SEP_Comma},
 };
 static const usize PUNCT_COUNT = sizeof(PUNCTUATIONS) / sizeof(PUNCTUATIONS[0]);
@@ -208,7 +209,8 @@ bool lexer_next_token(Lexer *lexer, Token *token, Diagnostic *diagnostic)
 
         /* skip single line comments. */
         if (is_prefix(lexer, "//")) {
-            while (!lexer_is_done(lexer) && (current(lexer) != '\n' && current(lexer) != '\r')) {
+            while (!lexer_is_done(lexer) &&
+                   (current(lexer) != '\n' && current(lexer) != '\r')) {
                 next(lexer);
             }
             continue;
@@ -241,6 +243,18 @@ bool lexer_next_token(Lexer *lexer, Token *token, Diagnostic *diagnostic)
 
     lexer->prev_offset = lexer->offset;
     lexer->prev_col    = lexer->col;
+
+    if (is_prefix(lexer, "c\"")) {
+        next(lexer);
+        next(lexer);
+        while (!lexer_is_done(lexer) && current(lexer) != '"') {
+            next(lexer);
+        }
+        next(lexer);
+        return set_token_and_return(token, TOKEN_LIT_CString,
+                                    lexer_get_locus(lexer), true);
+    }
+
 
     /* lex an identifier or keyword */
     if (codepoint_isalpha(current(lexer))) {
@@ -311,6 +325,6 @@ bool lexer_is_done(const Lexer *lexer)
 {
     if (lexer == NULL)
         return true;
-    // todo: something seems off here :|
+    /* todo: something seems off here :| */
     return lexer->offset >= mini_string_count(lexer->content);
 }

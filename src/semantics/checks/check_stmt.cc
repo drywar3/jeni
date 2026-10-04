@@ -139,7 +139,7 @@ WorkerStatus check_variable(SemanticContext *sema, void *data,
         } else {
             // Handle error case: var x; without type or initializer
             Diagnostic diag = diag_create(
-                DIAG_Error, variable->name.locus, "type error",
+                                          Severity::Error, variable->name.locus, "type error",
                 "variables without initializers must specify an explicit type");
             sema::report(sema, diag);
             symbol->resolve_state = sema::SymbolState::Failed;
@@ -170,11 +170,10 @@ bool discover_variable(SemanticContext *sema, StatementPointer stmt,
             return true;
         }
 
-        Diagnostic diag = diag_create(
-            DIAG_Error, variable->name.locus, "variable redeclaration",
-            mini_string_build(sema->allocator,
-                              "symbol `%.*s` is already defined",
-                              SVARG(variable->name.value)));
+        Diagnostic diag = diag_create(Severity::Error, variable->name.locus, "variable redeclaration",
+                                      mini_string_build(sema->allocator,
+                                                        "symbol `%.*s` is already defined",
+                                                        SVARG(variable->name.value)));
         sema::report(sema,
                      diag_add_label(diag, Label{"symbol was first defined here",
                                                 first->locus}));

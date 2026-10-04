@@ -1,7 +1,7 @@
 #pragma once
 
-#include <mini.c/string_view.h>
 #include "parser/locus.h"
+#include <mini.c/string_view.h>
 
 typedef struct Name {
     Mini_StringView value;
@@ -9,8 +9,8 @@ typedef struct Name {
 } Name;
 
 typedef enum Mutability {
-    MUT_Constant = 1,
-    MUT_Mutable  = 0,
+    MUT_Constant = true,
+    MUT_Mutable  = false,
 } Mutability;
 
 static inline Name name_create(Mini_StringView value, Locus locus)

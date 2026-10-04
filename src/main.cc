@@ -6,7 +6,6 @@
 #include <stdio.h>
 
 #include "ast/ast.h"
-#include "ast/print.h"
 #include "codegen/backends/c.h"
 #include "codegen/codegen.h"
 #include "hir/convert.h"

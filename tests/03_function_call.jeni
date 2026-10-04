@@ -1,0 +1,7 @@
+
+main :: func () -> int {
+     putchar (72);
+     putchar (c"Hello World");
+}
+
+putchar :: func (x : int) ---

@@ -10,6 +10,7 @@ SemanticStorage semastore_init(Mini_Allocator allocator)
         .scopes  = sema::ScopeStorage(allocator),
         .symbols = sema::SymbolStorage(allocator),
         .types   = sema::TypeStorage(allocator),
+        .call_schemas = SemanticStorage::CallSchemas(allocator),
     };
     /* invalid scope */
     storage.scopes.add_value(
@@ -78,6 +79,17 @@ void semactx_resolve(SemanticContext *sema, Program *program)
             }
         }
     }
+}
+
+sema::FunctionCallSchema* SemanticContext::get_call_schema(sema::SymbolId symbol_id)
+{
+    return store->call_schemas.find(symbol_id);
+}
+
+void SemanticContext::set_call_schema(sema::SymbolId symbol_id, sema::FunctionCallSchema schema)
+{
+    MINI_ASSERT(get_call_schema(symbol_id) == nullptr, "symbol call schema already exists");
+    store->call_schemas[symbol_id] = schema;
 }
 
 using namespace sema::type_id;

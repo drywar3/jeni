@@ -144,3 +144,14 @@ sema::eagerly_get_id_of_symbol(SemanticContext *sema, ScopeId start,
     }
     return std::nullopt;
 }
+
+sema::SymbolId sema::get_symbol_at_locus(SemanticContext *sema, Locus locus)
+{
+    MINI_ASSERT(sema->store->symbols.contains(locus), );
+    return sema::SymbolId(*sema->store->symbols.get_id(locus));
+}
+
+void sema::link_locus_to_symbol(SemanticContext *sema, Locus locus, SymbolId id)
+{
+    sema->store->symbols.link(locus, (usize)id);
+}

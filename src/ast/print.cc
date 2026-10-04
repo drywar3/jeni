@@ -121,7 +121,7 @@ void print_expr(const Expression *expr, usize indent)
         print_indent(indent + 1);
         printf("\"arguments\": [");
 
-        const usize count = mini_array_count(function_call->arguments);
+        const usize count = function_call->arguments.count();
 
         if (count > 0)
             printf("\n");
@@ -161,7 +161,7 @@ void print_expr(const Expression *expr, usize indent)
         print_indent(indent + 1);
         printf("\"parameters\": [");
 
-        const usize count = mini_array_count(function->prototype.parameters);
+        const usize count = function->prototype.parameters.count();
 
         if (count > 0)
             printf("\n");

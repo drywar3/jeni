@@ -15,6 +15,8 @@ bool lir::Value::operator==(const Value &other) const
         return valueid == other.valueid;
     case Kind::GlobalRef:
         return ident == other.ident;
+    case Kind::CString:
+        return string == other.string;
     default: MINI_UNREACHABLE();
     }
 }

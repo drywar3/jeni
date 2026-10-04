@@ -4,6 +4,8 @@
 lir::ValueId lir::lower_expression(Buildr *b, const hir::Expression *expression)
 {
     switch (expression->kind) {
+    case hir::Expression::Kind::CString:
+        return b->create_cstring(expression->as.string.value);
     case hir::Expression::Kind::Integer:
         return b->create_integer(expression->as.integer.value);
     case hir::Expression::Kind::Identifier:

@@ -47,6 +47,11 @@ namespace sema
 
     enum class TypeId : usize {};
 
+    struct PointerType {
+        Mutability mutability;
+        TypeId target_type;
+    };
+
     struct FunctionType {
         using Parameters = MINI_ARRAY(TypeId);
         Parameters parameters;
@@ -58,6 +63,7 @@ namespace sema
 
         union {
             FunctionType function;
+            PointerType pointer;
         };
 
         bool operator==(const Type &other) const
@@ -65,7 +71,8 @@ namespace sema
             if (kind != other.kind)
                 return false;
 
-            if (kind == TypeKind::Error) return false;
+            if (kind == TypeKind::Error)
+                return false;
 
             if (kind == TypeKind::Function) {
                 if (function.return_type != other.function.return_type)
@@ -78,6 +85,9 @@ namespace sema
                         return false;
                     n += 1;
                 }
+            } else if (kind == TypeKind::Pointer) {
+                return pointer.mutability == other.pointer.mutability &&
+                       pointer.target_type == other.pointer.target_type;
             }
 
             return true;
@@ -95,40 +105,14 @@ namespace sema
             return type;
         }
 
-        Mini_String display(Mini_Allocator a, TypeStorage &types) const
+        static auto Pointer(Mutability mutability, TypeId type_id)
         {
-            switch (kind) {
-            case TypeKind::Void:
-                return mini_string_build(a, "void");
-
-            case TypeKind::String:
-                return mini_string_build(a, "string");
-            case TypeKind::Int:
-                return mini_string_build(a, "int");
-            case TypeKind::Uint:
-                return mini_string_build(a, "uint");
-            case TypeKind::Function: {
-                Mini_String output = mini_string_build(a, "func(");
-                for (usize n = 0; n < mini_array_count(function.parameters);
-                     ++n) {
-                    if (n != 0)
-                        mini_string_append_string(&output, ", ");
-                    mini_string_append_string(
-                        &output, types.at_index(usize(function.parameters[n]))
-                                     .display(a, types));
-                }
-                mini_string_append_fmt(
-                    &output, ") -> %s",
-                    types.at_index(usize(function.return_type))
-                        .display(a, types));
-                return output;
-            } break;
-            case TypeKind::Error:
-                return mini_string_build(a, "!error!");
-            default:
-                MINI_UNREACHABLE("%d", kind.kind);
-            }
+            auto type    = Type(TypeKind::Pointer);
+            type.pointer = PointerType{mutability, type_id};
+            return type;
         }
+
+        Mini_String display(Mini_Allocator a, TypeStorage &types) const;
     };
 
     struct TypeInfo {

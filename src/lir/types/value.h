@@ -10,6 +10,7 @@ namespace lir
         enum struct Kind {
             Integer,
             String,
+            CString,
             LocalRef,
             GlobalRef,
             ParamRef,
@@ -28,6 +29,11 @@ namespace lir
         static Value Integer(int64 value)
         {
             return Value{.kind = Kind::Integer, .integer = value};
+        }
+
+        static Value CString(mini::StringView value)
+        {
+            return Value{.kind = Kind::CString, .string = value};
         }
 
         static Value LocalRef(usize index)

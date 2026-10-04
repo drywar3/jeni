@@ -36,6 +36,10 @@ namespace sema
     void link_locus_to_type(SemanticContext *sema, Locus locus, TypeId id);
     TypeId get_type_at_locus(SemanticContext *sema, Locus locus);
 
+    void link_locus_to_symbol(SemanticContext *sema, Locus locus, SymbolId id);
+    SymbolId get_symbol_at_locus(SemanticContext *sema, Locus locus);
+
+
     void link_locus_to_scope(SemanticContext *sema, Locus locus, ScopeId id);
     ScopeId find_scope_by_locus(SemanticContext *sema, Locus locus);
 

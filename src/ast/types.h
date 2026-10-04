@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ast/misc.h"
 #include "type.h"
 #include "expr.h"
 
@@ -7,8 +8,13 @@ struct TypeString {
     Typehint base;
 };
 
+struct TypeChar {
+    Typehint base;
+};
+
 typedef struct TypePointer {
     Typehint base;
+    Mutability mutability;
     TypehintPointer typehint;
 } TypePointer;
 

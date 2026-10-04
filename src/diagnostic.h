@@ -11,11 +11,11 @@ struct Label {
     bool is_primary = false;
 };
 
-typedef enum {
-    DIAG_Error,
-    DIAG_Warning,
-    DIAG_Note,
-} Severity;
+enum struct Severity {
+    Error,
+    Warning,
+    Note,
+};
 
 typedef struct {
     Severity severity;

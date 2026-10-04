@@ -1,0 +1,17 @@
+
+main :: func () -> int {
+     x := c"Jeni";
+     y := c"Foobar";
+
+     printf(c"Hello, World! %d\n");
+
+     print_number(10);
+     print_number(20);
+     print_number(30);
+}
+
+print_number :: func (x : int) {
+    printf(c"%d ", x);
+}
+
+printf :: func (fmt: *const char, x : int, ...) ---

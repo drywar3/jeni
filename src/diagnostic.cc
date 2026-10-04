@@ -91,11 +91,11 @@ static void print_source_line(const SourceFile *file, usize line_num,
 static const char *severity_prefix(Severity sev)
 {
     switch (sev) {
-    case DIAG_Error:
+    case Severity::Error:
         return "error";
-    case DIAG_Warning:
+    case Severity::Warning:
         return "warning";
-    case DIAG_Note:
+    case Severity::Note:
         return "note";
     }
     return "diagnostic";
@@ -104,11 +104,11 @@ static const char *severity_prefix(Severity sev)
 static const char *severity_color(Severity sev)
 {
     switch (sev) {
-    case DIAG_Error:
+    case Severity::Error:
         return C_BRED;
-    case DIAG_Warning:
+    case Severity::Warning:
         return C_BYEL;
-    case DIAG_Note:
+    case Severity::Note:
         return C_BCYAN;
     }
     return "";

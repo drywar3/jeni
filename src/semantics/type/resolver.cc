@@ -1,7 +1,12 @@
-#include "semantics/impl.h"
-#include "semantics/type/ids.h"
 #include "semantics/type/resolver.h"
+#include "ast/type.h"
+#include "ast/types.h"
+#include "mini.c/mini_def.h"
 #include "semantics/entities/type.h"
+#include "semantics/impl.h"
+#include "semantics/sema.h"
+#include "semantics/type/ids.h"
+#include "semantics/worker.h"
 
 sema::TypeId sema::register_or_get_type(SemanticContext *sema, sema::Type type)
 {
@@ -14,6 +19,30 @@ sema::TypeId sema::register_or_get_type(SemanticContext *sema, sema::Type type)
         index += 1;
     }
     return (sema::TypeId)sema->store->types.add_value(type);
+}
+
+static WorkerStatus
+resolve_pointer_typehint(SemanticContext *sema, const Typehint *typehint,
+                         std::optional<Locus> resolve_location)
+{
+    TypePointer *pointer = (TypePointer *)typehint;
+    WorkerStatus status  = sema::resolve_typehint(sema, pointer->typehint,
+                                                  pointer->typehint->locus);
+    if (status != WorkerStatus::Done)
+        return status;
+
+    sema::TypeId target_type_id =
+        sema::get_type_at_locus(sema, pointer->typehint->locus);
+
+    sema::Type pointer_type =
+        sema::Type::Pointer(pointer->mutability, target_type_id);
+    sema::TypeId type_id = sema::register_or_get_type(sema, pointer_type);
+
+    if (resolve_location) {
+        sema::link_locus_to_type(sema, *resolve_location, type_id);
+    }
+
+    return WorkerStatus::Done;
 }
 
 WorkerStatus sema::resolve_typehint(SemanticContext *sema,
@@ -30,6 +59,11 @@ WorkerStatus sema::resolve_typehint(SemanticContext *sema,
     } break;
     case TYPEHINT_String:
         id = sema::type_id::String;
+        break;
+    case TYPEHINT_Pointer:
+        return resolve_pointer_typehint(sema, typehint, resolve_location);
+    case TYPEHINT_Char:
+        id = sema::type_id::Char;
         break;
     default:
         MINI_UNREACHABLE("TODO");

@@ -7,6 +7,7 @@ enum ExpressionKind {
     EXPR_Identifier,
     EXPR_Integer,
     EXPR_String,
+    EXPR_CString,
     EXPR_Bool,
     EXPR_Float,
     EXPR_Initializer,

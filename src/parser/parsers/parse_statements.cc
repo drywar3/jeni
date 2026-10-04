@@ -20,8 +20,6 @@ static bool expression_requires_terminator(ExpressionPointer expr)
 bool eat_name(Parser *parser, Name *name)
 {
     if (!equals(parser, TOKEN_Identifier)) {
-        MINI_UNREACHABLE("[%s] instead",
-                         tokenkind_to_string(current(parser).kind));
         return false;
     }
 
@@ -71,9 +69,9 @@ Statement *parse_variable_declaration(Parser *p)
             : try_expect(p, TOKEN_OP_Assign)
                 ? MUT_Mutable
                 : ({
-                      diagpool_report(p->diagnostics, DIAG_Error,
-                                      current(p).locus, "invalid token",
-                                      "expected `:`, `=` or `;`");
+                        diagpool_report(p->diagnostics, Severity::Error,
+                                        current(p).locus, "invalid token",
+                                        "expected `:`, `=` or `;`");
                       next(p);
                       MUT_Mutable;
                   });

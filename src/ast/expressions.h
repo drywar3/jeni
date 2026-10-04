@@ -1,12 +1,13 @@
 #pragma once
 
 #include "expr.h"
+#include "mini.c/string_view.h"
 #include "misc.h"
 #include "stmt.h"
 #include "type.h"
 #include "parser/token.h"
 
-#include <mini.c/array.h>
+#include <mini.cc/array.h>
 
 struct ExprInteger {
     Expression base;
@@ -18,15 +19,32 @@ struct ExprIdentifier {
     Mini_StringView value;
 };
 
+struct ExprString {
+    Expression base;
+    mini::StringView value;
+};
+
 struct AstFunctionParameter {
     Name name;
     Typehint *typehint;
+    Expression *default_expression;
 };
 
 struct AstFunctionPrototype {
-    using Parameters = MINI_ARRAY(AstFunctionParameter);
+    using Parameters = mini::Array<AstFunctionParameter>;
+
     Parameters parameters;
     Typehint *return_type;
+    /* consider moving this to its own struct because the
+     * variadic mark carry a name also
+     *
+     * ```
+     * foobar :: func(x : int, args:...) {
+     * ```
+     *
+     * but it is all still speculations. for now this is ok.
+     */
+    bool      is_variadic = false;
 };
 
 struct ExprFunction {
@@ -68,7 +86,7 @@ struct AstFunctionCallArgument {
 struct ExprFunctionCall {
     Expression base;
     ExpressionPointer callee;
-    MINI_ARRAY(AstFunctionCallArgument) arguments;
+    mini::Array<AstFunctionCallArgument> arguments;
 };
 
 struct ExprError{ Expression base; };

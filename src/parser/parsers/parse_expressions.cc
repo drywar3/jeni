@@ -2,6 +2,7 @@
 #include "ast/expressions.h"
 #include "parser/parser_impl.h"
 #include "parser/parsers/parse_function.h"
+#include "parser/token.h"
 
 static Expression ERROR_EXPR{
     .kind = EXPR_Error,
@@ -33,7 +34,16 @@ ExpressionPointer parse_primary(Parser *p)
                           ((ExprIdentifier){.value = value}));
     }
 
-    parser_report(p, diag_create(DIAG_Error, current(p).locus,
+    if (equals(p, TOKEN_LIT_CString)) {
+        Token token = next(p);
+        Mini_StringView value =
+            mini_string_substr(p->tokens.lexer.content, token.locus.first_byte,
+                               locus_length(&token.locus));
+        return ALLOC_EXPR(p->allocator, EXPR_CString, token.locus,
+                          ((ExprString){.value = value}));
+    }
+
+    parser_report(p, diag_create(Severity::Error, current(p).locus,
                                  "expected primary expression", "here"));
     return &ERROR_EXPR;
 }
@@ -46,7 +56,7 @@ ExpressionPointer parse_postfix(Parser *p)
             ExprFunctionCall fcall;
             fcall.callee = base;
             fcall.arguments =
-                MINI_ARRAY_INIT(p->allocator, AstFunctionCallArgument);
+                mini::Array<AstFunctionCallArgument>(p->allocator);
 
             while (!equals(p, TOKEN_SEP_Rparen)) {
                 AstFunctionCallArgument argument{};

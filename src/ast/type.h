@@ -17,27 +17,25 @@ typedef enum TypehintKind {
 typedef struct Typehint {
     TypehintKind kind;
     Locus locus;
-    Mutability mutability;
 } Typehint;
 
 typedef Typehint *TypehintPointer;
 
-#define ALLOC_TYPE(allocator, kind, locus, mut, derived)                       \
+#define ALLOC_TYPE(allocator, kind, locus, derived)                            \
     ({                                                                         \
         typeof(derived) derived_tmp = derived;                                 \
         TypehintPointer typehint =                                             \
             (TypehintPointer)MINI_ALLOC(allocator, typeof(derived_tmp));       \
         *((typeof(derived_tmp) *)typehint) = derived;                          \
-        typehint_ctor(typehint, kind, locus, mut);                             \
+        typehint_ctor(typehint, kind, locus);                                  \
         typehint;                                                              \
     })
 
 static inline void typehint_ctor(TypehintPointer _this, TypehintKind kind,
-                                 Locus locus, Mutability mutability)
+                                 Locus locus)
 {
-    _this->kind       = kind;
-    _this->locus      = locus;
-    _this->mutability = mutability;
+    _this->kind  = kind;
+    _this->locus = locus;
 }
 
 void typehint_destroy(Typehint *stmt, Mini_Allocator allocator);

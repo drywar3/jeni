@@ -8,10 +8,11 @@ convert_function_prototype(hir::Context *ctx,
                            const AstFunctionPrototype *prototype)
 {
     hir::stmt::Function::Prototype hir_prototype;
+    hir_prototype.is_variadic = prototype->is_variadic;
     hir_prototype.parameters =
         MINI_ARRAY_INIT(ctx->allocator, hir::stmt::Function::Parameter);
 
-    for (usize n = 0; n < mini_array_count(prototype->parameters); ++n) {
+    for (usize n = 0; n < prototype->parameters.count(); ++n) {
         const AstFunctionParameter &parameter = prototype->parameters[n];
 
         hir::stmt::Function::Parameter hir_parameter;

@@ -41,11 +41,12 @@ namespace lir
         mini::Array<Instruction> instructions;
         usize current_local_index;
         bool body_is_defined;
+        bool is_variadic;
 
         Buildr buildr(Module *mod);
         void add_instruction(Instruction inst);
     };
 
     Function function_init(lir::Buildr *b, mini::StringView name,
-                           TypePtr return_type);
+                           TypePtr return_type, bool is_variadic);
 } // namespace lir

@@ -30,6 +30,7 @@ namespace hir
             struct Prototype {
                 Function::Parameters parameters;
                 sema::TypeId         return_type;
+                bool                 is_variadic = false;
             };
 
             mini::StringView    name;

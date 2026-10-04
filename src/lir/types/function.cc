@@ -7,7 +7,7 @@ lir::Buildr lir::Function::buildr(Module *mod)
     return lir::Buildr{mod, this, .current_block = block };
 }
 
-lir::Function lir::function_init(lir::Buildr *b, mini::StringView name, TypePtr return_type)
+lir::Function lir::function_init(lir::Buildr *b, mini::StringView name, TypePtr return_type, bool is_variadic)
 {
     auto allocator = b->allocator();
 
@@ -20,6 +20,7 @@ lir::Function lir::function_init(lir::Buildr *b, mini::StringView name, TypePtr 
         .block = b->mod->context->new_block(std::nullopt),
         .instructions = mini::Array<Instruction>(allocator),
         .current_local_index = 0,
+        .is_variadic = is_variadic,
     };
     return function;
 }

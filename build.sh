@@ -8,7 +8,8 @@ FRESH_BUILD="no"
 
 build() {
     printf "note: refreshing cache\n"
-    cmake -B ./build > /dev/null
+    #cmake -B ./build > /dev/null $EXE_ARGS
+    cmake -B ./build $EXE_ARGS
 
     if [ "$FRESH_BUILD" = "yes" ]; then
         make -C ./vendor/libtcc/ clean
@@ -28,7 +29,8 @@ build() {
         build_cmd+=(--clean-first)
     fi
 
-    "${build_cmd[@]}" > /dev/null
+    #"${build_cmd[@]}" > /dev/null
+    "${build_cmd[@]}"
     printf "note: done\n"
 }
 

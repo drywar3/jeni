@@ -44,10 +44,12 @@ typedef enum {
     TOKEN_SEP_Rparen,
     // used to indicate that a function has no body
     TOKEN_SEP_Nobody, // ---
+    TOKEN_SEP_Vararg, // ...
 
     TOKEN_LIT_Int,
     TOKEN_LIT_String,
     TOKEN_LIT_RString,
+    TOKEN_LIT_CString,
     TOKEN_LIT_Char,
     TOKEN_LIT_True,
     TOKEN_LIT_False,

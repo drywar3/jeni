@@ -18,7 +18,7 @@ hir::Expression *hir::convert_function_call(hir::Context *ctx,
     function_call.callee = hir::convert_expression(ctx, callee);
     function_call.arguments = mini::Array<hir::Expression*>(ctx->allocator);
 
-    for (const auto &argument : mini::iterate(arguments)) {
+    for (const auto &argument : arguments.iter()) {
         MINI_ASSERT(argument.is_positional, "TODO: handle non-positional arguments");
         function_call.arguments.append(hir::convert_expression(ctx, argument.argument));
     }

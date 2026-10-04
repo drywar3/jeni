@@ -4,6 +4,7 @@ project(JeniLang LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_BUILD_TYPE DEBUG)
 
 add_subdirectory(vendor/mini.c)
 
@@ -21,7 +22,7 @@ target_link_directories(JeniCompiler PRIVATE
 target_compile_options(JeniCompiler PRIVATE
   -Wno-c99-designator
   -Wno-c++20-extensions
-  -ftime-trace
+  #-ftime-trace
   -Wall
   #  -fsanitize=address -fno-omit-frame-pointer -g
 )

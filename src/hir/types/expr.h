@@ -18,6 +18,10 @@ namespace hir
             mini::StringView value;
         };
 
+        struct String {
+            mini::StringView value;
+        };
+
         struct FunctionCall {
             Expression *callee;
             mini::Array<Expression *> arguments;
@@ -29,6 +33,7 @@ namespace hir
             Integer,
             Identifier,
             FunctionCall,
+            CString,
         };
 
         Kind kind;
@@ -38,6 +43,7 @@ namespace hir
             expr::Integer integer;
             expr::Identifier identifier;
             expr::FunctionCall function_call;
+            expr::String string;
         } as;
     };
 } // namespace hir

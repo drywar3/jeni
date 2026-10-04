@@ -1,6 +1,7 @@
 #include "codegen/backends/c.h"
 #include "lir/types/instruction.h"
 #include "lir/types/type.h"
+#include "mini.c/string_view.h"
 
 #include <libtcc.h>
 #include <mini.c/string.h>
@@ -70,6 +71,8 @@ static void emit_function_fwd_declaration(CBackend *bk,
         writef(bk, " param_%zu", n);
         n += 1;
     }
+    if (function->is_variadic)
+        writef(bk, ", ...");
     writef(bk, ");\n");
 }
 
@@ -170,6 +173,9 @@ Mini_String codegen::c_backend_entry_point(codegen::Context *context)
 void write_type(Mini_String *out, lir::TypePtr type)
 {
     switch (type->kind) {
+    case lir::Type::Kind::Int8:
+        mini_string_append_string(out, "int8_t");
+        break;
     case lir::Type::Kind::Int32:
         mini_string_append_string(out, "int32_t");
         break;
@@ -180,7 +186,10 @@ void write_type(Mini_String *out, lir::TypePtr type)
         mini_string_append_string(out, "_JeniVoid");
         break;
     case lir::Type::Kind::Pointer:
-        write_type(out, type->pointer_to);
+        if (type->pointer.mutability) {
+            writeo(out, "const ");
+        }
+        write_type(out, type->pointer.inner);
         mini_string_append_string(out, "*");
         break;
     default:
@@ -208,6 +217,9 @@ void write_value(CBackend *bk, Mini_String *out, lir::ValueId value_id)
     case lir::Value::Kind::Deref:
         mini_string_append(out, '*');
         write_value(bk, out, value.valueid);
+        break;
+    case lir::Value::Kind::CString:
+        mini_string_append_fmt(out, "%.*s", SVARG(value.string.base()));
         break;
     default:
         MINI_UNREACHABLE();
@@ -250,6 +262,11 @@ void emit_function_definition(CBackend *bk,
         writec(bk, " param_%zu", n);
         n += 1;
     }
+
+    if (function->is_variadic) {
+        writec(bk, ", ...");
+    }
+
     writec(bk, ")");
 
     if (function->body_is_defined) {
@@ -334,10 +351,12 @@ bool codegen::c_backend_finalize(Mini_String blob, const char *output_name)
         fprintf(stderr, "error: failed to initialize tcc\n");
         return false;
     }
+    //printf("%s", blob);
 
     auto scope_guard = mini::ScopeGuard([&]() { tcc_delete(s); });
     tcc_set_lib_path(s, "./vendor/libtcc");
     tcc_set_output_type(s, TCC_OUTPUT_EXE);
+    tcc_set_options(s, "-w");
 
     tcc_add_include_path(s, "./vendor/libtcc/include");
     tcc_add_library_path(s, "./vendor/libtcc/");

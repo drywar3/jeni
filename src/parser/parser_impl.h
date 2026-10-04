@@ -80,7 +80,7 @@ INLINE bool skip_until_one_of_impl(Parser *p, bool skip_past, int count, TokenKi
 INLINE bool expect(Parser *parser, TokenKind kind)
 {
     if (!equals(parser, kind)) {
-        diagpool_report(parser->diagnostics, DIAG_Error, current(parser).locus,
+        diagpool_report(parser->diagnostics, Severity::Error, current(parser).locus,
                         "invalid token",
                         mini_string_build(
                             parser->allocator, "expected `%s` got `%s` instead",

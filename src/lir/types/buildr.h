@@ -2,6 +2,7 @@
 
 #include "lir/types/function.h"
 #include "lir/types/type.h"
+#include "mini.cc/string_view.h"
 #include "semantics/sema.h"
 
 namespace lir
@@ -29,6 +30,7 @@ namespace lir
         }
 
         ValueId create_integer(int64 value);
+        ValueId create_cstring(mini::StringView value);
 
         usize new_local(mini::StringView name);
 
