@@ -21,9 +21,11 @@ SemanticContext semactx_init(Mini_Allocator allocator,
                              DiagnosticPool *diagnostics,
                              SemanticStorage *store)
 {
-    SemanticContext sema{.current_scope = {},
-                         .pending_workers = HashMap<sema::SymbolId, MINI_ARRAY(Worker)>(allocator),
-                         .block_save_points = SemanticContext::BlockSavePoints(allocator)};
+    SemanticContext sema{
+        .pending_workers =
+            HashMap<sema::SymbolId, MINI_ARRAY(Worker)>(allocator),
+        .current_scope = {},
+        .block_save_points = SemanticContext::BlockSavePoints(allocator)};
     sema.allocator    = allocator;
     sema.diagnostics  = diagnostics;
     sema.store        = store;
@@ -46,9 +48,11 @@ void semactx_resolve(SemanticContext *sema, Program *program)
 
         if (status == WorkerStatus::Pending && !status.is_handled) {
             for (sema::SymbolId id : mini::iterate(status.waiting_on)) {
-                sema->register_worker(id, Worker{(void*)stmt, check_statement});
+                sema->register_worker(id,
+                                      Worker{(void *)stmt, check_statement});
             }
-            // sema->register_worker(status.waiting_on[0], Worker{(void*)stmt, check_statement});
+            // sema->register_worker(status.waiting_on[0], Worker{(void*)stmt,
+            // check_statement});
         }
     }
 
@@ -57,9 +61,10 @@ void semactx_resolve(SemanticContext *sema, Program *program)
             sema::Symbol *symbol = sema->symbols().at_index_ptr(usize(id));
             if (symbol->resolve_state == sema::SymbolState::Resolved) {
                 for (usize n = 0; n < mini_array_count(workers); ++n) {
-                    Worker worker = workers[n];
+                    Worker worker       = workers[n];
                     WorkerStatus status = worker.func(sema, worker.data, true);
-                    if (status == WorkerStatus::Done || status == WorkerStatus::Failed) {
+                    if (status == WorkerStatus::Done ||
+                        status == WorkerStatus::Failed) {
                         mini_array_remove(workers, n);
                     }
                 }
@@ -89,7 +94,6 @@ constexpr sema::Type TYPES[] = {
 
 void semastore_init_builtin_types(SemanticStorage *store)
 {
-    MINI_ARRAY(sema::Type) type_store = store->types.values();
     for (usize n = 0; n < (usize)sema::type_id::_LAST_; n++) {
         store->types.add_value(TYPES[n]);
     }

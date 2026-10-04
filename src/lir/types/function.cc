@@ -12,13 +12,14 @@ lir::Function lir::function_init(lir::Buildr *b, mini::StringView name, TypePtr 
     auto allocator = b->allocator();
 
     lir::Function function {
-        .instructions = mini::Array<Instruction>(allocator),
+        .name  = name,
         .prototype    = {
             .parameters  = mini::Array<TypePtr>(allocator),
             .return_type = return_type,
         },
-        .current_local_index = 0,
         .block = b->mod->context->new_block(std::nullopt),
+        .instructions = mini::Array<Instruction>(allocator),
+        .current_local_index = 0,
     };
     return function;
 }

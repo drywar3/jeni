@@ -1,6 +1,7 @@
 #pragma once
 
 #include "parser/locus.h"
+#include "ast/stmt.h"
 
 enum ExpressionKind {
     EXPR_Identifier,
@@ -14,9 +15,12 @@ enum ExpressionKind {
     EXPR_Cast,
     EXPR_Function,
     EXPR_FunctionCall,
+    EXPR_Error,
 };
 
 struct Expression {
+    Statement base;
+
     ExpressionKind kind;
     Locus locus;
 

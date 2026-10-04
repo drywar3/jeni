@@ -8,7 +8,7 @@
 
 static bool expression_requires_terminator(ExpressionPointer expr)
 {
-    MINI_ASSERT(expr, "invalid expression");
+    if (!expr) return true;
     switch (expr->kind) {
     case EXPR_Function:
         return false;
@@ -79,6 +79,13 @@ Statement *parse_variable_declaration(Parser *p)
                   });
 
         variable.initializer    = parser_parse_expression(p);
+        if (!variable.initializer || variable.initializer->kind == EXPR_Error) {
+            variable.is_initialized = false;
+            skip_until_one_of(p, true, TOKEN_SEP_Semicolon);
+            return
+                ALLOC_STMT(p->allocator, STMT_Variable,
+                   locus_merge(begin.locus, previous(p).locus), variable);
+        }
         variable.is_initialized = true;
     }
 

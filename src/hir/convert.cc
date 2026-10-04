@@ -27,6 +27,10 @@ hir::Statement *hir::convert_statement(hir::Context *ctx,
     switch (stmt->kind) {
     case STMT_Variable: return convert_variable_stmt(ctx, stmt);
     case STMT_Block:    return convert_block(ctx, (StmtBlock*)stmt);
+    case STMT_Expr: {
+        hir::Expression *expression = convert_expression(ctx, (const ::Expression*)stmt);
+        return ctx->new_stmt(hir::Statement::Kind::Expr, expression);
+    } break;
     default: MINI_UNREACHABLE();
     }
 }

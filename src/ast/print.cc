@@ -1,7 +1,8 @@
 #include "print.h"
-#include "type.h"
-#include "statements.h"
+#include "ast/expr.h"
 #include "expressions.h"
+#include "statements.h"
+#include "type.h"
 
 static void print_indent(usize indent)
 {
@@ -49,9 +50,24 @@ static void print_string(Mini_StringView string)
 
 void print_type(const Typehint *typehint, usize indent)
 {
-    (void)typehint;
-    (void)indent;
-    MINI_UNREACHABLE();
+    if (!typehint) {
+        printf("null");
+        return;
+    }
+
+    switch (typehint->kind) {
+    case TypehintKind::TYPEHINT_Void:
+        printf("void");
+        break;
+    case TypehintKind::TYPEHINT_Integer:
+        printf("int");
+        break;
+    case TypehintKind::TYPEHINT_String:
+        printf("string");
+        break;
+    default:
+        MINI_UNREACHABLE("%d", typehint->kind);
+    }
 }
 
 void print_expr(const Expression *expr, usize indent)
@@ -129,6 +145,50 @@ void print_expr(const Expression *expr, usize indent)
         print_indent(indent);
         printf("}");
     } break;
+    case EXPR_Function: {
+        const ExprFunction *function = (const ExprFunction *)expr;
+
+        printf("{\n");
+
+        print_indent(indent + 1);
+        printf("\"kind\": \"function\",\n");
+
+        print_indent(indent + 1);
+        printf("\"return type\": ");
+        print_type(function->prototype.return_type, indent + 1);
+        printf(",\n");
+
+        print_indent(indent + 1);
+        printf("\"parameters\": [");
+
+        const usize count = mini_array_count(function->prototype.parameters);
+
+        if (count > 0)
+            printf("\n");
+
+        for (usize n = 0; n < count; n++) {
+            print_indent(indent + 2);
+
+            printf("\"name\": %.*s,\n",
+                   SVARG(function->prototype.parameters[n].name.value));
+            print_indent(indent + 2);
+            printf("\"type\":  ");
+            print_type(function->prototype.parameters[n].typehint, indent + 2);
+
+            if (n + 1 < count)
+                printf(",");
+
+            printf("\n");
+        }
+
+        if (count > 0)
+            print_indent(indent + 1);
+
+        printf("]\n");
+
+        print_indent(indent);
+        printf("}");
+    } break;
 
     default:
         MINI_UNREACHABLE();
@@ -180,4 +240,5 @@ void ast_print(const Statement *statement, usize indent)
     default:
         MINI_UNREACHABLE();
     }
+    printf("\n");
 }

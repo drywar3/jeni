@@ -129,9 +129,9 @@ std::optional<sema::SymbolId> sema::get_id_of_symbol(SemanticContext *sema,
     return std::nullopt;
 }
 
-std::optional<sema::SymbolId> sema::eagerly_get_id_of_symbol(SemanticContext *sema,
-                                                             ScopeId start,
-                                                             mini::StringView name)
+std::optional<sema::SymbolId>
+sema::eagerly_get_id_of_symbol(SemanticContext *sema, ScopeId start,
+                               mini::StringView name)
 {
     std::optional<ScopeId> current = start;
     while (current.has_value()) {

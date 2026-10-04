@@ -59,7 +59,7 @@ struct ExprUnaryOperation {
 };
 
 struct AstFunctionCallArgument {
-    bool is_positional;
+    bool is_positional = true;
     ExpressionPointer argument;
     /* some_function_name(:some_parameter_name argument) */
     Name name;
@@ -70,3 +70,5 @@ struct ExprFunctionCall {
     ExpressionPointer callee;
     MINI_ARRAY(AstFunctionCallArgument) arguments;
 };
+
+struct ExprError{ Expression base; };

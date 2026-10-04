@@ -5,12 +5,15 @@
 
 namespace lir
 {
+    enum struct ValueId {};
     struct Value {
         enum struct Kind {
             Integer,
             String,
             LocalRef,
+            GlobalRef,
             ParamRef,
+            Deref,
         };
 
         Kind kind;
@@ -19,6 +22,7 @@ namespace lir
             int64            integer;
             mini::StringView ident;
             mini::StringView string;
+            ValueId          valueid;
         };
 
         static Value Integer(int64 value)
@@ -36,15 +40,18 @@ namespace lir
             return Value{.kind = Kind::ParamRef, .index = index };
         }
 
-
         static Value GlobalRef(mini::StringView ident)
         {
-            return Value{.kind = Kind::LocalRef, .ident = ident };
+            return Value{.kind = Kind::GlobalRef, .ident = ident };
+        }
+
+        static Value Deref(ValueId value)
+        {
+            return Value{.kind = Kind::Deref, .valueid = value };
         }
 
         bool operator==(const Value &other) const;
     };
-    enum struct ValueId {};
 
     using ValueStorage = mini::Array<Value>;
 

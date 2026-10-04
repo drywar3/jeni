@@ -11,6 +11,7 @@ sema::TypeId sema::register_or_get_type(SemanticContext *sema, sema::Type type)
             sema::TypeId id = (sema::TypeId)(index);
             return id;
         }
+        index += 1;
     }
     return (sema::TypeId)sema->store->types.add_value(type);
 }

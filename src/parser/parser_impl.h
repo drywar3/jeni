@@ -53,6 +53,30 @@ INLINE bool eat_sequence_impl(Parser *parser, int count, TokenKind *kinds)
     return true;
 }
 
+
+#define skip_until_one_of(p, skip_past, ...)                            \
+    skip_until_one_of_impl(p, skip_past,                                \
+                           sizeof((TokenKind[]){__VA_ARGS__}) /         \
+                           sizeof(((TokenKind[]){__VA_ARGS__})[0]),     \
+                           (TokenKind[]){__VA_ARGS__})
+
+INLINE bool skip_until_one_of_impl(Parser *p, bool skip_past, int count, TokenKind *kinds)
+{
+    while (!parser_is_done(p)) {
+        for (usize n = 0; n < count; ++n) {
+            if (equals(p, kinds[n])) {
+                if (skip_past) {
+                    next(p);
+                    return true;
+                }
+            }
+        }
+        next(p);
+    }
+    return false;
+}
+
+
 INLINE bool expect(Parser *parser, TokenKind kind)
 {
     if (!equals(parser, kind)) {
@@ -78,3 +102,8 @@ INLINE bool try_expect(Parser *parser, TokenKind kind)
 }
 
 bool eat_name(Parser *parser, Name *name);
+
+INLINE void parser_report(Parser *p, Diagnostic diag)
+{
+    diagpool_report_diag(p->diagnostics, diag);
+}

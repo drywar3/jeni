@@ -93,3 +93,4 @@ SemanticContext semactx_init(Mini_Allocator allocator,
                              DiagnosticPool *diagnostics,
                              SemanticStorage *store);
 void semactx_resolve(SemanticContext *sema, Program *program);
+

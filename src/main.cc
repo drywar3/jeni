@@ -1,24 +1,30 @@
-#include <stdio.h>
-#include <mini.c/fs.h>
-#include <mini.cc/scope_guard.h>
-#include <mini.c/string.h>
 #include <mini.c/bulk_allocator.h>
 #include <mini.c/debug_allocator.h>
+#include <mini.c/fs.h>
+#include <mini.c/string.h>
+#include <mini.cc/scope_guard.h>
+#include <stdio.h>
 
-#include "source.h"
-#include "lir/lir.h"
 #include "ast/ast.h"
 #include "ast/print.h"
+#include "codegen/backends/c.h"
+#include "codegen/codegen.h"
 #include "hir/convert.h"
-#include "parser/lexer.h"
+#include "lir/lir.h"
 #include "parser/parser.h"
 #include "semantics/sema.h"
+#include "source.h"
 
 int main(int argc, char **argv)
 {
     if (argc < 2) {
-        printf("usage: %s <input>\n", argv[0]);
+        printf("usage: %s <input> [output]\n", argv[0]);
         return 1;
+    }
+
+    const char *output_name = "a.out";
+    if (argc > 2) {
+        output_name = argv[2];
     }
 
     Mini_BulkAllocator bka   = mini_bka_create(mini_default_allocator());
@@ -75,10 +81,14 @@ int main(int argc, char **argv)
     hir::Context hir         = hir::ctx_init(allocator, &storage);
     hir::Program hir_program = hir::program_from_raw(&hir, program);
 
-
     lir::Context context = lir::ctx_init(allocator, &storage);
-    lir::Module  mod     = lir::module_init(&context);
-
+    lir::Module mod      = lir::module_init(&context);
     lir::inflate_module(&mod, hir_program);
+
+    codegen::Context cg_context = codegen::ctx_init(
+        &mod, allocator,
+        {codegen::c_backend_entry_point, codegen::c_backend_finalize});
+    codegen::ctx_generate(&cg_context, output_name);
+
     return 0;
 }

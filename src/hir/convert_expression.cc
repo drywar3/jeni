@@ -21,7 +21,8 @@ hir::Expression *hir::convert_expression(hir::Context *ctx,
         return ctx->new_expr(hir::Expression::Kind::Identifier,
                              sema::TypeId(*ctx->types().get_id(expression->locus)),
                              hir_ident);
-    }
+    } break;
+    case EXPR_FunctionCall: return convert_function_call(ctx, (const ExprFunctionCall *)expression);
     default: MINI_UNREACHABLE();
     }
 }

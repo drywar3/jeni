@@ -2,12 +2,13 @@
 
 #include <memory>
 #include <mini.c/allocator.h>
+#include <new>
 
 template<typename T>
 static inline T *Box(Mini_Allocator allocator, T &value)
 {
     T *mem = MINI_ALLOC(allocator, T);
-    *mem   = value;
+    new (mem) T(std::move(value));
     return mem;
 }
 

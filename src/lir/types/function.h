@@ -1,7 +1,7 @@
 #pragma once
 
-#include "misc/map.h"
 #include "lir/types/type.h"
+#include "misc/map.h"
 // #include "lir/types/buildr.h"
 #include "lir/types/instruction.h"
 
@@ -12,8 +12,8 @@ namespace lir
 {
     struct Local {
         mini::StringView name;
-        usize            index;
-        bool             is_parameter;
+        usize index;
+        bool is_parameter;
         // lir::TypePtr     type;
     };
 
@@ -21,8 +21,8 @@ namespace lir
     struct Block {
         using LocalMap = HashMap<mini::StringView, Local>;
 
-        std::optional<BlockId>  parent;
-        LocalMap                locals;
+        std::optional<BlockId> parent;
+        LocalMap locals;
     };
     using BlockStorage = mini::Array<Block>;
 
@@ -32,18 +32,20 @@ namespace lir
     struct Function {
         struct Prototype {
             mini::Array<TypePtr> parameters;
-            TypePtr              return_type;
+            TypePtr return_type;
         };
 
         mini::StringView name;
-        Prototype        prototype;
-        BlockId          block;
+        Prototype prototype;
+        BlockId block;
         mini::Array<Instruction> instructions;
         usize current_local_index;
+        bool body_is_defined;
 
         Buildr buildr(Module *mod);
         void add_instruction(Instruction inst);
     };
 
-    Function function_init(lir::Buildr *b, mini::StringView name, TypePtr return_type);
+    Function function_init(lir::Buildr *b, mini::StringView name,
+                           TypePtr return_type);
 } // namespace lir

@@ -35,6 +35,7 @@ namespace hir
             mini::StringView    name;
             Function::Prototype prototype;
             hir::Statement     *body;
+            bool                body_is_defined;
         };
 
         struct Block {
@@ -48,6 +49,7 @@ namespace hir
             Variable,
             Function,
             Block,
+            Expr,
         };
 
         Kind kind;
@@ -55,6 +57,7 @@ namespace hir
             stmt::Variable variable;
             stmt::Function function;
             stmt::Block    block;
+            hir::Expression *expr;
         } as;
     };
 } // namespace hir

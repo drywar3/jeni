@@ -61,7 +61,7 @@ template <typename Key, typename Value> struct DenseMap {
     Value *find(const Key &key)
     {
         auto it = key_to_index_.find(key);
-        return (it != key_to_index_.end()) ? &values_[it->second] : nullptr;
+        return (it != nullptr) ? &values_[*it] : nullptr;
     }
 
     const Value *find(const Key &key) const
@@ -88,7 +88,10 @@ template <typename Key, typename Value> struct DenseMap {
     const Value &at_index(std::size_t index) const { return values_[index]; }
 
     Value *at_index_ptr(std::size_t index) { return &values_[index]; }
-    const Value *at_index_ptr(std::size_t index) const { return &values_[index]; }
+    const Value *at_index_ptr(std::size_t index) const
+    {
+        return &values_[index];
+    }
 
     /* --- capacity & iteration --- */
 

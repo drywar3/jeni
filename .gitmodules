@@ -1,3 +1,6 @@
 [submodule "vendor/mini.c"]
 	path = vendor/mini.c
 	url = https://github.com/drywar3/mini.c
+[submodule "vendor/libtcc"]
+	path = vendor/libtcc
+	url = https://repo.or.cz/tinycc.git

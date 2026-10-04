@@ -2,10 +2,10 @@
 
 #include <mini.c/allocator.h>
 
-#include "ast/misc.h"
 #include "hir/types/stmt.h"
 #include "semantics/sema.h"
 #include "ast/statements.h"
+#include "ast/expressions.h"
 
 namespace hir
 {
@@ -54,4 +54,5 @@ namespace hir
 
     hir::Expression *convert_expression(hir::Context *ctx, const ::Expression *expression);
     hir::Statement *convert_block(hir::Context *ctx, StmtBlock *block);
+    hir::Expression *convert_function_call(hir::Context *ctx, const ExprFunctionCall *call);
 } // namespace hir

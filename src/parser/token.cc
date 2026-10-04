@@ -18,6 +18,8 @@ const char *tokenkind_to_string(TokenKind kind)
                             [TOKEN_SEP_Rbrace]    = "}",
                             [TOKEN_SEP_Lparen]    = "(",
                             [TOKEN_SEP_Rparen]    = ")",
+                            [TOKEN_SEP_Lbracket]    = "[",
+                            [TOKEN_SEP_Rbracket]    = "]",
 
                             [TOKEN_LIT_Int] = "integer literal",
 

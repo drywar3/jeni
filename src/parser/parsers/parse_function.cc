@@ -2,6 +2,7 @@
 #include "parser/parser_impl.h"
 #include "parser/parsers/parse_function.h"
 #include "parser/parsers/parse_typehint.h"
+#include "parser/token.h"
 
 bool parse_function_parameters(Parser *p,
                                AstFunctionPrototype::Parameters parameters)
@@ -32,12 +33,19 @@ ExpressionPointer parse_function(Parser *p)
     if (!parse_function_parameters(p, function.prototype.parameters))
         MINI_UNREACHABLE("TODO");
 
+    if (try_expect(p, TOKEN_OP_Arrow)) {
+        function.prototype.return_type = parser_parse_typehint(p);
+        if (!function.prototype.return_type)
+            return nullptr;
+    }
+
     if (equals(p, TOKEN_SEP_Lbrace)) {
         function.body_is_defined = true;
         function.body            = parser_parse_statement(p);
         if (function.body == nullptr)
             return nullptr;
     } else {
+        expect(p, TOKEN_SEP_Nobody);
         function.body_is_defined = false;
         function.body            = nullptr;
     }

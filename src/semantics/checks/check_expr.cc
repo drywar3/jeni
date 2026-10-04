@@ -1,8 +1,10 @@
 #include "ast/expr.h"
+#include "mini.c/string_view.h"
 #include "semantics/impl.h"
 #include "ast/expressions.h"
-#include "semantics/checks/check_expr.h"
 #include "semantics/type/ids.h"
+#include "semantics/checks/check_expr.h"
+#include "semantics/checks/check_function_call.h"
 
 static WorkerStatus check_identifier(SemanticContext *sema,
                                      ExprIdentifier *ident);
@@ -14,7 +16,7 @@ static void check_integer(SemanticContext *sema, ExprInteger *integer)
 
 WorkerStatus sema::check_expression(SemanticContext *sema, void *data)
 {
-    auto *expr = (ExpressionPointer)data;
+    auto *expr = (Expression*)data;
     switch (expr->kind) {
     case EXPR_Integer: {
         check_integer(sema, (ExprInteger *)expr);
@@ -22,8 +24,10 @@ WorkerStatus sema::check_expression(SemanticContext *sema, void *data)
     };
     case EXPR_Identifier:
         return check_identifier(sema, (ExprIdentifier *)expr);
+    case EXPR_FunctionCall:
+        return check_function_call(sema, (ExprFunctionCall*)expr);
     default:
-        MINI_UNREACHABLE("TODO");
+        MINI_UNREACHABLE("TODO: %d\n", expr->kind);
     }
 }
 
@@ -50,6 +54,7 @@ static WorkerStatus check_identifier(SemanticContext *sema,
             sema::report(sema, diag);
             return WorkerStatus::Failed;
         }
+
         sema::link_locus_to_type(sema, locus, *symbol->as.variable.type_id);
     } else {
         /* symbol not found */

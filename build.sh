@@ -10,6 +10,18 @@ build() {
     printf "note: refreshing cache\n"
     cmake -B ./build > /dev/null
 
+    if [ "$FRESH_BUILD" = "yes" ]; then
+        make -C ./vendor/libtcc/ clean
+    fi
+
+
+    printf "note: building libtcc\n"
+    if [ ! -f "./vendor/libtcc/config.mak" ]; then
+        (cd ./vendor/libtcc && ./configure)
+    fi
+    #make -C ./vendor/libtcc/ libtcc.a
+    make -C ./vendor/libtcc/ libtcc.a libtcc1.a CFLAGS="-Wall -O2 -g -DTCC_TARGET_X86_64"
+
     printf "note: building\n"
     local build_cmd=(cmake --build ./build/ --parallel)
     if [ "$FRESH_BUILD" = "yes" ]; then

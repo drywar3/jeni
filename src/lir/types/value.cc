@@ -11,6 +11,10 @@ bool lir::Value::operator==(const Value &other) const
     case Kind::LocalRef:
     case Kind::ParamRef:
         return index == other.index;
+    case Kind::Deref:
+        return valueid == other.valueid;
+    case Kind::GlobalRef:
+        return ident == other.ident;
     default: MINI_UNREACHABLE();
     }
 }

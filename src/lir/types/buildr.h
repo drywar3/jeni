@@ -1,8 +1,8 @@
 #pragma once
 
-#include "semantics/sema.h"
-#include "lir/types/type.h"
 #include "lir/types/function.h"
+#include "lir/types/type.h"
+#include "semantics/sema.h"
 
 namespace lir
 {
@@ -10,9 +10,9 @@ namespace lir
     struct Module;
 
     struct Buildr /* intentional spelling */ {
-        Module   *mod;
+        Module *mod;
         Function *function;
-        BlockId   current_block;
+        BlockId current_block;
 
         /* create and add a parameter to the function */
         ValueId parameter(TypePtr type, mini::StringView name);
@@ -37,6 +37,9 @@ namespace lir
         ValueId create_local_ref(Local local);
         ValueId create_glob_ref(mini::StringView name);
         ValueId create_alloca(mini::StringView name, lir::TypePtr type);
-        void    create_store(ValueId dst, lir::TypePtr type, ValueId value);
+        void create_store(ValueId dst, lir::TypePtr type, ValueId value);
+        ValueId create_deref(ValueId value);
+        ValueId create_temporary(lir::TypePtr type);
+        ValueId create_call(lir::TypePtr type, ValueId callee, mini::Array<ValueId> args);
     };
 } // namespace lir

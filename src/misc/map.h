@@ -4,11 +4,13 @@
 #include <cstdint>          // std::uintptr_t, std::uint64_t
 #include <cstring>          // std::memset
 #include <initializer_list> // std::initializer_list
-#include <new>              // placement new
 #include <utility>          // std::move, std::forward, std::swap, std::pair
 
 #include <mini.c/allocator.h>
 #include <mini.c/default_allocator.h>
+#include <mini.c/map_defs.h>
+#include <mini.c/mini_def.h>
+#include <mini.cc/string_view.h>
 
 // ============================================================================
 // General Purpose FNV-1a Hash Functor Template
@@ -47,6 +49,49 @@ template <> struct Hash<const char *> {
             hash *= 1099511628211ULL;
         }
         return hash;
+    }
+};
+
+/*
+ * hash helper function combining field hashes using bit-mixing
+ */
+inline void hash_combine(std::size_t &seed, std::size_t value)
+{
+    seed ^= value + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+}
+
+/* todo: add this to mini.c */
+static inline usize mini_strview_hash(const Mini_StringView *s)
+{
+    usize hash = 0;
+    for (usize n = 0; n < s->length; n++) {
+        hash_combine(hash, mini_char_hash(&s->data[n]));
+    }
+    return hash;
+}
+
+/*
+ * specialization of [std::hash] for [Mini_StringView]
+ */
+template <> struct Hash<Mini_StringView> {
+    std::size_t operator()(const Mini_StringView &s) const noexcept
+    {
+        return mini_strview_hash(&s);
+    }
+};
+
+inline bool operator==(const Mini_StringView &a, const Mini_StringView &b)
+{
+    return mini_sv_equals(a, b);
+}
+
+/*
+ * specialization of [std::hash] for [mini::StringView]
+ */
+template <> struct Hash<mini::StringView> {
+    std::size_t operator()(const mini::StringView &s) const noexcept
+    {
+        return mini_strview_hash(&s.base());
     }
 };
 

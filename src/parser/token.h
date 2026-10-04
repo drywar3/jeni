@@ -31,6 +31,7 @@ typedef enum {
     TOKEN_OP_Equals,
     TOKEN_OP_NotEquals,
     TOKEN_OP_Bang,
+    TOKEN_OP_Arrow,
 
     TOKEN_SEP_Semicolon,
     TOKEN_SEP_Colon,
@@ -41,6 +42,8 @@ typedef enum {
     TOKEN_SEP_Rbracket,
     TOKEN_SEP_Lparen,
     TOKEN_SEP_Rparen,
+    // used to indicate that a function has no body
+    TOKEN_SEP_Nobody, // ---
 
     TOKEN_LIT_Int,
     TOKEN_LIT_String,

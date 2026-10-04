@@ -3,6 +3,10 @@
 #include "parser/parser_impl.h"
 #include "parser/parsers/parse_function.h"
 
+static Expression ERROR_EXPR{
+    .kind = EXPR_Error,
+};
+
 ExpressionPointer parse_primary(Parser *p)
 {
     if (equals(p, TOKEN_LIT_Int)) {
@@ -29,7 +33,9 @@ ExpressionPointer parse_primary(Parser *p)
                           ((ExprIdentifier){.value = value}));
     }
 
-    MINI_UNREACHABLE("[%s]", tokenkind_to_string(p->current.kind));
+    parser_report(p, diag_create(DIAG_Error, current(p).locus,
+                                 "expected primary expression", "here"));
+    return &ERROR_EXPR;
 }
 
 ExpressionPointer parse_postfix(Parser *p)
@@ -43,7 +49,7 @@ ExpressionPointer parse_postfix(Parser *p)
                 MINI_ARRAY_INIT(p->allocator, AstFunctionCallArgument);
 
             while (!equals(p, TOKEN_SEP_Rparen)) {
-                AstFunctionCallArgument argument;
+                AstFunctionCallArgument argument{};
                 if (try_expect(p, TOKEN_SEP_Colon)) {
                     argument.is_positional = false;
                     if (!eat_name(p, &argument.name)) {

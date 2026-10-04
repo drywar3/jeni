@@ -32,6 +32,7 @@ typedef Statement *StatementPointer;
         statement;                                                             \
     })
 
+
 static inline void statement_ctor(StatementPointer _this, StatementKind kind,
                                   Locus locus)
 {

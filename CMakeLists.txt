@@ -13,14 +13,19 @@ add_executable(JeniCompiler ${SOURCES})
 target_include_directories(JeniCompiler PRIVATE
   ${CMAKE_SOURCE_DIR}/src
   ${CMAKE_SOURCE_DIR}/vendor/mini.c/include
+  ${CMAKE_SOURCE_DIR}/vendor/libtcc/
+)
+target_link_directories(JeniCompiler PRIVATE
+  ${CMAKE_SOURCE_DIR}/vendor/libtcc/
 )
 target_compile_options(JeniCompiler PRIVATE
   -Wno-c99-designator
   -Wno-c++20-extensions
   -ftime-trace
+  -Wall
   #  -fsanitize=address -fno-omit-frame-pointer -g
 )
-target_link_libraries(JeniCompiler PRIVATE mini.cc)
+target_link_libraries(JeniCompiler PRIVATE mini.cc tcc)
 set_target_properties(JeniCompiler PROPERTIES
   RUNTIME_OUTPUT_NAME "jeni"
 )

@@ -17,8 +17,11 @@ static const TokenSpec KEYWORDS[] = {
 static const usize KEYWORD_COUNT = sizeof(KEYWORDS) / sizeof(KEYWORDS[0]);
 
 static const TokenSpec PUNCTUATIONS[] = {
+    { "---", TOKEN_SEP_Nobody}, 
+
     {"++", TOKEN_OP_Inc},    {"--", TOKEN_OP_Dec},
     {"==", TOKEN_OP_Equals}, {"!=", TOKEN_OP_NotEquals},
+    {"->", TOKEN_OP_Arrow},
 
     {"+", TOKEN_OP_Add},     {"-", TOKEN_OP_Minus},
     {"*", TOKEN_OP_Star},    {"/", TOKEN_OP_Div},
@@ -205,7 +208,7 @@ bool lexer_next_token(Lexer *lexer, Token *token, Diagnostic *diagnostic)
 
         /* skip single line comments. */
         if (is_prefix(lexer, "//")) {
-            while (current(lexer) != '\n' && current(lexer) != '\r') {
+            while (!lexer_is_done(lexer) && (current(lexer) != '\n' && current(lexer) != '\r')) {
                 next(lexer);
             }
             continue;
@@ -225,6 +228,7 @@ bool lexer_next_token(Lexer *lexer, Token *token, Diagnostic *diagnostic)
                 }
             }
             MINI_ASSERT(count == 0, "unbalanced comment");
+            continue;
         }
 
         break;
