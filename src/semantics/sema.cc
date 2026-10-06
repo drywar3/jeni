@@ -24,7 +24,7 @@ SemanticContext semactx_init(Mini_Allocator allocator,
 {
     SemanticContext sema{
         .pending_workers =
-            HashMap<sema::SymbolId, MINI_ARRAY(Worker)>(allocator),
+        HashMap<sema::SymbolId, mini::Array<Worker>>(allocator),
         .current_scope = {},
         .block_save_points = SemanticContext::BlockSavePoints(allocator)};
     sema.allocator    = allocator;
@@ -47,34 +47,32 @@ void semactx_resolve(SemanticContext *sema, Program *program)
         StatementPointer stmt = program->ast[n];
         WorkerStatus status   = check_statement(sema, (void *)stmt);
 
-        if (status == WorkerStatus::Pending && !status.is_handled) {
+        if (status == WorkerStatus::Pending) {
             for (sema::SymbolId id : mini::iterate(status.waiting_on)) {
                 sema->register_worker(id,
-                                      Worker{(void *)stmt, check_statement});
+                                      Worker(stmt, check_statement, sema->current_scope));
             }
-            // sema->register_worker(status.waiting_on[0], Worker{(void*)stmt,
-            // check_statement});
         }
     }
 
     while (!sema->pending_workers.empty()) {
         for (auto [id, workers, x] : sema->pending_workers) {
             sema::Symbol *symbol = sema->symbols().at_index_ptr(usize(id));
-            if (symbol->resolve_state == sema::SymbolState::Resolved) {
-                for (usize n = 0; n < mini_array_count(workers); ++n) {
+            if (symbol->is_state(sema::SymbolState::Resolved)) {
+                for (usize n = 0; n < workers.count(); ++n) {
                     Worker worker       = workers[n];
-                    WorkerStatus status = worker.func(sema, worker.data, true);
+                    WorkerStatus status = worker.resume(sema);
                     if (status == WorkerStatus::Done ||
                         status == WorkerStatus::Failed) {
-                        mini_array_remove(workers, n);
+                        workers.remove(n);
                     }
                 }
-            } else if (symbol->resolve_state == sema::SymbolState::Failed) {
+            } else if (symbol->is_state(sema::SymbolState::Failed)) {
                 sema->pending_workers.erase(id);
                 continue;
             }
 
-            if (mini_array_count(workers) == 0) {
+            if (workers.count() == 0) {
                 sema->pending_workers.erase(id);
             }
         }
@@ -102,6 +100,7 @@ constexpr sema::Type TYPES[] = {
     [(int)String] = sema::Type(sema::TypeKind::String),
     [(int)Char]   = sema::Type(sema::TypeKind::Char),
     [(int)Bool]   = sema::Type(sema::TypeKind::Bool),
+    [(int)Int64]   = sema::Type(sema::TypeKind::Int64),
 };
 
 void semastore_init_builtin_types(SemanticStorage *store)

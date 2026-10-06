@@ -5,6 +5,7 @@
 #include "semantics/entities/type.h"
 #include "semantics/entities/scope.h"
 #include "semantics/entities/symbol.h"
+#include "semantics/entities/symbol_proxy.h"
 
 namespace sema
 {
@@ -16,19 +17,25 @@ namespace sema
     bool symbol_is_defined(SemanticContext *sema, ScopeId scope,
                            mini::StringView name);
 
-    Symbol *find_symbol_in(SemanticContext *sema, ScopeId scope,
+    SymbolProxy get_symbol_by_id(const SemanticContext *sema, sema::SymbolId symbol_id);
+    SymbolProxy get_symbol_by_id(SemanticContext *sema, sema::SymbolId symbol_id);
+
+    Opt<SymbolProxy> find_symbol_in(SemanticContext *sema, ScopeId scope,
                            mini::StringView name);
-    const Symbol *find_symbol_in(const SemanticContext *sema, ScopeId scope,
+    Opt<SymbolProxy> find_symbol_in(const SemanticContext *sema, ScopeId scope,
                                  mini::StringView name);
 
-    Symbol *eagerly_find_symbol_in(SemanticContext *sema, ScopeId scope,
+    Opt<SymbolProxy> eagerly_find_symbol_in(SemanticContext *sema, ScopeId scope,
                                    mini::StringView name);
-    const Symbol *eagerly_find_symbol_in(const SemanticContext *sema,
+    Opt<SymbolProxy> eagerly_find_symbol_in(const SemanticContext *sema,
                                          ScopeId scope, mini::StringView name);
 
     SymbolId register_symbol_in(SemanticContext *sema, ScopeId scope_id,
                                 mini::StringView name, Locus locus,
                                 Symbol symbol);
+
+    Opt<sema::SymbolProxy> lookup_symbol(SemanticContext *sema, ScopeId scope_id, mini::StringView name);
+    Opt<sema::SymbolProxy> eagerly_lookup_symbol(SemanticContext *sema, ScopeId scope_id, mini::StringView name);
 
     std::optional<SymbolId> get_id_of_symbol(SemanticContext *sema, ScopeId scope_id, mini::StringView name);
     std::optional<SymbolId> eagerly_get_id_of_symbol(SemanticContext *sema, ScopeId scope_id, mini::StringView name);

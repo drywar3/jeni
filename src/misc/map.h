@@ -4,6 +4,8 @@
 #include <cstdint>          // std::uintptr_t, std::uint64_t
 #include <cstring>          // std::memset
 #include <initializer_list> // std::initializer_list
+#include <new>              // placement new
+#include <type_traits>      // std::conditional
 #include <utility>          // std::move, std::forward, std::swap, std::pair
 
 #include <mini.c/allocator.h>
@@ -52,31 +54,34 @@ template <> struct Hash<const char *> {
     }
 };
 
-/*
- * hash helper function combining field hashes using bit-mixing
- */
+/* hash helper function combining field hashes using bit-mixing */
 inline void hash_combine(std::size_t &seed, std::size_t value)
 {
     seed ^= value + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 }
 
-/* todo: add this to mini.c */
 static inline usize mini_strview_hash(const Mini_StringView *s)
 {
-    usize hash = 0;
-    for (usize n = 0; n < s->length; n++) {
-        hash_combine(hash, mini_char_hash(&s->data[n]));
+    if (!s || !s->data) return 0;
+    std::size_t hash = 14695981039346656037ULL;
+    for (std::size_t i = 0; i < s->length; ++i) {
+        hash ^= static_cast<unsigned char>(s->data[i]);
+        hash *= 1099511628211ULL;
     }
     return hash;
 }
 
-/*
- * specialization of [std::hash] for [Mini_StringView]
- */
 template <> struct Hash<Mini_StringView> {
     std::size_t operator()(const Mini_StringView &s) const noexcept
     {
         return mini_strview_hash(&s);
+    }
+};
+
+template <> struct std::hash<mini::StringView> {
+    std::size_t operator()(const mini::StringView &s) const noexcept
+    {
+        return mini_strview_hash(&s.base());
     }
 };
 
@@ -85,9 +90,6 @@ inline bool operator==(const Mini_StringView &a, const Mini_StringView &b)
     return mini_sv_equals(a, b);
 }
 
-/*
- * specialization of [std::hash] for [mini::StringView]
- */
 template <> struct Hash<mini::StringView> {
     std::size_t operator()(const mini::StringView &s) const noexcept
     {
@@ -114,7 +116,6 @@ class HashMap {
         }
     };
 
-    // Generic Iterator Template for Const/Non-Const Support
     template <bool IsConst> class IteratorImpl {
       private:
         using MapPtr = typename std::conditional<IsConst, const HashMap *,
@@ -147,6 +148,14 @@ class HashMap {
             }
         }
 
+        // Allow implicit conversion from non-const Iterator to ConstIterator
+        template <bool OtherIsConst,
+                  typename = std::enable_if_t<IsConst && !OtherIsConst>>
+        IteratorImpl(const IteratorImpl<OtherIsConst> &other)
+            : map_(other.map_), bucket_(other.bucket_), node_(other.node_)
+        {
+        }
+
         NodeRef operator*() const { return *node_; }
         NodePtr operator->() const { return node_; }
 
@@ -161,16 +170,20 @@ class HashMap {
             return *this;
         }
 
-        bool operator==(const IteratorImpl &other) const
+        template <bool OtherIsConst>
+        bool operator==(const IteratorImpl<OtherIsConst> &other) const
         {
             return node_ == other.node_ && bucket_ == other.bucket_ &&
                    map_ == other.map_;
         }
 
-        bool operator!=(const IteratorImpl &other) const
+        template <bool OtherIsConst>
+        bool operator!=(const IteratorImpl<OtherIsConst> &other) const
         {
             return !(*this == other);
         }
+
+        friend class IteratorImpl<true>;
     };
 
     using Iterator      = IteratorImpl<false>;
@@ -236,7 +249,6 @@ class HashMap {
         }
     }
 
-    // Copy Semantics
     HashMap(const HashMap &other)
         : capacity_(other.capacity_ < 4 ? 4 : other.capacity_), size_(0),
           max_load_factor_(other.max_load_factor_), hasher_(other.hasher_),
@@ -264,7 +276,6 @@ class HashMap {
         return *this;
     }
 
-    // Move Semantics
     HashMap(HashMap &&other) noexcept
         : buckets_(other.buckets_), capacity_(other.capacity_),
           size_(other.size_), max_load_factor_(other.max_load_factor_),
@@ -307,7 +318,6 @@ class HashMap {
         std::swap(allocator_, other.allocator_);
     }
 
-    // Lookup & Access
     Value *find(const Key &key)
     {
         if (capacity_ == 0 || !buckets_)
@@ -342,12 +352,9 @@ class HashMap {
 
     bool contains(const Key &key) const { return find(key) != nullptr; }
 
-    // Optimized Single-Pass operator[]
     Value &operator[](const Key &key)
     {
-        if (capacity_ == 0 || !buckets_)
-            rehash(16);
-
+        check_and_rehash();
         std::size_t idx = get_bucket_index(key, capacity_);
         Node *current   = buckets_[idx];
 
@@ -357,9 +364,6 @@ class HashMap {
             }
             current = current->next;
         }
-
-        check_and_rehash();
-        idx = get_bucket_index(key, capacity_);
 
         Node *new_node_mem = MINI_ALLOC(allocator_, Node);
         Node *new_node = new (new_node_mem) Node(key, Value(), buckets_[idx]);
@@ -370,9 +374,7 @@ class HashMap {
 
     Value &operator[](Key &&key)
     {
-        if (capacity_ == 0 || !buckets_)
-            rehash(16);
-
+        check_and_rehash();
         std::size_t idx = get_bucket_index(key, capacity_);
         Node *current   = buckets_[idx];
 
@@ -383,9 +385,6 @@ class HashMap {
             current = current->next;
         }
 
-        check_and_rehash();
-        idx = get_bucket_index(key, capacity_);
-
         Node *new_node_mem = MINI_ALLOC(allocator_, Node);
         Node *new_node =
             new (new_node_mem) Node(std::move(key), Value(), buckets_[idx]);
@@ -394,12 +393,9 @@ class HashMap {
         return new_node->value;
     }
 
-    // Insertion & Modification
     template <typename K, typename V> bool emplace(K &&key, V &&value)
     {
-        if (capacity_ == 0 || !buckets_)
-            rehash(16);
-
+        check_and_rehash();
         std::size_t idx = get_bucket_index(key, capacity_);
         Node *current   = buckets_[idx];
 
@@ -410,9 +406,6 @@ class HashMap {
             }
             current = current->next;
         }
-
-        check_and_rehash();
-        idx = get_bucket_index(key, capacity_);
 
         Node *new_node_mem = MINI_ALLOC(allocator_, Node);
         Node *new_node     = new (new_node_mem)

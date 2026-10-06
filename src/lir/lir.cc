@@ -43,8 +43,8 @@ static lir::Global lower_glob_variable(lir::Buildr *builder,
     };
 }
 
-static lir::Global lower_glob_function(lir::Buildr *b,
-                                       const hir::Statement *stmt)
+lir::Global lir::lower_glob_function(lir::Buildr *b,
+                                     const hir::Statement *stmt)
 {
     const hir::stmt::Function &function = stmt->as.function;
 

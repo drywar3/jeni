@@ -258,7 +258,7 @@ bool lexer_next_token(Lexer *lexer, Token *token, Diagnostic *diagnostic)
 
     /* lex an identifier or keyword */
     if (codepoint_isalpha(current(lexer))) {
-        while (!lexer_is_done(lexer) && codepoint_isalpha(current(lexer))) {
+        while (!lexer_is_done(lexer) && (codepoint_isalpha(current(lexer)) || codepoint_isdigit(current(lexer), 10))) {
             next(lexer);
         }
         usize length = lexer->offset - lexer->prev_offset;
@@ -284,9 +284,9 @@ bool lexer_next_token(Lexer *lexer, Token *token, Diagnostic *diagnostic)
      */
     if (codepoint_isdigit(current(lexer), 10)) {
         int continue_base = 10;
-        if (current(lexer) == '0') {
-            MINI_UNREACHABLE("TODO");
-        }
+        // if (current(lexer) == '0') {
+        //     MINI_UNREACHABLE("TODO");
+        // }
 
         /* lex decimal part */
         while (!lexer_is_done(lexer) &&

@@ -1,7 +1,29 @@
-
 main :: func () -> int {
-     putchar (72);
-     putchar (c"Hello World");
+     puts        :: func (b : *const char) ---
+     printf      :: func (b : *const char, ...) -> int ---
+     putchar     :: func (c : int) ---
+     atoi        :: func (d: *const char) -> int ---
+
+     InitWindow   :: func (a : int, b: int, c : *const char) ---
+     LoadFileText :: func (file_path: *const char) -> *char ---
+     SetTraceLogLevel  :: func (x : int) ---
+
+     puts(c"Hello World");
+     x := atoi(c"720100000");
+     printf(c"x = %d\n", x);
+
+     SetTraceLogLevel(LOG_NONE);
+     printf(c"----------------------------------------------------\n");
+     data := LoadFileText(c"./tests/02_hello_world.jeni");
+     puts(data);
+     printf(c"----------------------------------------------------\n");
 }
 
-putchar :: func (x : int) ---
+LOG_ALL     :: 0;
+LOG_TRACE   :: 1;
+LOG_DEBUG   :: 2;
+LOG_INFO    :: 3;
+LOG_WARNING :: 4;
+LOG_ERROR   :: 5;
+LOG_FATAL   :: 6;
+LOG_NONE    :: 7;

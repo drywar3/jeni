@@ -27,9 +27,10 @@ typedef struct TypeArray {
 typedef struct TypeInteger {
     Typehint base;
     enum Kind {
-        AST_TYPE_INT_Int,
-        AST_TYPE_INT_Uint,
-        AST_TYPE_INT_Usize,
-        AST_TYPE_INT_Isize,
+        Int,
+        Uint,
+        Usize,
+        Isize,
+        Int64,
     } kind;
 } TypeInteger;

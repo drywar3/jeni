@@ -21,6 +21,11 @@ CoerceResult check_type_coercesion(SemanticContext *sema,
         return CoerceResult::Ok;
     }
 
+    if (target.kind.is_signed_integer() && source.kind.is_signed_integer()) {
+        bool can_fit = target.kind >= source.kind;
+        if (can_fit) return CoerceResult::Ok;
+    }
+
     if ((target.kind.is_unsigned_integer() &&
          source.kind.is_signed_integer()) ||
         (target.kind.is_signed_integer() &&

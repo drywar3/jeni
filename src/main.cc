@@ -87,7 +87,8 @@ int main(int argc, char **argv)
     codegen::Context cg_context = codegen::ctx_init(
         &mod, allocator,
         {codegen::c_backend_entry_point, codegen::c_backend_finalize});
-    codegen::ctx_generate(&cg_context, output_name);
+    if (!codegen::ctx_generate(&cg_context, output_name))
+        return 1;
 
     return 0;
 }

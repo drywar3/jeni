@@ -17,6 +17,7 @@ sema::SymbolId sema::register_symbol_in(SemanticContext *sema, ScopeId scope_id,
                                         Symbol symbol)
 {
     Scope &scope = sema->store->scopes.at_index((usize)scope_id);
+    MINI_ASSERT(!sema::scope_has_symbol(&scope, name.base()), "scope already contains symbol: %.*s", SVARG(name.base()));
     SymbolId symbol_id{sema->store->symbols.insert(locus, symbol)};
     scope_put(&scope, name.base(), symbol_id);
     return symbol_id;
@@ -27,16 +28,16 @@ void sema::report(SemanticContext *sema, Diagnostic diagnostic)
     diagpool_report_diag(sema->diagnostics, diagnostic);
 }
 
-sema::Symbol *sema::find_symbol_in(SemanticContext *sema, ScopeId scope_id,
-                                   mini::StringView name)
+Opt<sema::SymbolProxy> sema::find_symbol_in(SemanticContext *sema, ScopeId scope_id,
+                                            mini::StringView name)
 {
     Scope &scope = sema->store->scopes.at_index((usize)scope_id);
     if (!scope_has_symbol(&scope, name.base())) {
-        return nullptr;
+        return std::nullopt;
     }
 
     SymbolId symbol_id = *scope_get_symbol(&scope, name.base());
-    return &sema->store->symbols.at_index((usize)symbol_id);
+    return sema::SymbolProxy(sema->store, symbol_id);
 }
 
 const sema::Symbol *find_symbol_in(const SemanticContext *sema,
@@ -86,35 +87,35 @@ void sema::link_locus_to_scope(SemanticContext *sema, Locus locus, ScopeId id)
     sema->store->scopes.link(locus, (usize)id);
 }
 
-sema::Symbol *sema::eagerly_find_symbol_in(SemanticContext *sema, ScopeId start,
-                                           mini::StringView name)
+Opt<sema::SymbolProxy> sema::eagerly_find_symbol_in(SemanticContext *sema, ScopeId start,
+                                                    mini::StringView name)
 {
     std::optional<ScopeId> current = start;
     while (current.has_value()) {
         sema::Scope &scope = sema->scopes().at_index(usize(*current));
         if (scope_has_symbol(&scope, name.base())) {
             const auto symbol_id = scope_get_symbol(&scope, name.base());
-            return sema->symbols().at_index_ptr(usize(*symbol_id));
+            return sema::SymbolProxy(sema->store, *symbol_id);
         }
         current = scope.parent;
     }
-    return nullptr;
+    return std::nullopt;
 }
 
-const sema::Symbol *sema::eagerly_find_symbol_in(const SemanticContext *sema,
-                                                 ScopeId start,
-                                                 mini::StringView name)
+Opt<sema::SymbolProxy> sema::eagerly_find_symbol_in(const SemanticContext *sema,
+                                                    ScopeId start,
+                                                    mini::StringView name)
 {
     std::optional<ScopeId> current = start;
     while (current.has_value()) {
         const sema::Scope &scope = sema->scopes().at_index((usize)*current);
         if (scope_has_symbol(&scope, name.base())) {
             const auto symbol_id = scope_get_symbol(&scope, name.base());
-            return sema->symbols().at_index_ptr(usize(*symbol_id));
+            return sema::SymbolProxy(sema->store, *symbol_id);
         }
         current = scope.parent;
     }
-    return nullptr;
+    return std::nullopt;
 }
 
 std::optional<sema::SymbolId> sema::get_id_of_symbol(SemanticContext *sema,
@@ -154,4 +155,36 @@ sema::SymbolId sema::get_symbol_at_locus(SemanticContext *sema, Locus locus)
 void sema::link_locus_to_symbol(SemanticContext *sema, Locus locus, SymbolId id)
 {
     sema->store->symbols.link(locus, (usize)id);
+}
+
+Opt<sema::SymbolProxy> sema::lookup_symbol(SemanticContext *sema, ScopeId scope_id, mini::StringView name)
+{
+    sema::Scope &scope = sema->scopes().at_index(usize(scope_id));
+    if (!sema::scope_has_symbol(&scope, name.base()))
+        return std::nullopt;
+
+    sema::SymbolId id = *sema::scope_get_symbol(&scope, name);
+    return sema::SymbolProxy(sema->store, id);
+}
+
+Opt<sema::SymbolProxy> sema::eagerly_lookup_symbol(SemanticContext *sema, ScopeId scope_id, mini::StringView name)
+{
+    Opt<sema::ScopeId> current = scope_id;
+    while (current.has_value()) {
+        if (auto sym_opt = sema::lookup_symbol(sema, *current, name); sym_opt.has_value())
+            return sym_opt;
+        Scope &scope = sema->scopes().at_index(usize(*current));
+        current = scope.parent;
+    }
+    return std::nullopt;
+}
+
+sema::SymbolProxy sema::get_symbol_by_id(const SemanticContext *sema, sema::SymbolId symbol_id)
+{
+    return sema::SymbolProxy(sema->store, symbol_id);
+}
+
+sema::SymbolProxy sema::get_symbol_by_id(SemanticContext *sema, sema::SymbolId symbol_id)
+{
+    return sema::SymbolProxy(sema->store, symbol_id);
 }

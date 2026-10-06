@@ -99,19 +99,19 @@ static void emit_global_declarations(CBackend *bk)
 static void emit_global_init_function(CBackend *bk)
 {
     const auto &mod          = *bk->context->mod;
-    bool has_dynamic_globals = false;
+    //bool has_dynamic_globals = false;
 
     for (const auto &global : mod.globals.iter()) {
         if (global.kind == lir::Global::Kind::Variable) {
             if (!is_constant_value(&mod, global.variable.initializer)) {
-                has_dynamic_globals = true;
+                //has_dynamic_globals = true;
                 break;
             }
         }
     }
 
-    if (!has_dynamic_globals)
-        return;
+    // if (!has_dynamic_globals)
+    //     return;
 
     writef(bk, "void __jeni_global_init(void);\n");
 
@@ -179,6 +179,9 @@ void write_type(Mini_String *out, lir::TypePtr type)
     case lir::Type::Kind::Int32:
         mini_string_append_string(out, "int32_t");
         break;
+    case lir::Type::Kind::Int64:
+        mini_string_append_string(out, "int64_t");
+        break;
     case lir::Type::Kind::String:
         mini_string_append_string(out, "char *");
         break;
@@ -192,6 +195,7 @@ void write_type(Mini_String *out, lir::TypePtr type)
         write_type(out, type->pointer.inner);
         mini_string_append_string(out, "*");
         break;
+    case lir::Type::Kind::Function:
     default:
         MINI_UNREACHABLE("%d", type->kind);
     }
@@ -271,6 +275,8 @@ void emit_function_definition(CBackend *bk,
 
     if (function->body_is_defined) {
         writec(bk, " {\n");
+        if (function->name == "main")
+            writec(bk, INDENT"__jeni_global_init();\n");
         emit_stack_slots(bk, &bk->code, function);
 
         for (const auto &inst : function->instructions.iter()) {
@@ -363,6 +369,9 @@ bool codegen::c_backend_finalize(Mini_String blob, const char *output_name)
 
     tcc_add_include_path(s, "/usr/include");
     tcc_add_include_path(s, "/usr/local/include");
+
+    tcc_add_library(s, "raylib");
+    tcc_add_library(s, "m");
 
     if (tcc_compile_string(s, blob) < 0) {
         fprintf(stderr, "error: tcc compilation failed\n");

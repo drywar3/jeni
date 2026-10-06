@@ -19,7 +19,7 @@ struct WorkerStatus {
     operator V() const { return kind; }
 
     MINI_ARRAY(sema::SymbolId) waiting_on;
-    bool is_handled = false;
+    Opt<sema::ScopeId> working_scope;
 
     ~WorkerStatus() {
         mini_array_destroy(waiting_on);
@@ -64,8 +64,8 @@ struct WorkerStatus {
         return *this;
     }
 
-    void handled(bool value) {
-        is_handled = value;
+    void at_scope(sema::ScopeId scope) {
+        working_scope = scope;
     }
 
     bool is_failed() const {
@@ -76,6 +76,11 @@ struct WorkerStatus {
 typedef WorkerStatus (*WorkerFunc)(SemanticContext *ctx, void *data, bool is_resumption);
 
 struct Worker {
-    void *data;
-    WorkerFunc func;
+    void         *data;
+    WorkerFunc    func;
+    sema::ScopeId scope_id;
+
+    Worker(void *data, WorkerFunc func, sema::ScopeId current_scope);
+
+    WorkerStatus resume(SemanticContext *sema);
 };

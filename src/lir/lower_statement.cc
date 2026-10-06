@@ -1,5 +1,6 @@
 #include "lir/lir.h"
 
+
 static void lower_block(lir::Buildr *b, const hir::Statement *stmt);
 static void lower_variable(lir::Buildr *b, const hir::Statement *stmt);
 
@@ -12,6 +13,9 @@ void lir::lower_statement(lir::Buildr *b, const hir::Statement *stmt)
         return lower_variable(b, stmt);
     case hir::Statement::Kind::Expr:
         lower_expression(b, stmt->as.expr);
+        return;
+    case hir::Statement::Kind::Function:
+        b->add_global(lower_glob_function(b, stmt));
         return;
     default:
         MINI_UNREACHABLE();

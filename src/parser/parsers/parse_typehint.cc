@@ -6,10 +6,11 @@
 #include <utility>
 
 constexpr std::initializer_list<std::pair<const char *, int>> TYPES = {
-    {"int", TypeInteger::AST_TYPE_INT_Int},
-    {"uint", TypeInteger::AST_TYPE_INT_Uint},
-    {"isize", TypeInteger::AST_TYPE_INT_Isize},
-    {"usize", TypeInteger::AST_TYPE_INT_Usize},
+    {"int", TypeInteger::Int},
+    {"uint", TypeInteger::Uint},
+    {"isize", TypeInteger::Isize},
+    {"usize", TypeInteger::Usize},
+    {"int64", TypeInteger::Int64},
 };
 
 /* typehint = ["const"] type_spec ;

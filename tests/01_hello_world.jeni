@@ -1,6 +1,7 @@
 
+
 /* Hello World */
-main :: func () -> int {
+main :: func (argc : int) -> int {
     putchar(72);
     putchar(69);
     putchar(76); putchar(76);
@@ -14,7 +15,9 @@ main :: func () -> int {
     putchar(68);
     putchar(33);
     putchar(10);
+
+    printf(c"Hello World", argc);
 }
 
 putchar :: func (c: int) ---
-//printf  :: func (fmt: *const char) ---
+printf  :: func (fmt: *const char, ...) ---

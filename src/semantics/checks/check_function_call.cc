@@ -3,6 +3,7 @@
 #include "semantics/checks/check_expr.h"
 #include "semantics/entities/type.h"
 #include "semantics/impl.h"
+#include "semantics/type/ids.h"
 #include "semantics/worker.h"
 #include "semantics/type/coercer.h"
 
@@ -79,16 +80,18 @@ WorkerStatus sema::check_function_call(SemanticContext *sema,
     Expression *callee = call->callee;
     auto &arguments    = call->arguments;
 
-
     WorkerStatus status = WorkerStatus::Done;
-    if (auto s = sema::check_expression(sema, callee);
-        s == WorkerStatus::Pending)
-        return s;
-    else
-        status = s;
+
+        WorkerStatus callee_status = sema::check_expression(sema, callee);
+    if (callee_status == WorkerStatus::Pending) {
+        return callee_status;
+    } else if (callee_status == WorkerStatus::Failed) {
+        sema::link_locus_to_type(sema, call->base.locus, sema::type_id::Error);
+        return callee_status;
+    }
 
     sema::Type &callee_type = *sema->types().find(callee->locus);
-    if (callee_type.kind != sema::TypeKind::Function && status != WorkerStatus::Failed)  {
+    if (callee_type.kind != sema::TypeKind::Function) {
         sema::report(
             sema,
             diag_create(Severity::Error, callee->locus, "invalid function call",
@@ -96,39 +99,48 @@ WorkerStatus sema::check_function_call(SemanticContext *sema,
                                           "type `%s` is not callable",
                                           callee_type.display(sema->allocator,
                                                               sema->types()))));
-        status = WorkerStatus::Failed;
+        sema::link_locus_to_type(sema, call->base.locus, sema::type_id::Error);
+        return WorkerStatus::Failed;
     }
 
     sema::link_locus_to_type(sema, call->base.locus, callee_type.function.return_type);
-    sema::SymbolId callee_id = sema::SymbolId(*sema->symbols().get_id(callee->locus));
+
+    auto callee_sym_id_opt = sema->symbols().get_id(callee->locus);
+    if (!callee_sym_id_opt.has_value()) {
+        return WorkerStatus::Failed;
+    }
+
+    sema::SymbolId callee_id = sema::SymbolId(*callee_sym_id_opt);
     sema::FunctionCallSchema schema = *sema->get_call_schema(callee_id);
 
-    usize  argument_count = arguments.count();
-
-    if (!ensure_argument_count_is_sufficient(sema, argument_count, schema, call->base.locus))
+    usize argument_count = arguments.count();
+    if (!ensure_argument_count_is_sufficient(sema, argument_count, schema, call->base.locus)) {
         status = WorkerStatus::Failed;
+    }
 
     for (usize index = 0; index < arguments.count(); ++index) {
         const auto &arg = arguments[index];
         Expression *value = arg.argument;
 
-        if (auto s = sema::check_expression(sema, value);
-            s != WorkerStatus::Done) {
-            if (s == WorkerStatus::Pending)
-                return s;
-            status = s;
+        WorkerStatus arg_status = sema::check_expression(sema, value);
+        if (arg_status == WorkerStatus::Pending) {
+            return arg_status; // YIELD IMMEDIATELY without polluting status flags
+        } if (arg_status == WorkerStatus::Failed) {
+            status = WorkerStatus::Failed;
+            continue;
         }
 
-        if (index <= schema.arity.max && !status.is_failed()) {
+        if (index <= schema.arity.max && !schema.is_variadic && !status.is_failed()) {
             sema::TypeId expected_type =
-                callee_type.function.parameters[index];
+                schema.get_parameter_at_index(index).type_id;
             sema::TypeId recieved_type =
                 sema::get_type_at_locus(sema, value->locus);
             if (!sema::coerce_type_into(sema, expected_type, recieved_type,
                                         schema.get_parameter_at_index(index).locus,
                                         value->locus,
-                                        true))
+                                        true)) {
                 status = WorkerStatus::Failed;
+            }
         }
     }
 

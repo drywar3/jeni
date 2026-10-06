@@ -13,6 +13,7 @@ namespace sema
             Error,
             _SignedInt,
             Int,
+            Int64,
             _SignedIntEnd,
             _UnsignedInt,
             Uint,
@@ -53,7 +54,7 @@ namespace sema
     };
 
     struct FunctionType {
-        using Parameters = MINI_ARRAY(TypeId);
+        using Parameters = mini::Array<TypeId>;
         Parameters parameters;
         TypeId return_type;
     };
@@ -79,7 +80,7 @@ namespace sema
                     return false;
                 usize n = 0;
                 for (const auto &param_type :
-                     mini::iterate(function.parameters)) {
+                         function.parameters.iter()) {
                     const auto &other_type = other.function.parameters[n];
                     if (param_type != other_type)
                         return false;

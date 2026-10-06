@@ -22,7 +22,7 @@ struct SemanticStorage {
 
 struct SemanticContext {
     /* maps [symbol id] -> pending workers */
-    HashMap<sema::SymbolId, MINI_ARRAY(Worker)> pending_workers;
+    HashMap<sema::SymbolId, mini::Array<Worker>> pending_workers;
 
     using BlockSavePoints = HashMap<Locus, usize>;
 
@@ -62,14 +62,13 @@ struct SemanticContext {
 
     void register_worker(sema::SymbolId id, Worker worker)
     {
-        MINI_ARRAY(Worker) workers;
         if (pending_workers.contains(id)) {
-            workers = pending_workers[id];
+            pending_workers[id].append(worker);
         } else {
-            workers = MINI_ARRAY_INIT(allocator, Worker);
+            mini::Array<Worker> workers = mini::Array<Worker>(allocator);
+            workers.append(worker);
             pending_workers[id] = workers;
         }
-        mini_array_append(workers, worker);
     }
 
     void wake_up_workers(sema::SymbolId symbol_id)
@@ -77,17 +76,17 @@ struct SemanticContext {
         if (!pending_workers.contains(symbol_id))
             return;
 
-        Worker *workers = *pending_workers.find(symbol_id);
-        for (usize n = 0; n < mini_array_count(workers); ++n) {
+        auto &workers = *pending_workers.find(symbol_id);
+        for (usize n = 0; n < workers.count(); ++n) {
             Worker worker = workers[n];
             WorkerStatus new_status =
-                worker.func(this, worker.data, true);
+                worker.resume(this);
             if (new_status == WorkerStatus::Done || new_status == WorkerStatus::Failed) {
-                mini_array_remove(workers, n);
+                workers.remove(n);
             }
         }
 
-        if (mini_array_count(workers) == 0) {
+        if (workers.count() == 0) {
             pending_workers.erase(symbol_id);
         }
     }

@@ -10,11 +10,12 @@ hir::Expression *hir::convert_expression(hir::Context *ctx,
     switch (expression->kind) {
     case EXPR_Integer: {
         const ExprInteger *integer = (const ExprInteger *)expression;
+        const auto type_id = ctx->types().get_id(expression->locus);
+        MINI_ASSERT(type_id.has_value(), "missing type link");
         hir::expr::Integer hir_integer;
         hir_integer.value = integer->value;
         return ctx->new_expr(
-            hir::Expression::Kind::Integer,
-            sema::TypeId(*ctx->types().get_id(expression->locus)), hir_integer);
+                   hir::Expression::Kind::Integer, sema::TypeId(*type_id), hir_integer);
     } break;
     case EXPR_CString: {
         const ExprString *string = (const ExprString *)expression;

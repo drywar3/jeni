@@ -142,5 +142,10 @@ lir::ValueId lir::Buildr::create_call(lir::TypePtr type, ValueId callee,
     inst.inst = InstructionKind::Call(type, callee, args);
     inst.dst  = create_deref(result);
     function->add_instruction(inst);
-    return result;
+    return create_deref(result);
+}
+
+void lir::Buildr::add_global(lir::Global glob)
+{
+    mod->globals.append(glob);
 }

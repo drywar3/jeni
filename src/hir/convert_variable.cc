@@ -16,8 +16,8 @@ hir::Statement *hir::convert_variable_stmt(hir::Context *ctx, const ::Statement 
 
     hir::stmt::Variable hir_variable;
     hir_variable.name = variable->name.value;
-    hir_variable.mutability  = symbol->as.variable.mutability;
-    hir_variable.type_id     = *symbol->as.variable.type_id;
+    hir_variable.mutability  = symbol->variable.mutability;
+    hir_variable.type_id     = *symbol->variable.type_id;
     if (variable->is_initialized) {
         hir_variable.initializer = hir::convert_expression(ctx, variable->initializer);
     }

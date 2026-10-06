@@ -13,12 +13,13 @@ sema::TypeId sema::register_or_get_type(SemanticContext *sema, sema::Type type)
     usize index = 0;
     for (const auto &_type : sema->store->types) {
         if (_type == type) {
-            sema::TypeId id = (sema::TypeId)(index);
+            sema::TypeId id = sema::TypeId(index);
             return id;
         }
         index += 1;
     }
-    return (sema::TypeId)sema->store->types.add_value(type);
+    auto id = sema::TypeId(sema->store->types.add_value(type));
+    return id;
 }
 
 static WorkerStatus
@@ -55,7 +56,16 @@ WorkerStatus sema::resolve_typehint(SemanticContext *sema,
 
     switch (typehint->kind) {
     case TYPEHINT_Integer: {
-        id = sema::type_id::Int;
+        const auto *integer = (const TypeInteger*)typehint;
+        switch (integer->kind) {
+        case TypeInteger::Int:
+            id = sema::type_id::Int;
+            break;
+        case TypeInteger::Int64:
+            id = sema::type_id::Int64;
+            break;
+        default: MINI_UNREACHABLE();
+        }
     } break;
     case TYPEHINT_String:
         id = sema::type_id::String;

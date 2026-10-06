@@ -50,6 +50,23 @@ template <> struct Hash<Locus> {
     }
 };
 
+template <> struct std::hash<Locus> {
+    std::size_t operator()(const Locus &loc) const noexcept
+    {
+        std::size_t seed = 0;
+
+        hash_combine(seed, Hash<usize>{}(loc.line));
+        hash_combine(seed, Hash<usize>{}(loc.begin));
+        hash_combine(seed, Hash<usize>{}(loc.end));
+        hash_combine(seed, Hash<usize>{}(loc.first_byte));
+        hash_combine(seed, Hash<usize>{}(loc.last_byte));
+        hash_combine(seed, Hash<usize>{}((usize)loc.source_id));
+
+        return seed;
+    }
+};
+
+
 Locus locus_create(usize line, usize begin, usize end, usize fb, usize lb,
                    SourceId id);
 usize locus_length(const Locus *locus);

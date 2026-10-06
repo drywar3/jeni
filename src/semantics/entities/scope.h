@@ -22,7 +22,7 @@ namespace sema
     typedef struct ScopeFunction {
     } ScopeFunction;
 
-    typedef struct Scope {
+    struct Scope {
         using Map    = ::Map<Mini_StringView, SymbolId>;
         using Parent = std::optional<ScopeId>;
 
@@ -30,7 +30,7 @@ namespace sema
         ScopeKind kind;
         Map symbols;
         Scope::Parent parent;
-    } Scope;
+    };
 
     using ScopeStorage = DenseMap<Locus, Scope>;
 

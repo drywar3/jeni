@@ -4,6 +4,7 @@
 #include "lir/types/type.h"
 #include "mini.cc/string_view.h"
 #include "semantics/sema.h"
+#include "lir/types/global.h"
 
 namespace lir
 {
@@ -14,6 +15,8 @@ namespace lir
         Module *mod;
         Function *function;
         BlockId current_block;
+
+        void add_global(lir::Global glob);
 
         /* create and add a parameter to the function */
         ValueId parameter(TypePtr type, mini::StringView name);

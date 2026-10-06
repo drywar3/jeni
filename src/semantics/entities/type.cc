@@ -11,6 +11,8 @@ Mini_String sema::Type::display(Mini_Allocator a, TypeStorage &types) const
         return mini_string_build(a, "char");
     case TypeKind::Int:
         return mini_string_build(a, "int");
+    case TypeKind::Int64:
+        return mini_string_build(a, "int64");
     case TypeKind::Uint:
         return mini_string_build(a, "uint");
     case TypeKind::Pointer: {
@@ -23,7 +25,7 @@ Mini_String sema::Type::display(Mini_Allocator a, TypeStorage &types) const
     }
     case TypeKind::Function: {
         Mini_String output = mini_string_build(a, "func(");
-        for (usize n = 0; n < mini_array_count(function.parameters);
+        for (usize n = 0; n < function.parameters.count();
              ++n) {
             if (n != 0)
                 mini_string_append_string(&output, ", ");

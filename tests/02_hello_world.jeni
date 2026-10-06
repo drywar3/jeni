@@ -3,7 +3,7 @@ main :: func () -> int {
      x := c"Jeni";
      y := c"Foobar";
 
-     printf(c"Hello, World! %d\n");
+     printf(c"Hello, World! %d\n", 10);
 
      print_number(10);
      print_number(20);

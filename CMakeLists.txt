@@ -24,9 +24,9 @@ target_compile_options(JeniCompiler PRIVATE
   -Wno-c++20-extensions
   #-ftime-trace
   -Wall
-  #  -fsanitize=address -fno-omit-frame-pointer -g
+  # -fsanitize=address -fno-omit-frame-pointer -g
 )
-target_link_libraries(JeniCompiler PRIVATE mini.cc tcc)
+target_link_libraries(JeniCompiler PRIVATE mini.cc tcc asan)
 set_target_properties(JeniCompiler PROPERTIES
   RUNTIME_OUTPUT_NAME "jeni"
 )

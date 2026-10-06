@@ -3,7 +3,7 @@
 #include "misc/id.h"
 #include "semantics/entities/type.h"
 
-#include <mini.c/string_view.h>
+#include <mini.cc/string_view.h>
 #include <optional>
 
 namespace sema
@@ -33,15 +33,18 @@ namespace sema
 
     struct Symbol {
         SymbolKind kind;
-        Mini_StringView name;
+        mini::StringView name;
         ScopeId scope_id;
         /* points to where the variable was defined */
         Locus locus;
-        SymbolState resolve_state;
+        SymbolState resolve_state{SymbolState::Unresolved};
 
         union {
             SymbolVariable variable;
-        } as;
+        };
+
+        void set_state(SymbolState state);
+        bool is_state(SymbolState state) const;
     };
 
     using SymbolStorage = DenseMap<Locus, Symbol>;

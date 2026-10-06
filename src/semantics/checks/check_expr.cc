@@ -43,7 +43,7 @@ WorkerStatus sema::check_expression(SemanticContext *sema, void *data)
 }
 
 static WorkerStatus check_identifier(SemanticContext *sema,
-                                     ExprIdentifier *ident)
+                                      ExprIdentifier *ident)
 {
     Locus locus           = ident->base.locus;
     mini::StringView name = ident->value;
@@ -51,24 +51,9 @@ static WorkerStatus check_identifier(SemanticContext *sema,
     sema::ScopeId current_scope = sema->current_scope;
     sema::link_locus_to_scope(sema, locus, current_scope);
 
-    if (auto symbol = sema::eagerly_find_symbol_in(sema, current_scope, name);
-        symbol != nullptr) {
-        /* todo: switch instead? */
-        if (symbol->resolve_state == sema::SymbolState::Unresolved) {
-            WorkerStatus status = WorkerStatus::Pending;
-            status.wait_for(
-                *sema::eagerly_get_id_of_symbol(sema, current_scope, name));
-            return status;
-        } else if (symbol->resolve_state == sema::SymbolState::Resolving) {
-            auto diag = diag_create(Severity::Error, locus,
-                                    "cyclic dependency detected", "here");
-            sema::report(sema, diag);
-            return WorkerStatus::Failed;
-        }
-
-        sema::link_locus_to_type(sema, locus, *symbol->as.variable.type_id);
-        sema::link_locus_to_symbol(sema, locus, *sema::eagerly_get_id_of_symbol(sema, current_scope, name));
-    } else {
+    // Get the symbol ID directly alongside the symbol pointer
+    auto sym_opt = sema::eagerly_lookup_symbol(sema, current_scope, name);
+    if (!sym_opt.has_value()) {
         /* symbol not found */
         sema::link_locus_to_type(sema, locus, sema::type_id::Error);
         sema::report(sema, diag_create(Severity::Error, locus,
@@ -76,6 +61,29 @@ static WorkerStatus check_identifier(SemanticContext *sema,
                                        "not found in this scope"));
         return WorkerStatus::Failed;
     }
+
+    sema::SymbolId sym_id = sym_opt->id;
+    const sema::SymbolProxy symbol   = *sym_opt;
+
+    if (symbol->is_state(sema::SymbolState::Unresolved)) {
+        WorkerStatus status = WorkerStatus::Pending;
+        status.wait_for(sym_id); // wait specifically on THIS symbol's ID
+        return status;
+    }
+
+    if (symbol->is_state(sema::SymbolState::Resolving)) {
+        /* a symbol can only cycle on ITSELF, not if a parent function scope is Resolving!
+         * Make sure symbol->id == sym_id and we are actually in a dependency cycle on this specific symbol. */
+        auto diag = diag_create(Severity::Error, locus,
+                                "cyclic dependency detected", "here");
+        diag = diag_add_label(diag, Label{"check_here", symbol->locus});
+        sema::report(sema, diag);
+        sema::link_locus_to_type(sema, locus, sema::type_id::Error);
+        return WorkerStatus::Failed;
+    }
+
+    sema::link_locus_to_type(sema, locus, *symbol->variable.type_id);
+    sema::link_locus_to_symbol(sema, locus, sym_id);
 
     return WorkerStatus::Done;
 }

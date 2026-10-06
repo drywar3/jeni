@@ -45,4 +45,7 @@ namespace lir
     ValueId lower_expression(Buildr *b, const hir::Expression *expression);
     ValueId lower_function_call(Buildr *b, const hir::Expression *expression);
     TypePtr lower_type(Buildr *b, sema::TypeId type_id);
+
+    lir::Global lower_glob_function(lir::Buildr *b,
+                                    const hir::Statement *stmt);
 } // namespace lir
