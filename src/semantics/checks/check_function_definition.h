@@ -5,7 +5,7 @@
 
 namespace sema
 {
-    WorkerStatus check_function_definition(SemanticContext *sema,
-                                           StmtVariable *variable,
-                                           bool is_resumption);
+    Worker_Status check_function_definition(Semantic_Context *sema,
+                                            ast::stmt::Variable *variable,
+                                            bool is_resumption);
 } // namespace sema

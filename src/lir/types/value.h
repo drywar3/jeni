@@ -43,8 +43,8 @@ namespace lir
         };
 
         Kind kind;
-        usize index;
         union {
+            usize index;
             int64            integer;
             mini::StringView ident;
             mini::StringView string;

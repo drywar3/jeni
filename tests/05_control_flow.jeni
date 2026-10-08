@@ -1,4 +1,26 @@
 
+test_for_loop :: func () {
+    n := 0;
+    for {
+        if n > 10 then break;
+        printf(c"Hello World\n");
+        n = n + 1;
+    }
+}
+
+test_scopes :: func () {
+    x := 10;
+    printf(c"outer x before = %d\n", x); // 10
+
+    for {
+        x := 99; // Shadowed or mutated depending on your language rules
+        printf(c"inner x = %d\n", x);
+        break;
+    }
+
+    printf(c"outer x after = %d\n", x); // Should still be 10 if shadowed
+}
+
 test_invalid_return_value :: func (n : int) -> *const char {
     if n == 0 return c"null";
     else if n == 1 return c"first";
@@ -39,6 +61,11 @@ main :: func () -> int {
     printf(c"==================================\n");
     fibonacci(10, 0, 1);
     printf(c"==================================\n");
+
+    test_for_loop();
+    test_scopes();
+
+    break;
 
     return 0;
 }

@@ -74,7 +74,7 @@ void print_expr(const Expression *expr, usize indent)
 {
     switch (expr->kind) {
     case EXPR_Integer: {
-        const ExprInteger *integer = (const ExprInteger *)expr;
+        const ast::expr::Integer *integer = (const ast::expr::Integer *)expr;
 
         printf("{\n");
 
@@ -89,7 +89,8 @@ void print_expr(const Expression *expr, usize indent)
     } break;
 
     case EXPR_Identifier: {
-        const ExprIdentifier *identifier = (const ExprIdentifier *)expr;
+        const ast::expr::Identifier *identifier =
+            (const ast::expr::Identifier *)expr;
 
         printf("{\n");
 
@@ -105,8 +106,9 @@ void print_expr(const Expression *expr, usize indent)
         printf("}");
     } break;
 
-    case EXPR_FunctionCall: {
-        const ExprFunctionCall *function_call = (const ExprFunctionCall *)expr;
+    case EXPR_Function_Call: {
+        const ast::expr::Function_Call *function_call =
+            (const ast::expr::Function_Call *)expr;
 
         printf("{\n");
 
@@ -146,7 +148,7 @@ void print_expr(const Expression *expr, usize indent)
         printf("}");
     } break;
     case EXPR_Function: {
-        const ExprFunction *function = (const ExprFunction *)expr;
+        const auto *function = (const ast::expr::Function *)expr;
 
         printf("{\n");
 
@@ -199,7 +201,8 @@ void ast_print(const Statement *statement, usize indent)
 {
     switch (statement->kind) {
     case STMT_Variable: {
-        const StmtVariable *variable = (const StmtVariable *)statement;
+        const ast::stmt::Variable *variable =
+            (const ast::stmt::Variable *)statement;
 
         printf("{\n");
 

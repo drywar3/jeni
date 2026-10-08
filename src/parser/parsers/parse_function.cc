@@ -1,27 +1,27 @@
+#include "parser/parsers/parse_function.h"
 #include "ast/expressions.h"
 #include "parser/parser_impl.h"
-#include "parser/parsers/parse_function.h"
 #include "parser/parsers/parse_typehint.h"
 #include "parser/token.h"
 
-bool parse_function_parameters(Parser *p,
-                               AstFunctionPrototype *prototype)
+bool parse_function_parameters(Parser *p, ast::Function_Prototype *prototype)
 {
     auto &parameters = prototype->parameters;
     parser::expect(p, TOKEN_SEP_Lparen);
 
     while (!parser::equals(p, TOKEN_SEP_Rparen)) {
         if (parser::try_expect(p, TOKEN_SEP_Vararg)) {
-            /* after hitting the variadic mark, we do not expect any arguments again */
+            /* after hitting the variadic mark, we do not expect any arguments
+             * again */
             prototype->is_variadic = true;
             break;
         }
 
-        AstFunctionParameter parameter{};
+        ast::Function_Parameter parameter{};
         if (!parser::eat_name(p, &parameter.name)) {
-            parser::report(p, diag_create(Severity::Error, parser::current(p).locus,
-                                         "invalid token",
-                                         "expected parameter name"));
+            parser::report(
+                p, diag_create(Severity::Error, parser::current(p).locus,
+                               "invalid token", "expected parameter name"));
             if (!skip_until_one_of(p, true, TOKEN_SEP_Comma, TOKEN_SEP_Rparen))
                 return false;
         } else {
@@ -34,8 +34,8 @@ bool parse_function_parameters(Parser *p,
             break;
     }
 
-    /* todo: consider reporting a better suited diagnostic for the case where the
-    *        parameter list continues even after the varidic mark (if present) */
+    /* todo: consider reporting a better suited diagnostic for the case where
+     * the parameter list continues even after the varidic mark (if present) */
     parser::expect(p, TOKEN_SEP_Rparen);
     return true;
 }
@@ -44,9 +44,9 @@ ExpressionPointer parse_function(Parser *p)
 {
     Token begin = parser::next(p); /* consume `func` keyword */
 
-    ExprFunction function{};
+    ast::expr::Function function{};
     function.prototype.parameters =
-        AstFunctionPrototype::Parameters(p->allocator);
+        ast::Function_Prototype::Parameters(p->allocator);
     if (!parse_function_parameters(p, &function.prototype))
         MINI_UNREACHABLE("TODO");
 
@@ -67,6 +67,7 @@ ExpressionPointer parse_function(Parser *p)
         function.body            = nullptr;
     }
 
-    return ALLOC_EXPR(p->allocator, EXPR_Function,
-                      locus_merge(begin.locus, parser::previous(p).locus), function);
+    return ast::expr::alloc_expression(
+        p->allocator, EXPR_Function,
+        locus_merge(begin.locus, parser::previous(p).locus), function);
 }

@@ -1,16 +1,16 @@
-#include "semantics/sema.h"
 #include "semantics/worker.h"
+#include "semantics/sema.h"
 
-Worker::Worker(void *data, WorkerFunc func, sema::ScopeId current_scope)
-    : data(data), func(func), scope_id(current_scope)
+Worker::Worker(void *data, Worker_Func func, sema::Scope_Id current_scope)
+    : data(data), func(func), scope_Id(current_scope)
 {
 }
 
-WorkerStatus Worker::resume(SemanticContext *sema)
+Worker_Status Worker::resume(Semantic_Context *sema)
 {
-    sema::ScopeId previous_scope = sema->current_scope;
-    sema->current_scope = scope_id;
-    WorkerStatus status = func(sema, data, true);
-    sema->current_scope = previous_scope;
+    sema::Scope_Id previous_scope = sema->current_scope;
+    sema->current_scope           = scope_Id;
+    Worker_Status status          = func(sema, data, true);
+    sema->current_scope           = previous_scope;
     return status;
 }

@@ -1,7 +1,7 @@
 #include "hir/convert.h"
 
 hir::Statement *hir::convert_if_stmt(hir::Context *ctx,
-                                     const StmtIf *if_stmt)
+                                     const ast::stmt::If *if_stmt)
 {
     hir::stmt::If if_{};
     if_.branches  = {ctx->allocator};

@@ -8,7 +8,7 @@
 
 namespace sema
 {
-    struct TypeKind {
+    struct Type_Kind {
         enum V {
             Error,
             _SignedInt,
@@ -28,7 +28,7 @@ namespace sema
             Function,
         } kind;
 
-        constexpr TypeKind(V v) : kind(v) {}
+        constexpr Type_Kind(V v) : kind(v) {}
 
         operator V() const { return kind; }
 
@@ -44,27 +44,27 @@ namespace sema
     };
 
     struct Type;
-    using TypeStorage = DenseMap<Locus, Type>;
+    using Type_Storage = DenseMap<Locus, Type>;
 
-    enum class TypeId : usize {};
+    enum class Type_Id : usize {};
 
-    struct PointerType {
+    struct Pointer_Type {
         Mutability mutability;
-        TypeId target_type;
+        Type_Id target_type;
     };
 
-    struct FunctionType {
-        using Parameters = mini::Array<TypeId>;
+    struct Function_Type {
+        using Parameters = mini::Array<Type_Id>;
         Parameters parameters;
-        TypeId return_type;
+        Type_Id return_type;
     };
 
     struct Type {
-        TypeKind kind;
+        Type_Kind kind;
 
         union {
-            FunctionType function;
-            PointerType pointer;
+            Function_Type function;
+            Pointer_Type pointer;
         };
 
         bool operator==(const Type &other) const
@@ -72,21 +72,20 @@ namespace sema
             if (kind != other.kind)
                 return false;
 
-            if (kind == TypeKind::Error)
+            if (kind == Type_Kind::Error)
                 return false;
 
-            if (kind == TypeKind::Function) {
+            if (kind == Type_Kind::Function) {
                 if (function.return_type != other.function.return_type)
                     return false;
                 usize n = 0;
-                for (const auto &param_type :
-                         function.parameters.iter()) {
+                for (const auto &param_type : function.parameters.iter()) {
                     const auto &other_type = other.function.parameters[n];
                     if (param_type != other_type)
                         return false;
                     n += 1;
                 }
-            } else if (kind == TypeKind::Pointer) {
+            } else if (kind == Type_Kind::Pointer) {
                 return pointer.mutability == other.pointer.mutability &&
                        pointer.target_type == other.pointer.target_type;
             }
@@ -95,30 +94,24 @@ namespace sema
         }
 
         /* for initialization in global contexts */
-        constexpr Type() : kind(TypeKind::Error) {}
-        constexpr Type(TypeKind kind) : kind(kind) {}
+        constexpr Type() : kind(Type_Kind::Error) {}
+        constexpr Type(Type_Kind kind) : kind(kind) {}
 
-        static auto Function(FunctionType::Parameters parameters,
-                             TypeId return_type)
+        static auto Function(Function_Type::Parameters parameters,
+                             Type_Id return_type)
         {
-            auto type     = Type(TypeKind::Function);
-            type.function = FunctionType{parameters, return_type};
+            auto type     = Type(Type_Kind::Function);
+            type.function = Function_Type{parameters, return_type};
             return type;
         }
 
-        static auto Pointer(Mutability mutability, TypeId type_id)
+        static auto Pointer(Mutability mutability, Type_Id type_id)
         {
-            auto type    = Type(TypeKind::Pointer);
-            type.pointer = PointerType{mutability, type_id};
+            auto type    = Type(Type_Kind::Pointer);
+            type.pointer = Pointer_Type{mutability, type_id};
             return type;
         }
 
-        Mini_String display(Mini_Allocator a, TypeStorage &types) const;
+        Mini_String display(Mini_Allocator a, Type_Storage &types) const;
     };
-
-    struct TypeInfo {
-        TypeId id;
-        Mutability mutability;
-    };
-
 } // namespace sema

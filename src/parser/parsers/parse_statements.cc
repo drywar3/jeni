@@ -25,12 +25,12 @@ bool parser::eat_name(Parser *parser, Name *name)
 
     Token _current = parser::next(parser);
     name->value    = mini_string_substr(parser->tokens.lexer.content,
-                                        /* the lexer lexes tokens on a 1-based
-                                         * cursor   so there is need to substract 1
-                                         * to get an   accurate character index
-                                         */
-                                     _current.locus.first_byte,
-                                     locus_length(&_current.locus));
+  /* the lexer lexes tokens on a 1-based
+   * cursor   so there is need to substract 1
+   * to get an   accurate character index
+   */
+                                        _current.locus.first_byte,
+                                        locus_length(&_current.locus));
     name->locus    = _current.locus;
     return true;
 }
@@ -40,7 +40,7 @@ Statement *parser::parse_variable_declaration(Parser *p)
     MINI_ASSERT(equals_sequence(p, TOKEN_Identifier, TOKEN_SEP_Colon),
                 "cannot parse a variable declaration");
     Token begin = current(p);
-    StmtVariable variable{};
+    ast::stmt::Variable variable{};
     if (!parser::eat_name(p, &variable.name))
         MINI_UNREACHABLE();
     /* skip `:` after variable name */
@@ -68,21 +68,21 @@ Statement *parser::parse_variable_declaration(Parser *p)
             try_expect(p, TOKEN_SEP_Colon) ? Mutability::Constant
             : try_expect(p, TOKEN_OP_Assign)
             ? Mutability::Mutable
-                : ({
-                        diagpool_report(p->diagnostics, Severity::Error,
-                                        current(p).locus, "invalid token",
-                                        "expected `:`, `=` or `;`");
-                      next(p);
-                      Mutability::Mutable;
-                  });
+            : ({
+                    diagpool_report(p->diagnostics, Severity::Error,
+                                    current(p).locus, "invalid token",
+                                    "expected `:`, `=` or `;`");
+                    next(p);
+                    Mutability::Mutable;
+                });
 
         variable.initializer    = parser_parse_expression(p);
         if (!variable.initializer || variable.initializer->kind == EXPR_Error) {
             variable.is_initialized = false;
             skip_until_one_of(p, true, TOKEN_SEP_Semicolon);
             return
-                ALLOC_STMT(p->allocator, STMT_Variable,
-                   locus_merge(begin.locus, previous(p).locus), variable);
+                ast::stmt::alloc_statement(p->allocator, STMT_Variable,
+                                           locus_merge(begin.locus, previous(p).locus), variable);
         }
         variable.is_initialized = true;
     }
@@ -94,15 +94,15 @@ Statement *parser::parse_variable_declaration(Parser *p)
     }
 
     Statement *stmt =
-        ALLOC_STMT(p->allocator, STMT_Variable,
-                   locus_merge(begin.locus, previous(p).locus), variable);
+        ast::stmt::alloc_statement(p->allocator, STMT_Variable,
+                                   locus_merge(begin.locus, previous(p).locus), variable);
     return stmt;
 }
 
 StatementPointer parser::parse_block(Parser *p)
 {
     Token begin = next(p); /* consume `{` */
-    StmtBlock block{};
+    ast::stmt::Block block{};
     block.body = MINI_ARRAY_INIT(p->allocator, StatementPointer);
     while (!equals(p, TOKEN_SEP_Rbrace) && !parser_is_done(p)) {
         StatementPointer stmt = parser_parse_statement(p);
@@ -114,8 +114,8 @@ StatementPointer parser::parse_block(Parser *p)
         }
     }
     expect(p, TOKEN_SEP_Rbrace);
-    return ALLOC_STMT(p->allocator, STMT_Block,
-                      locus_merge(begin.locus, previous(p).locus), block);
+    return ast::stmt::alloc_statement(p->allocator, STMT_Block,
+                                      locus_merge(begin.locus, previous(p).locus), block);
 }
 
 Statement *parser::parse_if_statement(Parser *p)
@@ -137,7 +137,7 @@ Statement *parser::parse_if_statement(Parser *p)
             if (!header.then) return false;
         } else {
             parser::report_error(p, current(p).locus,
-                                "expected `then` or `{`; `then` must be used for single-statement if");
+                                 "expected `then` or `{`; `then` must be used for single-statement if");
             header.then = parser_parse_statement(p);
             if (!header.then) return false;
         }
@@ -146,16 +146,15 @@ Statement *parser::parse_if_statement(Parser *p)
     };
 
     Token begin = next(p);
-    StmtIf if_stmt{};
+    ast::stmt::If if_stmt{};
 
-    if_stmt.branches = mini::Array<AstIfBranch>(p->allocator);
+    if_stmt.branches = mini::Array<ast::If_Branch>(p->allocator);
 
     if (!parse_if_header(p, if_stmt)) return nullptr;
 
     while (eat_sequence(p, TOKEN_KW_Else, TOKEN_KW_If)) {
-        AstIfBranch branch{};
+        ast::If_Branch branch{};
         if (!parse_if_header(p, branch)) return nullptr;
-
         if_stmt.branches.append(branch);
     }
 
@@ -165,8 +164,8 @@ Statement *parser::parse_if_statement(Parser *p)
         if (!if_stmt.else_) return nullptr;
     }
 
-    return ALLOC_STMT(p->allocator, STMT_If,
-                      locus_merge(begin.locus, previous(p).locus), if_stmt);
+    return ast::stmt::alloc_statement(p->allocator, STMT_If,
+                                      locus_merge(begin.locus, previous(p).locus), if_stmt);
 }
 
 Statement *parser::parse_return_statement(Parser *p)
@@ -178,7 +177,34 @@ Statement *parser::parse_return_statement(Parser *p)
             return nullptr;
     }
     expect(p, TOKEN_SEP_Semicolon);
-    return ALLOC_STMT(p->allocator, STMT_Return,
-                      locus_merge(begin.locus, previous(p).locus),
-                      StmtReturn{.value=expression});
+    return ast::stmt::alloc_statement(p->allocator, STMT_Return,
+                                      locus_merge(begin.locus, previous(p).locus),
+                                      ast::stmt::Return{.value=expression});
+}
+
+Statement *parser::parse_for_loop(Parser *p)
+{
+    Token begin = next(p);
+
+    if (parser::equals(p, TOKEN_SEP_Lbrace)) {
+        ast::stmt::For_Ever for_ever{};
+        for_ever.body = parser_parse_statement(p);
+        if (!for_ever.body) return nullptr;
+        return ast::stmt::alloc_statement(p->allocator,
+                                          STMT_For_Ever,
+                                          locus_merge(begin.locus, previous(p).locus),
+                                          for_ever);
+    }
+
+    MINI_UNREACHABLE();
+}
+
+Statement *parser::parse_break(Parser *p)
+{
+    Token begin = next(p);
+    parser::expect(p, TOKEN_SEP_Semicolon);
+    return ast::stmt::alloc_statement(p->allocator,
+                                      STMT_Break,
+                                      locus_merge(begin.locus, previous(p).locus),
+                                      ast::stmt::Break{});
 }

@@ -1,9 +1,9 @@
 #pragma once
 
-#include "parser/locus.h"
 #include "ast/stmt.h"
+#include "parser/locus.h"
 
-enum ExpressionKind {
+enum Expression_Kind {
     EXPR_Identifier,
     EXPR_Integer,
     EXPR_String,
@@ -15,40 +15,19 @@ enum ExpressionKind {
     EXPR_Unary,
     EXPR_Cast,
     EXPR_Function,
-    EXPR_FunctionCall,
+    EXPR_Function_Call,
     EXPR_Error,
 };
 
-struct Expression {
-    Statement base;
+struct Expression : Statement {
+    Expression_Kind kind;
+    // Locus locus;
 
-    ExpressionKind kind;
-    Locus locus;
-
-    bool is(ExpressionKind kind) const {
-        return this->kind == kind;
-    }
+    bool is(Expression_Kind kind) const { return this->kind == kind; }
 
     bool is_error() const { return is(EXPR_Error); }
 };
 
 typedef Expression *ExpressionPointer;
-
-#define ALLOC_EXPR(allocator, kind, locus, derived)                            \
-    ({                                                                         \
-        typeof(derived) derived_tmp = derived;                                 \
-        ExpressionPointer expression =                                         \
-            (ExpressionPointer)MINI_ALLOC(allocator, typeof(derived_tmp));     \
-        *((typeof(derived_tmp) *)expression) = derived;                        \
-        expression_ctor(expression, kind, locus);                              \
-        expression;                                                            \
-    })
-
-static inline void expression_ctor(ExpressionPointer _this, ExpressionKind kind,
-                                   Locus locus)
-{
-    _this->kind  = kind;
-    _this->locus = locus;
-}
 
 void expression_destroy(Expression *stmt, Mini_Allocator allocator);

@@ -3,7 +3,7 @@
 #include "parser/locus.h"
 #include <mini.c/allocator.h>
 
-typedef enum {
+enum Statement_Kind {
     STMT_Variable,
     STMT_Assign,
     STMT_If,
@@ -14,33 +14,22 @@ typedef enum {
     STMT_Defer,
     STMT_Expr,
     STMT_Return,
-} StatementKind;
+    STMT_For_Ever,
+    STMT_Break,
+    STMT_Continue,
+};
 
-typedef struct {
-    StatementKind kind;
+struct Statement {
+    Statement_Kind kind;
     Locus locus;
-} Statement;
+
+    void set_stmt_kind(Statement_Kind kind) { this->kind = kind; }
+
+    Statement_Kind get_stmt_kind() const { return kind; }
+};
 
 typedef Statement *StatementPointer;
 
-#define ALLOC_STMT(allocator, kind, locus, derived)                            \
-    ({                                                                         \
-        typeof(derived) derived_tmp = derived;                                 \
-        StatementPointer statement =                                           \
-            (StatementPointer)MINI_ALLOC(allocator, typeof(derived_tmp));      \
-        *((typeof(derived_tmp) *)statement) = derived;                         \
-        statement_ctor(statement, kind, locus);                                \
-        statement;                                                             \
-    })
-
-
-static inline void statement_ctor(StatementPointer _this, StatementKind kind,
-                                  Locus locus)
-{
-    _this->kind  = kind;
-    _this->locus = locus;
-}
-
 void statement_destroy(Statement *stmt, Mini_Allocator allocator);
 
-const char *statement_name(StatementKind kind);
+const char *statement_name(Statement_Kind kind);

@@ -3,8 +3,8 @@
 #include "hir/types/expr.h"
 #include "semantics/entities/type.h"
 
-#include <mini.cc/string_view.h>
 #include <mini.cc/array.h>
+#include <mini.cc/string_view.h>
 
 namespace hir
 {
@@ -14,53 +14,60 @@ namespace hir
     {
         struct Variable {
             mini::StringView name;
-            Mutability       mutability;
-            sema::TypeId     type_id;
-            Expression      *initializer;
+            Mutability mutability;
+            sema::Type_Id type_id;
+            Expression *initializer;
         };
 
         struct Function {
             struct Parameter {
                 mini::StringView name;
-                sema::TypeId     type_id;
+                sema::Type_Id type_id;
             };
 
             using Parameters = MINI_ARRAY(Function::Parameter);
 
             struct Prototype {
                 Function::Parameters parameters;
-                sema::TypeId         return_type;
-                bool                 is_variadic = false;
+                sema::Type_Id return_type;
+                bool is_variadic = false;
             };
 
-            mini::StringView    name;
+            mini::StringView name;
             Function::Prototype prototype;
-            hir::Statement     *body;
-            bool                body_is_defined;
+            hir::Statement *body;
+            bool body_is_defined;
         };
 
         struct Block {
-            using Body = mini::Array<Statement*>;
+            using Body = mini::Array<Statement *>;
             Body body;
         };
 
         struct If {
             struct Branch {
                 Expression *condition;
-                Statement  *then;
+                Statement *then;
             };
 
             using Branches = mini::Array<Branch>;
 
             Expression *condition;
-            Branches    branches;
-            Statement  *then;
-            Statement  *else_;
+            Branches branches;
+            Statement *then;
+            Statement *else_;
         };
 
         struct Return {
-            sema::TypeId type_id;
-            Expression  *value;
+            sema::Type_Id type_id;
+            Expression *value;
+        };
+
+        struct Break {};
+
+        struct Loop {
+            Expression *condition;
+            Statement  *body;
         };
     } // namespace stmt
 
@@ -72,15 +79,19 @@ namespace hir
             Expr,
             If,
             Return,
+            Loop,
+            Break,
         };
 
         Kind kind;
         union {
             stmt::Variable variable;
             stmt::Function function;
-            stmt::Block    block;
-            stmt::If       if_;
-            stmt::Return   ret;
+            stmt::Block block;
+            stmt::If if_;
+            stmt::Return ret;
+            stmt::Break  break_;
+            stmt::Loop loop;
             hir::Expression *expr;
         } as;
     };

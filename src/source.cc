@@ -3,9 +3,9 @@
 #include <mini.c/fs.h>
 #include <mini.cc/dtor.h>
 
-SourceManager sourcemgr_init()
+SourceManager sourcemgr_init(Mini_Allocator allocator)
 {
-    SourceManager sm{.sources = SourceManager::Map(mini_default_allocator())};
+    SourceManager sm{.sources = SourceManager::Map(allocator)};
     return sm;
 }
 

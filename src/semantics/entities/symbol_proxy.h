@@ -1,17 +1,17 @@
 #pragma once
 
-#include "semantics/sema.h"
 #include "semantics/entities/symbol.h"
+#include "semantics/sema.h"
 
 namespace sema
 {
-    struct SymbolProxy {
-        sema::SymbolId id;
-        SemanticStorage *store;
+    struct Symbol_Proxy {
+        sema::Symbol_Id id;
+        Semantic_Storage *store;
 
-        explicit SymbolProxy(SemanticStorage *store, sema::SymbolId id);
+        explicit Symbol_Proxy(Semantic_Storage *store, sema::Symbol_Id id);
 
-        sema::SymbolId get_id() const { return id; }
+        sema::Symbol_Id get_id() const { return id; }
 
         const sema::Symbol *operator->() const;
         sema::Symbol *operator->();

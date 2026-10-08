@@ -13,7 +13,7 @@ namespace hir
 
     struct Context {
         Mini_Allocator allocator;
-        const SemanticStorage *store;
+        const Semantic_Storage *store;
 
         auto &types() { return store->types; }
         auto &scopes() { return store->scopes; }
@@ -22,6 +22,8 @@ namespace hir
         const auto &types() const { return store->types; }
         const auto &scopes() const { return store->scopes; }
         const auto &symbols() const { return store->symbols; }
+
+        hir::Expression *create_true_expr();
 
         template <typename T>
         hir::Statement *new_stmt(hir::Statement::Kind kind, T obj)
@@ -39,7 +41,7 @@ namespace hir
 
         template <typename T>
         hir::Expression *new_expr(hir::Expression::Kind kind,
-                                  sema::TypeId type_id, T obj)
+                                  sema::Type_Id type_id, T obj)
         {
             hir::Expression *expr = MINI_ALLOC(allocator, hir::Expression);
             expr->kind            = kind;
@@ -51,19 +53,23 @@ namespace hir
         }
     };
 
-    Context ctx_init(Mini_Allocator allocator, const SemanticStorage *store);
+    Context ctx_init(Mini_Allocator allocator, const Semantic_Storage *store);
     Program program_from_raw(Context *ctx, ::Program ast);
     hir::Statement *convert_statement(hir::Context *ctx,
                                       const ::Statement *stmt);
 
     hir::Expression *convert_expression(hir::Context *ctx,
                                         const ::Expression *expression);
-    hir::Statement *convert_block(hir::Context *ctx, StmtBlock *block);
-    hir::Expression *convert_function_call(hir::Context *ctx,
-                                           const ExprFunctionCall *call);
-    hir::Expression *convert_binary_op(hir::Context *ctx,
-                                       const ExprBinaryOperation *binop);
+    hir::Statement *convert_block(hir::Context *ctx, ast::stmt::Block *block);
+    hir::Expression *
+    convert_function_call(hir::Context *ctx,
+                          const ast::expr::Function_Call *call);
+    hir::Expression *
+    convert_binary_op(hir::Context *ctx,
+                      const ast::expr::Binary_Operation *binop);
 
     hir::Statement *convert_if_stmt(hir::Context *ctx,
-                                    const StmtIf *if_stmt);
+                                    const ast::stmt::If *if_stmt);
+    hir::Statement *convert_for_ever_stmt(hir::Context *ctx,
+                                          const ast::stmt::For_Ever *for_ever);
 } // namespace hir

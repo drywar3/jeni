@@ -1,12 +1,13 @@
 #include "parser.h"
 #include "ast/expr.h"
+#include "ast/statements.h"
 #include "ast/stmt.h"
 #include "parser/parsers/parse_expressions.h"
 #include "parser_impl.h"
 #include "parsers/parse_statements.h"
 
 Parser parser_create(SourceId id, const Mini_String content,
-                     DiagnosticPool *diagnostics)
+                     Diagnostic_Pool *diagnostics)
 {
     Parser parser = {.tokens = tokenbuffer_create(id, content, diagnostics)};
     parser.diagnostics = diagnostics;
@@ -29,7 +30,6 @@ bool parser_is_done(const Parser *parser)
             parser::previous(parser).kind == TOKEN_Endoffile) ||
            tokenbuffer_is_truly_done(&parser->tokens);
 }
-
 
 Statement *parser_parse_statement(Parser *parser)
 {
@@ -55,14 +55,26 @@ Statement *parser_parse_statement(Parser *parser)
         return nullptr;
     }
 
-    if (parser::equals(parser, TOKEN_KW_Return
-              )) {
+    if (parser::equals(parser, TOKEN_KW_Return)) {
         if (auto ret = parser::parse_return_statement(parser))
             return ret;
         skip_until_one_of(parser, false, STMT_HEAD);
         return nullptr;
     }
 
+    if (parser::equals(parser, TOKEN_KW_For)) {
+        if (auto for_loop = parser::parse_for_loop(parser))
+            return for_loop;
+        skip_until_one_of(parser, false, STMT_HEAD);
+        return nullptr;
+    }
+
+    if (parser::equals(parser, TOKEN_KW_Break)) {
+        if (auto break_ = parser::parse_break(parser))
+            return break_;
+        skip_until_one_of(parser, false, STMT_HEAD);
+        return nullptr;
+    }
 
     Expression *expr = parser_parse_expression(parser);
     if (!expr || expr->kind == EXPR_Error) {
@@ -70,7 +82,7 @@ Statement *parser_parse_statement(Parser *parser)
         return nullptr;
     }
 
-    expr->base.kind = STMT_Expr;
+    expr->set_stmt_kind(STMT_Expr);
     parser::expect(parser, TOKEN_SEP_Semicolon);
     return (Statement *)expr;
 }

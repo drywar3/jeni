@@ -4,5 +4,5 @@
 
 namespace sema
 {
-    WorkerStatus check_return_stmt(SemanticContext *sema, void *data);
+    Worker_Status check_return_stmt(Semantic_Context *sema, void *data);
 } // namespace sema

@@ -1,7 +1,7 @@
 #include "token_buffer.h"
 
 TokenBuffer tokenbuffer_create(SourceId id, const Mini_String content,
-                               DiagnosticPool *diagnostics)
+                               Diagnostic_Pool *diagnostics)
 {
     TokenBuffer buffer = {.lexer = lexer_create(id, content)};
     buffer.tokens      = MINI_ARRAY_INIT(mini_default_allocator(), Token);
@@ -20,7 +20,7 @@ void tokenbuffer_prepare(TokenBuffer *buffer, int window)
     if (lexer_is_done(&buffer->lexer))
         return;
 
-    if (buffer->cursor + window >= mini_array_count(buffer->tokens)) {
+    if (buffer->cursor + window >= (int)mini_array_count(buffer->tokens)) {
         usize needed = (buffer->cursor + window) * 2;
         for (usize n = 0; n < needed; n++) {
             Token token;
@@ -41,7 +41,7 @@ bool tokenbuffer_is_truly_done(const TokenBuffer *buffer)
     /* when the lexer has reached the end of the content given and the
      * token buffer is also exhausted then we are truly done */
     return lexer_is_done(&buffer->lexer) &&
-           buffer->cursor >= mini_array_count(buffer->tokens);
+           buffer->cursor >= (int)mini_array_count(buffer->tokens);
 }
 
 Token tokenbuffer_peek(TokenBuffer *buffer, int ahead)
@@ -51,7 +51,7 @@ Token tokenbuffer_peek(TokenBuffer *buffer, int ahead)
         return mini_array_last(buffer->tokens);
     }
 
-    if (buffer->cursor + ahead >= mini_array_count(buffer->tokens)) {
+    if (buffer->cursor + ahead >= (int)mini_array_count(buffer->tokens)) {
         tokenbuffer_prepare(buffer, ahead);
     }
 

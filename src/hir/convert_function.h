@@ -6,5 +6,5 @@
 
 namespace hir
 {
-    Statement *convert_function_stmt(hir::Context *ctx, const StmtVariable *var);
+    Statement *convert_function_stmt(hir::Context *ctx, const ast::stmt::Variable *var);
 } // namespace hir

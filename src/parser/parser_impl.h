@@ -32,7 +32,7 @@ namespace parser
 
     INLINE bool equals_sequence_impl(Parser *parser, int count, TokenKind *kinds)
     {
-        for (usize n = 0; n < count; n++) {
+        for (usize n = 0; n < (usize)count; n++) {
             if (tokenbuffer_peek(&parser->tokens, n).kind != kinds[n])
                 return false;
         }
@@ -48,7 +48,7 @@ namespace parser
     INLINE bool eat_sequence_impl(Parser *parser, int count, TokenKind *kinds)
     {
         if (!equals_sequence_impl(parser, count, kinds)) return false;
-        for (usize n = 0; n < count; n++) next(parser);
+        for (usize n = 0; n < (usize)count; n++) next(parser);
         return true;
     }
 
@@ -61,7 +61,7 @@ namespace parser
     INLINE bool skip_until_one_of_impl(Parser *p, bool skip_past, int count, TokenKind *kinds)
     {
         while (!parser_is_done(p)) {
-            for (usize n = 0; n < count; ++n) {
+            for (usize n = 0; n < (usize)count; ++n) {
                 if (equals(p, kinds[n])) {
                     if (skip_past) {
                         next(p);

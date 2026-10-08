@@ -1,5 +1,5 @@
-#include "source.h"
 #include "diagnostic.h"
+#include "source.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -496,31 +496,31 @@ Diagnostic diag_add_label(Diagnostic diagnostic, Label label)
     return diagnostic;
 }
 
-DiagnosticPool diagpool_create()
+Diagnostic_Pool diagpool_create()
 {
-    DiagnosticPool pool{};
+    Diagnostic_Pool pool{};
     pool.diagnostics = MINI_ARRAY_INIT(mini_default_allocator(), Diagnostic);
     mini_array_set_dtor(pool.diagnostics, diag_destroy);
     return pool;
 }
 
-void diagpool_report(DiagnosticPool *pool, DIAG_CTOR)
+void diagpool_report(Diagnostic_Pool *pool, DIAG_CTOR)
 {
     Diagnostic diag = diag_create(severity, locus, message, text);
     mini_array_append(pool->diagnostics, diag);
 }
 
-void diagpool_destroy(DiagnosticPool *pool)
+void diagpool_destroy(Diagnostic_Pool *pool)
 {
     mini_array_destroy(pool->diagnostics);
 }
 
-void diagpool_report_diag(DiagnosticPool *pool, Diagnostic diagnostic)
+void diagpool_report_diag(Diagnostic_Pool *pool, Diagnostic diagnostic)
 {
     mini_array_append(pool->diagnostics, diagnostic);
 }
 
-bool diagpool_is_empty(DiagnosticPool *pool)
+bool diagpool_is_empty(Diagnostic_Pool *pool)
 {
     return mini_array_count(pool->diagnostics) == 0;
 }

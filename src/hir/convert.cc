@@ -1,8 +1,15 @@
 #include "hir/convert.h"
+#include "semantics/type/ids.h"
 #include "hir/convert_variable.h"
 
+hir::Expression *hir::Context::create_true_expr()
+{
+    return new_expr(hir::Expression::Kind::Boolean, sema::type_id::Bool,
+                    hir::expr::Boolean{true});
+}
+
 hir::Context hir::ctx_init(Mini_Allocator allocator,
-                           const SemanticStorage *store)
+                           const Semantic_Storage *store)
 {
     return {allocator, store};
 }
@@ -25,16 +32,18 @@ hir::Statement *hir::convert_statement(hir::Context *ctx,
     case STMT_Variable:
         return convert_variable_stmt(ctx, stmt);
     case STMT_Block:
-        return convert_block(ctx, (StmtBlock *)stmt);
+        return convert_block(ctx, (ast::stmt::Block *)stmt);
     case STMT_If:
-        return convert_if_stmt(ctx, (StmtIf *)stmt);
+        return convert_if_stmt(ctx, (ast::stmt::If *)stmt);
     case STMT_Return: {
-        auto *ret_ = (StmtReturn *)stmt;
+        auto *ret_ = (ast::stmt::Return *)stmt;
         hir::stmt::Return ret{};
-        ret.value = hir::convert_expression(ctx, ret_->value);
-        ret.type_id = sema::TypeId(*ctx->types().get_id(ret_->value->locus));
+        ret.value   = hir::convert_expression(ctx, ret_->value);
+        ret.type_id = sema::Type_Id(*ctx->types().get_id(ret_->value->locus));
         return ctx->new_stmt(hir::Statement::Kind::Return, ret);
     } break;
+    case STMT_For_Ever: return hir::convert_for_ever_stmt(ctx, (ast::stmt::For_Ever *)stmt);
+    case STMT_Break:    return ctx->new_stmt(hir::Statement::Kind::Break, hir::stmt::Break{});
     case STMT_Expr: {
         hir::Expression *expression =
             convert_expression(ctx, (const ::Expression *)stmt);

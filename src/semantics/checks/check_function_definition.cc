@@ -12,11 +12,11 @@
 
 #include <mini.cc/dtor.h>
 
-static void generate_function_call_schema(SemanticContext *sema,
-                                          AstFunctionPrototype *proto,
-                                          sema::SymbolId symbol_id)
+static void generate_function_call_schema(Semantic_Context *sema,
+                                          ast::Function_Prototype *proto,
+                                          sema::Symbol_Id symbol_id)
 {
-    sema::FunctionCallSchema schema{sema->allocator};
+    sema::Function_Call_Schema schema{sema->allocator};
 
     schema.arity.min   = 0;
     schema.arity.max   = proto->parameters.count();
@@ -28,7 +28,7 @@ static void generate_function_call_schema(SemanticContext *sema,
     for (usize n = 0; n < proto->parameters.count(); ++n) {
         const auto &parameter = proto->parameters[n];
 
-        sema::ParameterSpec param_spec{};
+        sema::Parameter_Spec param_spec{};
         param_spec.locus =
             locus_merge(parameter.name.locus, parameter.typehint->locus);
         param_spec.type_id =
@@ -68,67 +68,68 @@ static void generate_function_call_schema(SemanticContext *sema,
     sema->set_call_schema(symbol_id, schema);
 }
 
-WorkerStatus check_function_prototype(SemanticContext *sema,
-                                      AstFunctionPrototype *proto,
-                                      sema::SymbolId symbol_id)
+Worker_Status check_function_prototype(Semantic_Context *sema,
+                                       ast::Function_Prototype *proto,
+                                       sema::Symbol_Id symbol_id)
 {
     MINI_ASSERT(proto != nullptr, );
 
     /* ensure all the parameters are resolvable */
     for (usize n = 0; n < proto->parameters.count(); ++n) {
-        AstFunctionParameter &parameter = proto->parameters[n];
+        ast::Function_Parameter &parameter = proto->parameters[n];
         if (auto s = sema::resolve_typehint(sema, parameter.typehint,
                                             parameter.name.locus);
-            s != WorkerStatus::Done) {
+            s != Worker_Status::Done) {
             return s;
         }
     }
 
     if (proto->return_type) {
-        WorkerStatus status = sema::resolve_typehint(sema, proto->return_type,
-                                                      proto->return_type->locus);
-        if (status != WorkerStatus::Done)
+        Worker_Status status = sema::resolve_typehint(
+            sema, proto->return_type, proto->return_type->locus);
+        if (status != Worker_Status::Done)
             return status;
     }
 
     auto current_scope = sema->current_scope;
 
-    auto parameter_type_ids = sema::FunctionType::Parameters(sema->allocator);
+    auto parameter_type_ids = sema::Function_Type::Parameters(sema->allocator);
 
     for (usize n = 0; n < proto->parameters.count(); ++n) {
-        AstFunctionParameter &parameter = proto->parameters[n];
-        sema::TypeId id = sema::get_type_at_locus(sema, parameter.name.locus);
+        ast::Function_Parameter &parameter = proto->parameters[n];
+        sema::Type_Id id = sema::get_type_at_locus(sema, parameter.name.locus);
         parameter_type_ids.append(id);
         sema::Symbol param_symbol{};
-        param_symbol.name                = parameter.name.value;
-        param_symbol.kind                = sema::SymbolKind::Variable;
-        param_symbol.locus               = parameter.name.locus;
-        param_symbol.scope_id            = current_scope;
-        param_symbol.set_state(sema::SymbolState::Resolved);
-        param_symbol.variable.type_id = id;
+        param_symbol.name     = parameter.name.value;
+        param_symbol.kind     = sema::Symbol_Kind::Variable;
+        param_symbol.locus    = parameter.name.locus;
+        param_symbol.scope_Id = current_scope;
+        param_symbol.set_state(sema::Symbol_State::Resolved);
+        param_symbol.variable.type_id    = id;
         param_symbol.variable.mutability = Mutability::Constant;
         sema::register_symbol_in(sema, current_scope, parameter.name.value,
                                  parameter.name.locus, param_symbol);
     }
 
-    sema::TypeId return_type = sema::type_id::Void;
+    sema::Type_Id return_type = sema::type_id::Void;
     if (proto->return_type)
         return_type = sema::get_type_at_locus(sema, proto->return_type->locus);
 
-    sema::TypeId function_type = sema::register_or_get_type(
+    sema::Type_Id function_type = sema::register_or_get_type(
         sema, sema::Type::Function(parameter_type_ids, return_type));
 
-    /* refresh the symbol pointer using symbol_id in case register_symbol_in reallocated storage */
-    sema::Symbol *symbol = sema->symbols().at_index_ptr(usize(symbol_id));
+    /* refresh the symbol pointer using symbol_id in case register_symbol_in
+     * reallocated storage */
+    sema::Symbol *symbol     = sema->symbols().at_index_ptr(usize(symbol_id));
     symbol->variable.type_id = function_type;
     sema::link_locus_to_type(sema, symbol->locus, function_type);
     generate_function_call_schema(sema, proto, symbol_id);
-    return WorkerStatus::Done;
+    return Worker_Status::Done;
 }
 
-WorkerStatus sema::check_function_definition(SemanticContext *sema,
-                                             StmtVariable *variable,
-                                             bool is_resumption)
+Worker_Status sema::check_function_definition(Semantic_Context *sema,
+                                              ast::stmt::Variable *variable,
+                                              bool is_resumption)
 {
     MINI_ASSERT(variable != nullptr, );
     MINI_ASSERT(variable->initializer != nullptr, );
@@ -136,30 +137,31 @@ WorkerStatus sema::check_function_definition(SemanticContext *sema,
 
     auto symbol_opt = sema::eagerly_find_symbol_in(sema, sema->current_scope,
                                                    variable->name.value);
-    MINI_ASSERT(symbol_opt.has_value(),);
+    MINI_ASSERT(symbol_opt.has_value(), );
 
-    sema::SymbolProxy symbol = *symbol_opt;
+    sema::Symbol_Proxy symbol = *symbol_opt;
 
-    symbol->set_state(sema::SymbolState::Resolving);
+    symbol->set_state(sema::Symbol_State::Resolving);
 
-    ExprFunction *function = (ExprFunction *)variable->initializer;
-    sema::SymbolId id      = *sema::eagerly_get_id_of_symbol(
+    ast::expr::Function *function =
+        (ast::expr::Function *)variable->initializer;
+    sema::Symbol_Id id = *sema::eagerly_get_id_of_symbol(
         sema, sema->current_scope, symbol->name);
 
-    sema::enter_scope(sema, sema::ScopeKind::Function);
+    sema::enter_scope(sema, sema::Scope_Kind::Function);
     auto scope_guard = mini::ScopeGuard([&]() { sema::leave_scope(sema); });
 
-    if (WorkerStatus check_proto =
-        check_function_prototype(sema, &function->prototype, id);
-        check_proto != WorkerStatus::Done) {
-        symbol->set_state(check_proto == WorkerStatus::Failed
-                          ? sema::SymbolState::Failed
-                          : sema::SymbolState::Unresolved);
+    if (Worker_Status check_proto =
+            check_function_prototype(sema, &function->prototype, id);
+        check_proto != Worker_Status::Done) {
+        symbol->set_state(check_proto == Worker_Status::Failed
+                              ? sema::Symbol_State::Failed
+                              : sema::Symbol_State::Unresolved);
         return check_proto;
     }
 
     sema::find_first_scope_of(
-        sema, sema::ScopeKind::Function, [function](auto *sema, auto &scope) {
+        sema, sema::Scope_Kind::Function, [function](auto *sema, auto &scope) {
             scope.function.return_type =
                 function->prototype.return_type
                     ? sema::get_type_at_locus(
@@ -170,26 +172,26 @@ WorkerStatus sema::check_function_definition(SemanticContext *sema,
     /* checking function prototype might have relocated the symbol
      * so i refresh the variable here (just in case) */
     symbol = sema::get_symbol_by_id(sema, id);
-    symbol->set_state(sema::SymbolState::Resolved);
+    symbol->set_state(sema::Symbol_State::Resolved);
 
     sema->wake_up_workers(id);
 
     if (function->body_is_defined) {
         auto s = check_statement(sema, function->body, is_resumption);
-        if (s == WorkerStatus::Failed)
-            symbol->set_state(sema::SymbolState::Failed);
-        else if (s == WorkerStatus::Pending) {
-            // symbol->resolve_state = sema::SymbolState::Unresolved;
+        if (s == Worker_Status::Failed)
+            symbol->set_state(sema::Symbol_State::Failed);
+        else if (s == Worker_Status::Pending) {
+            // symbol->resolve_state = sema::Symbol_State::Unresolved;
             for (const auto symbold_id : mini::iterate(s.waiting_on)) {
                 sema->register_worker(
                     symbold_id,
                     Worker(function->body, check_statement,
                            s.working_scope.value_or(sema->current_scope)));
             }
-            return WorkerStatus::Pending;
+            return Worker_Status::Pending;
         }
         return s;
     }
 
-    return WorkerStatus::Done;
+    return Worker_Status::Done;
 }

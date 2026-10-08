@@ -17,6 +17,9 @@ static const TokenSpec KEYWORDS[] = {
     {"if", TOKEN_KW_If},
     {"then", TOKEN_KW_Then},
     {"else", TOKEN_KW_Else},
+    {"for", TOKEN_KW_For},
+    {"break", TOKEN_KW_Break},
+    {"continue", TOKEN_KW_Continue},
 };
 static const usize KEYWORD_COUNT = sizeof(KEYWORDS) / sizeof(KEYWORDS[0]);
 

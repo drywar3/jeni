@@ -5,19 +5,43 @@
 #include "lir/types/value.h"
 #include "mini.cc/string_view.h"
 
-const SemanticStorage *lir::Buildr::store() const
+const Semantic_Storage *lir::Buildr::store() const
 {
     return mod->context->store;
 }
+
 Mini_Allocator lir::Buildr::allocator() const
 {
     return mod->context->allocator;
 }
 
+void lir::Buildr::push_loop_point(lir::Loop_Point point)
+{
+    MINI_ASSERT(function != nullptr,
+                "cannot push loop point if there is no function context");
+    loop_point_stack.append(point);
+}
+
+Opt<lir::Loop_Point> lir::Buildr::pop_loop_point()
+{
+    MINI_ASSERT(function != nullptr,
+                "cannot push loop point if there is no function context");
+    if (loop_point_stack.empty()) return std::nullopt;
+    return loop_point_stack.pop();
+}
+
+
 lir::ValueId lir::Buildr::create_integer(int64 value)
 {
     return valuestore_index(&mod->context->values, Value::Integer(value));
 }
+
+lir::ValueId lir::Buildr::create_boolean(bool value)
+{
+    if (value) return get_const_true();
+    else return get_const_false();
+}
+
 
 lir::ValueId lir::Buildr::create_cstring(mini::StringView value)
 {
@@ -145,15 +169,16 @@ lir::ValueId lir::Buildr::create_call(lir::TypePtr type, ValueId callee,
     return create_deref(result);
 }
 
-void lir::Buildr::add_global(lir::Global glob)
+void lir::Buildr::add_global(lir::Global glob) { mod->globals.append(glob); }
+
+lir::ValueId lir::Buildr::get_const_true() { return mod->context->const_true; }
+lir::ValueId lir::Buildr::get_const_false()
 {
-    mod->globals.append(glob);
+    return mod->context->const_false;
 }
 
-lir::ValueId lir::Buildr::get_const_true()  { return mod->context->const_true;  }
-lir::ValueId lir::Buildr::get_const_false() { return mod->context->const_false; }
-
-lir::Label lir::Buildr::new_label() {
+lir::Label lir::Buildr::new_label()
+{
     usize current_label_index = function->current_label_index++;
     return lir::Label(current_label_index);
 }
@@ -162,31 +187,37 @@ void lir::Buildr::put_label(lir::Label label)
 {
     MINI_ASSERT(function != nullptr,
                 "cannot add instruction when there is no function context");
-    function->add_instruction(lir::Instruction{std::nullopt, InstructionKind::PutLabel(label)});
+    function->add_instruction(
+        lir::Instruction{std::nullopt, InstructionKind::PutLabel(label)});
 }
 
 void lir::Buildr::jmp_if_eq(ValueId first, ValueId second, lir::Label label)
 {
     MINI_ASSERT(function != nullptr,
                 "cannot add instruction when there is no function context");
-    function->add_instruction(lir::Instruction{std::nullopt, InstructionKind::JmpIfEquals(label, first, second)});
+    function->add_instruction(lir::Instruction{
+        std::nullopt, InstructionKind::JmpIfEquals(label, first, second)});
 }
 
 void lir::Buildr::jmp_to_label(lir::Label label)
 {
     MINI_ASSERT(function != nullptr,
                 "cannot add instruction when there is no function context");
-    function->add_instruction(lir::Instruction{std::nullopt, InstructionKind::Jmp(label)});
+    function->add_instruction(
+        lir::Instruction{std::nullopt, InstructionKind::Jmp(label)});
 }
 
-lir::ValueId lir::Buildr::create_cmp(lir::CmpOp op, ValueId first, ValueId second)
+lir::ValueId lir::Buildr::create_cmp(lir::CmpOp op, ValueId first,
+                                     ValueId second)
 {
-    return valuestore_index(&mod->context->values, lir::Value::Cmp(op, first, second));
+    return valuestore_index(&mod->context->values,
+                            lir::Value::Cmp(op, first, second));
 }
 
 void lir::Buildr::create_ret(lir::TypePtr type, ValueId value)
 {
     MINI_ASSERT(function != nullptr,
                 "cannot add instruction when there is no function context");
-    function->add_instruction(lir::Instruction{std::nullopt, InstructionKind::Ret(type, value)});
+    function->add_instruction(
+        lir::Instruction{std::nullopt, InstructionKind::Ret(type, value)});
 }

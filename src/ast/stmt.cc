@@ -1,6 +1,6 @@
 #include "stmt.h"
 
-const char *statement_name(StatementKind kind)
+const char *statement_name(Statement_Kind kind)
 {
     return (const char *[]){
         [STMT_Variable] = "variable-declaration",

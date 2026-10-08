@@ -23,8 +23,9 @@ ExpressionPointer parse_primary(Parser *p)
         buffer[value_sv.length] = '\0';
         int64 value             = strtoll(buffer, NULL, 10);
         MINI_FREE(mini_default_allocator(), buffer);
-        return ALLOC_EXPR(p->allocator, EXPR_Integer, token.locus,
-                          ((ExprInteger){.value = value}));
+        return ast::expr::alloc_expression(p->allocator, EXPR_Integer,
+                                           token.locus,
+                                           ast::expr::Integer{.value = value});
     }
 
     if (parser::equals(p, TOKEN_Identifier)) {
@@ -32,8 +33,9 @@ ExpressionPointer parse_primary(Parser *p)
         Mini_StringView value =
             mini_string_substr(p->tokens.lexer.content, token.locus.first_byte,
                                locus_length(&token.locus));
-        return ALLOC_EXPR(p->allocator, EXPR_Identifier, token.locus,
-                          ((ExprIdentifier){.value = value}));
+        return ast::expr::alloc_expression(
+            p->allocator, EXPR_Identifier, token.locus,
+            ast::expr::Identifier{.value = value});
     }
 
     if (parser::equals(p, TOKEN_LIT_CString)) {
@@ -41,12 +43,13 @@ ExpressionPointer parse_primary(Parser *p)
         Mini_StringView value =
             mini_string_substr(p->tokens.lexer.content, token.locus.first_byte,
                                locus_length(&token.locus));
-        return ALLOC_EXPR(p->allocator, EXPR_CString, token.locus,
-                          ((ExprString){.value = value}));
+        return ast::expr::alloc_expression(p->allocator, EXPR_CString,
+                                           token.locus,
+                                           ast::expr::String{.value = value});
     }
 
     parser::report(p, diag_create(Severity::Error, parser::current(p).locus,
-                                 "expected primary expression", "here"));
+                                  "expected primary expression", "here"));
     return &ERROR_EXPR;
 }
 
@@ -55,13 +58,13 @@ ExpressionPointer parse_postfix(Parser *p)
     Expression *base = parse_primary(p);
     while (true) {
         if (parser::try_expect(p, TOKEN_SEP_Lparen)) {
-            ExprFunctionCall fcall;
+            ast::expr::Function_Call fcall;
             fcall.callee = base;
             fcall.arguments =
-                mini::Array<AstFunctionCallArgument>(p->allocator);
+                mini::Array<ast::Function_Call_Argument>(p->allocator);
 
             while (!parser::equals(p, TOKEN_SEP_Rparen)) {
-                AstFunctionCallArgument argument{};
+                ast::Function_Call_Argument argument{};
                 if (parser::try_expect(p, TOKEN_SEP_Colon)) {
                     argument.is_positional = false;
                     if (!parser::eat_name(p, &argument.name)) {
@@ -75,9 +78,9 @@ ExpressionPointer parse_postfix(Parser *p)
             }
 
             parser::expect(p, TOKEN_SEP_Rparen);
-            base =
-                ALLOC_EXPR(p->allocator, EXPR_FunctionCall,
-                           locus_merge(base->locus, parser::previous(p).locus), fcall);
+            base = ast::expr::alloc_expression(
+                p->allocator, EXPR_Function_Call,
+                locus_merge(base->locus, parser::previous(p).locus), fcall);
             continue;
         }
 
@@ -93,12 +96,12 @@ ExpressionPointer parse_unary(Parser *p)
         parser::equals(p, TOKEN_OP_Add) || parser::equals(p, TOKEN_OP_Inc) ||
         parser::equals(p, TOKEN_OP_Dec)) {
         Token begin                  = parser::next(p);
-        AstOperator op               = (AstOperator)begin.kind;
+        auto op                      = ast::Operator(begin.kind);
         ExpressionPointer expression = parse_postfix(p);
-        return ALLOC_EXPR(
+        return ast::expr::alloc_expression(
             p->allocator, EXPR_Unary,
             locus_merge(begin.locus, expression->locus),
-            ((ExprUnaryOperation){.op = op, .expression = expression}));
+            ast::expr::Unary_Operation{.op = op, .expression = expression});
     }
     return parse_postfix(p);
 }
@@ -106,13 +109,15 @@ ExpressionPointer parse_unary(Parser *p)
 ExpressionPointer parse_factor(Parser *p)
 {
     ExpressionPointer left = parse_unary(p);
-    while (parser::equals(p, TOKEN_OP_Star) || parser::equals(p, TOKEN_OP_Div)) {
-        ExprBinaryOperation binop{};
+    while (parser::equals(p, TOKEN_OP_Star) ||
+           parser::equals(p, TOKEN_OP_Div)) {
+        ast::expr::Binary_Operation binop{};
         binop.left  = left;
-        binop.op    = (AstOperator)parser::next(p).kind;
+        binop.op    = ast::Operator(parser::next(p).kind);
         binop.right = parse_unary(p);
-        left = ALLOC_EXPR(p->allocator, EXPR_Binop,
-                          locus_merge(left->locus, binop.right->locus), binop);
+        left        = ast::expr::alloc_expression(
+            p->allocator, EXPR_Binop,
+            locus_merge(left->locus, binop.right->locus), binop);
     }
     return left;
 }
@@ -120,26 +125,30 @@ ExpressionPointer parse_factor(Parser *p)
 ExpressionPointer parse_term(Parser *p)
 {
     ExpressionPointer left = parse_factor(p);
-    while (parser::equals(p, TOKEN_OP_Add) || parser::equals(p, TOKEN_OP_Minus)) {
-        ExprBinaryOperation binop{};
+    while (parser::equals(p, TOKEN_OP_Add) ||
+           parser::equals(p, TOKEN_OP_Minus)) {
+        ast::expr::Binary_Operation binop{};
         binop.left  = left;
-        binop.op    = (AstOperator)parser::next(p).kind;
+        binop.op    = ast::Operator(parser::next(p).kind);
         binop.right = parse_factor(p);
-        left = ALLOC_EXPR(p->allocator, EXPR_Binop,
-                          locus_merge(left->locus, binop.right->locus), binop);
+        left        = ast::expr::alloc_expression(
+            p->allocator, EXPR_Binop,
+            locus_merge(left->locus, binop.right->locus), binop);
     }
     return left;
 }
 
-Expression *parse_assignment(Parser *p) {
+Expression *parse_assignment(Parser *p)
+{
     Expression *left = parse_term(p);
     if (parser::equals(p, TOKEN_OP_Assign)) {
-        ExprBinaryOperation binop{};
+        ast::expr::Binary_Operation binop{};
         binop.left  = left;
-        binop.op    = (AstOperator)parser::next(p).kind;
+        binop.op    = ast::Operator(parser::next(p).kind);
         binop.right = parse_relational(p);
-        left = ALLOC_EXPR(p->allocator, EXPR_Binop,
-                          locus_merge(left->locus, binop.right->locus), binop);
+        left        = ast::expr::alloc_expression(
+            p->allocator, EXPR_Binop,
+            locus_merge(left->locus, binop.right->locus), binop);
     }
     return left;
 }
@@ -148,15 +157,16 @@ ExpressionPointer parse_comparison(Parser *p)
 {
     ExpressionPointer left = parse_assignment(p);
     while (parser::equals(p, TOKEN_OP_Greater) ||
-           parser::equals(p, TOKEN_OP_Less)    ||
-           parser::equals(p, TOKEN_OP_LessEq)    ||
+           parser::equals(p, TOKEN_OP_Less) ||
+           parser::equals(p, TOKEN_OP_LessEq) ||
            parser::equals(p, TOKEN_OP_GreaterEq)) {
-        ExprBinaryOperation binop{};
+        ast::expr::Binary_Operation binop{};
         binop.left  = left;
-        binop.op    = (AstOperator)parser::next(p).kind;
+        binop.op    = ast::Operator(parser::next(p).kind);
         binop.right = parse_term(p);
-        left = ALLOC_EXPR(p->allocator, EXPR_Binop,
-                          locus_merge(left->locus, binop.right->locus), binop);
+        left        = ast::expr::alloc_expression(
+            p->allocator, EXPR_Binop,
+            locus_merge(left->locus, binop.right->locus), binop);
     }
     return left;
 }
@@ -164,13 +174,15 @@ ExpressionPointer parse_comparison(Parser *p)
 ExpressionPointer parse_relational(Parser *p)
 {
     ExpressionPointer left = parse_comparison(p);
-    while (parser::equals(p, TOKEN_OP_Equals) || parser::equals(p, TOKEN_OP_NotEquals)) {
-        ExprBinaryOperation binop{};
+    while (parser::equals(p, TOKEN_OP_Equals) ||
+           parser::equals(p, TOKEN_OP_NotEquals)) {
+        ast::expr::Binary_Operation binop{};
         binop.left  = left;
-        binop.op    = (AstOperator)parser::next(p).kind;
+        binop.op    = ast::Operator(parser::next(p).kind);
         binop.right = parse_comparison(p);
-        left = ALLOC_EXPR(p->allocator, EXPR_Binop,
-                          locus_merge(left->locus, binop.right->locus), binop);
+        left        = ast::expr::alloc_expression(
+            p->allocator, EXPR_Binop,
+            locus_merge(left->locus, binop.right->locus), binop);
     }
     return left;
 }

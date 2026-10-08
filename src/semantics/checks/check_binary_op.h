@@ -1,9 +1,10 @@
 #pragma once
 
-#include "semantics/sema.h"
 #include "ast/expressions.h"
+#include "semantics/sema.h"
 
 namespace sema
 {
-    WorkerStatus check_binary_op(SemanticContext *sema, ExprBinaryOperation *binop);
+    Worker_Status check_binary_op(Semantic_Context *sema,
+                                  ast::expr::Binary_Operation *binop);
 } // namespace sema

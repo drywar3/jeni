@@ -1,7 +1,7 @@
 #include "hir/convert.h"
 #include "hir/types/stmt.h"
 
-hir::Statement *hir::convert_block(hir::Context *ctx, StmtBlock *block)
+hir::Statement *hir::convert_block(hir::Context *ctx, ast::stmt::Block *block)
 {
     hir::stmt::Block hir_block;
     hir_block.body = hir::stmt::Block::Body(ctx->allocator);

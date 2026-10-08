@@ -1,7 +1,7 @@
 #pragma once
 
-#include "source.h"
 #include "parser/locus.h"
+#include "source.h"
 
 #include <mini.c/array.h>
 
@@ -25,7 +25,7 @@ typedef struct {
 
 typedef struct {
     MINI_ARRAY(Diagnostic) diagnostics;
-} DiagnosticPool;
+} Diagnostic_Pool;
 
 #define DIAG_CTOR                                                              \
     Severity severity, Locus locus, const char *message, const char *text
@@ -35,10 +35,10 @@ Diagnostic diag_add_label(Diagnostic diagnostic, Label label);
 
 void diag_report(const Diagnostic *diagnostic, const SourceManager *sm);
 
-DiagnosticPool diagpool_create();
-void diagpool_report(DiagnosticPool *pool, DIAG_CTOR);
-void diagpool_report_diag(DiagnosticPool *pool, Diagnostic diagnostic);
+Diagnostic_Pool diagpool_create();
+void diagpool_report(Diagnostic_Pool *pool, DIAG_CTOR);
+void diagpool_report_diag(Diagnostic_Pool *pool, Diagnostic diagnostic);
 
-bool diagpool_is_empty(DiagnosticPool *pool);
+bool diagpool_is_empty(Diagnostic_Pool *pool);
 
-void diagpool_destroy(DiagnosticPool *pool);
+void diagpool_destroy(Diagnostic_Pool *pool);

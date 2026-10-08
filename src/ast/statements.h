@@ -1,46 +1,66 @@
 #pragma once
 
-#include "stmt.h"
-#include "misc.h"
 #include "expr.h"
+#include "misc.h"
+#include "stmt.h"
 #include "type.h"
 
 #include <mini.cc/array.h>
 
-struct StmtVariable {
-    Statement base;
+namespace ast
+{
 
-    Name name;
-    Mutability mutability;
-    bool type_is_defined;
-    Typehint *typehint;
-    bool is_initialized;
-    Expression *initializer;
-};
+    struct If_Branch {
+        Expression *condition;
+        Statement *then;
+    };
 
-struct StmtBlock {
-    using Body = MINI_ARRAY(StatementPointer);
+    namespace stmt
+    {
+        struct Variable : Statement {
+            Name name;
+            Mutability mutability;
+            bool type_is_defined;
+            Typehint *typehint;
+            bool is_initialized;
+            Expression *initializer;
+        };
 
-    Statement base;
-    Body body;
-};
+        struct Block : Statement {
+            using Body = MINI_ARRAY(StatementPointer);
+            Body body;
+        };
 
-struct AstIfBranch {
-    Expression *condition;
-    Statement  *then;
-};
+        struct If : Statement {
+            using Branches = mini::Array<ast::If_Branch>;
+            Expression *condition;
+            Statement *then;
+            Branches branches;
+            Statement *else_;
+        };
 
-struct StmtIf {
-    using Branches = mini::Array<AstIfBranch>;
+        struct Return : Statement {
+            Expression *value;
+        };
 
-    Statement   base;
-    Expression *condition;
-    Statement  *then;
-    Branches    branches;
-    Statement  *else_;
-};
+        struct For_Ever : Statement {
+            Statement *body;
+        };
 
-struct StmtReturn {
-    Statement   base;
-    Expression *value;
-};
+        struct Break : Statement {};
+
+        template <typename Derived_Statement>
+        static inline Statement *
+        alloc_statement(Mini_Allocator allocator, Statement_Kind kind,
+                        Locus locus, Derived_Statement s)
+        {
+            Statement *statement =
+                (Statement *)MINI_ALLOC(allocator, Derived_Statement);
+            new (statement) Derived_Statement(std::move(s));
+            statement->kind  = kind;
+            statement->locus = locus;
+            return statement;
+        }
+
+    } // namespace stmt
+} // namespace ast

@@ -8,45 +8,45 @@
 
 namespace sema
 {
-    enum struct ScopeId : usize {};
-    enum struct SymbolId : usize {};
+    enum struct Scope_Id : usize {};
+    enum struct Symbol_Id : usize {};
 
-    enum struct SymbolKind {
+    enum struct Symbol_Kind {
         Variable,
         Function,
         Type,
         Namespace,
     };
 
-    enum struct SymbolState {
+    enum struct Symbol_State {
         Resolved,
         Resolving,
         Unresolved,
         Failed,
     };
 
-    struct SymbolVariable {
+    struct Symbol_Variable {
         bool is_initialized;
-        std::optional<sema::TypeId> type_id;
+        std::optional<sema::Type_Id> type_id;
         Mutability mutability;
     };
 
     struct Symbol {
-        SymbolKind kind;
+        Symbol_Kind kind;
         mini::StringView name;
-        ScopeId scope_id;
+        Scope_Id scope_Id;
         /* points to where the variable was defined */
         Locus locus;
-        SymbolState resolve_state{SymbolState::Unresolved};
+        Symbol_State resolve_state{Symbol_State::Unresolved};
 
         union {
-            SymbolVariable variable;
+            Symbol_Variable variable;
         };
 
-        void set_state(SymbolState state);
-        bool is_state(SymbolState state) const;
+        void set_state(Symbol_State state);
+        bool is_state(Symbol_State state) const;
     };
 
-    using SymbolStorage = DenseMap<Locus, Symbol>;
+    using Symbol_Storage = DenseMap<Locus, Symbol>;
 
 } // namespace sema

@@ -31,10 +31,10 @@ int main(int argc, char **argv)
 
     const char *input_path = argv[1];
 
-    SourceManager sources = sourcemgr_init();
+    SourceManager sources = sourcemgr_init(allocator);
     SourceId root_file = sourcemgr_open_file(&sources, input_path, allocator);
 
-    DiagnosticPool diagnostics = diagpool_create();
+    Diagnostic_Pool diagnostics = diagpool_create();
 
     auto scope_guard = mini::ScopeGuard([&]() {
         sourcemgr_destroy(&sources);
@@ -63,10 +63,10 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    SemanticStorage storage = semastore_init(allocator);
+    Semantic_Storage storage = semastore_init(allocator);
     semastore_init_builtin_types(&storage);
 
-    SemanticContext sema = semactx_init(allocator, &diagnostics, &storage);
+    Semantic_Context sema = semactx_init(allocator, &diagnostics, &storage);
     semactx_resolve(&sema, &program);
 
     if (!diagpool_is_empty(&diagnostics)) {

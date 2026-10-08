@@ -2,8 +2,8 @@
 
 #include <mini.cc/string_view.h>
 
-#include "mini.cc/array.h"
 #include "ast/expressions.h"
+#include "mini.cc/array.h"
 #include "semantics/entities/type.h"
 
 namespace hir
@@ -23,7 +23,7 @@ namespace hir
             mini::StringView value;
         };
 
-        struct FunctionCall {
+        struct Function_Call {
             Expression *callee;
             mini::Array<Expression *> arguments;
         };
@@ -33,10 +33,14 @@ namespace hir
             Expression *value;
         };
 
-        struct BinaryOperation {
+        struct Binary_Operation {
             Expression *left;
             Expression *right;
-            AstOperator op;
+            ast::Operator op;
+        };
+
+        struct Boolean {
+            bool value;
         };
     } // namespace expr
 
@@ -44,22 +48,24 @@ namespace hir
         enum struct Kind {
             Integer,
             Identifier,
-            FunctionCall,
+            Function_Call,
             CString,
-            BinaryOperation,
+            Binary_Operation,
             Assign,
+            Boolean,
         };
 
         Kind kind;
-        sema::TypeId type_id;
+        sema::Type_Id type_id;
 
         union {
             expr::Integer integer;
             expr::Identifier identifier;
-            expr::FunctionCall function_call;
+            expr::Function_Call function_call;
             expr::String string;
-            expr::BinaryOperation binop;
+            expr::Binary_Operation binop;
             expr::Assign assign;
+            expr::Boolean boolean;
         } as;
     };
 } // namespace hir

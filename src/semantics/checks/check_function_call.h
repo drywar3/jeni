@@ -1,9 +1,10 @@
 #pragma once
 
-#include "semantics/sema.h"
 #include "ast/expressions.h"
+#include "semantics/sema.h"
 
 namespace sema
 {
-    WorkerStatus check_function_call(SemanticContext *sema, ExprFunctionCall *call);
+    Worker_Status check_function_call(Semantic_Context *sema,
+                                      ast::expr::Function_Call *call);
 } // namespace sema

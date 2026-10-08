@@ -1,7 +1,7 @@
 #include "lir/lir.h"
 
 lir::Context lir::ctx_init(Mini_Allocator allocator,
-                           const SemanticStorage *store)
+                           const Semantic_Storage *store)
 {
     lir::Context context{.values = ValueStorage(allocator),
                          .blocks = BlockStorage(allocator)};
@@ -46,16 +46,15 @@ static lir::Global lower_glob_variable(lir::Buildr *builder,
     };
 }
 
-lir::Global lir::lower_glob_function(lir::Buildr *b,
-                                     const hir::Statement *stmt)
+lir::Global lir::lower_glob_function(lir::Buildr *b, const hir::Statement *stmt)
 {
     const hir::stmt::Function &function = stmt->as.function;
 
     lir::TypePtr return_type =
         lir::lower_type(b, function.prototype.return_type);
 
-    lir::Global::Function g_function =
-        lir::function_init(b, function.name, return_type, function.prototype.is_variadic);
+    lir::Global::Function g_function = lir::function_init(
+        b, function.name, return_type, function.prototype.is_variadic);
     lir::Buildr new_builder = g_function.buildr(b->mod);
 
     new_builder.new_block();
@@ -94,7 +93,7 @@ static lir::Global lower_glob_statement(lir::Buildr *builder,
 
 void lir::inflate_module(lir::Module *mod, const hir::Program program)
 {
-    lir::Buildr buildr = mod->buildr();
+    lir::Buildr buildr = mod->new_buildr();
     for (const hir::Statement *stmt : mini::iterate(program)) {
         lir::Global global = lower_glob_statement(&buildr, stmt);
         mod->globals.append(global);

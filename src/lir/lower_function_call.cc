@@ -7,8 +7,8 @@
 lir::ValueId lir::lower_function_call(lir::Buildr *b,
                                       const hir::Expression *expression)
 {
-    const hir::expr::FunctionCall &call = expression->as.function_call;
-    lir::TypePtr type                   = lower_type(b, expression->type_id);
+    const hir::expr::Function_Call &call = expression->as.function_call;
+    lir::TypePtr type                    = lower_type(b, expression->type_id);
 
     ValueId callee = lir::lower_expression(b, call.callee);
 

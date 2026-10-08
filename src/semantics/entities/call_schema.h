@@ -1,40 +1,43 @@
 #pragma once
 
-#include "misc/map.h"
 #include "ast/expr.h"
-#include "semantics/entities/type.h"
+#include "misc/map.h"
 #include "semantics/entities/symbol.h"
+#include "semantics/entities/type.h"
 
 #include <mini.cc/string_view.h>
 
 namespace sema
 {
-    struct ParameterSpec {
-        Locus               locus;
-        usize               index;
-        sema::TypeId        type_id;
+    struct Parameter_Spec {
+        Locus locus;
+        usize index;
+        sema::Type_Id type_id;
         const ::Expression *default_expression;
     };
 
-    struct FunctionArity {
+    struct Function_Arity {
         usize min;
         usize max;
     };
 
-    struct FunctionCallSchema {
-        using Parameters = HashMap<mini::StringView, ParameterSpec>;
-        using IndexToParameterName = HashMap<usize, mini::StringView>;
+    struct Function_Call_Schema {
+        using Parameters = HashMap<mini::StringView, Parameter_Spec>;
+        using Index_To_Parameter_Name = HashMap<usize, mini::StringView>;
 
         Parameters parameters;
-        FunctionArity arity;
-        sema::SymbolId symbol_id;
+        Function_Arity arity;
+        sema::Symbol_Id symbol_id;
         bool is_variadic;
-        IndexToParameterName parameter_names;
+        Index_To_Parameter_Name parameter_names;
 
-        FunctionCallSchema(Mini_Allocator allocator = mini_default_allocator())
-            : parameters(allocator), parameter_names(allocator) {}
+        Function_Call_Schema(
+            Mini_Allocator allocator = mini_default_allocator())
+            : parameters(allocator), parameter_names(allocator)
+        {
+        }
 
-        ParameterSpec get_parameter_at_index(usize index) const
+        Parameter_Spec get_parameter_at_index(usize index) const
         {
             auto name = *parameter_names.find(index);
             return *parameters.find(name);

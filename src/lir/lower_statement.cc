@@ -4,6 +4,8 @@
 static void lower_block(lir::Buildr *b, const hir::Statement *stmt);
 static void lower_variable(lir::Buildr *b, const hir::Statement *stmt);
 static void lower_if_stmt(lir::Buildr *b, const hir::Statement *stmt);
+static void lower_loop_stmt(lir::Buildr *b, const hir::Statement *stmt);
+static void lower_break_stmt(lir::Buildr *b, const hir::Statement *stmt);
 
 void lir::lower_statement(lir::Buildr *b, const hir::Statement *stmt)
 {
@@ -12,7 +14,9 @@ void lir::lower_statement(lir::Buildr *b, const hir::Statement *stmt)
         return lower_block(b, stmt);
     case hir::Statement::Kind::Variable:
         return lower_variable(b, stmt);
-    case hir::Statement::Kind::If: return lower_if_stmt(b, stmt);
+    case hir::Statement::Kind::If:    return lower_if_stmt(b, stmt);
+    case hir::Statement::Kind::Break: return lower_break_stmt(b, stmt);
+    case hir::Statement::Kind::Loop:  return lower_loop_stmt(b, stmt);
     case hir::Statement::Kind::Expr:
         lower_expression(b, stmt->as.expr);
         return;
@@ -88,4 +92,33 @@ void lower_if_stmt(lir::Buildr *b, const hir::Statement *stmt)
         lir::lower_statement(b, if_.then);
         b->jmp_to_label(merge_label);
     b->put_label(merge_label);
+}
+
+void lower_loop_stmt(lir::Buildr *b, const hir::Statement *stmt)
+{
+    const auto &loop = stmt->as.loop;
+
+    auto condition = lir::lower_expression(b, loop.condition);
+    auto true_v    = b->get_const_true();
+    auto false_v   = b->get_const_false();
+
+    auto loop_start = b->new_label();
+    auto loop_end   = b->new_label();
+
+    b->push_loop_point({loop_start, loop_end});
+    b->put_label(loop_start);
+        b->jmp_if_eq(condition, false_v, loop_end);
+        lir::lower_statement(b, loop.body);
+        b->jmp_if_eq(condition, true_v, loop_start);
+   b->put_label(loop_end);
+
+   b->pop_loop_point();
+}
+
+void lower_break_stmt(lir::Buildr *b, const hir::Statement *stmt)
+{
+    (void)stmt;
+    auto loop_point = b->pop_loop_point();
+    b->jmp_to_label(loop_point->break_label);
+    b->push_loop_point(*loop_point);
 }

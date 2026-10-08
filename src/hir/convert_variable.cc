@@ -5,7 +5,7 @@
 
 hir::Statement *hir::convert_variable_stmt(hir::Context *ctx, const ::Statement *stmt)
 {
-    auto *variable     = (StmtVariable*)stmt;
+    auto *variable     = (ast::stmt::Variable*)stmt;
     if (variable->is_initialized &&
         variable->initializer->is(EXPR_Function))
         return hir::convert_function_stmt(ctx, variable);

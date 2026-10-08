@@ -19,7 +19,7 @@ struct SourceManager {
     Map sources;
 };
 
-SourceManager sourcemgr_init();
+SourceManager sourcemgr_init(Mini_Allocator allocator);
 void sourcemgr_destroy(SourceManager *sm);
 
 SourceId sourcemgr_open_file(SourceManager *sm, mini::StringView file_path,

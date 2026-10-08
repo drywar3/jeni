@@ -1,38 +1,38 @@
 #pragma once
 
-#include "worker.h"
 #include "ast/ast.h"
-#include "misc/map.h"
 #include "diagnostic.h"
-#include "semantics/entities/type.h"
-#include "semantics/entities/scope.h"
+#include "misc/map.h"
 #include "semantics/entities/call_schema.h"
+#include "semantics/entities/scope.h"
+#include "semantics/entities/type.h"
+#include "worker.h"
 
-#include <mini.c/mini_def.h>
 #include <mini.c/array.h>
+#include <mini.c/mini_def.h>
 
-struct SemanticStorage {
-    using CallSchemas = HashMap<sema::SymbolId, sema::FunctionCallSchema>;
+struct Semantic_Storage {
+    using Call_Schemas = HashMap<sema::Symbol_Id, sema::Function_Call_Schema>;
 
-    sema::ScopeStorage  scopes;
-    sema::SymbolStorage symbols;
-    sema::TypeStorage   types;
-    CallSchemas         call_schemas;
+    sema::Scope_Storage scopes;
+    sema::Symbol_Storage symbols;
+    sema::Type_Storage types;
+    Call_Schemas call_schemas;
 };
 
-struct SemanticContext {
+struct Semantic_Context {
     /* maps [symbol id] -> pending workers */
-    HashMap<sema::SymbolId, mini::Array<Worker>> pending_workers;
+    HashMap<sema::Symbol_Id, mini::Array<Worker>> pending_workers;
 
-    using BlockSavePoints = HashMap<Locus, usize>;
+    using Block_Save_Points = HashMap<Locus, usize>;
 
-    DiagnosticPool *diagnostics;
+    Diagnostic_Pool *diagnostics;
     Mini_Allocator allocator;
-    SemanticStorage *store;
+    Semantic_Storage *store;
 
-    sema::ScopeId global_scope;
-    sema::ScopeId current_scope;
-    BlockSavePoints block_save_points;
+    sema::Scope_Id global_scope;
+    sema::Scope_Id current_scope;
+    Block_Save_Points block_save_points;
 
     auto &types() { return store->types; }
     auto &scopes() { return store->scopes; }
@@ -42,8 +42,9 @@ struct SemanticContext {
     const auto &scopes() const { return store->scopes; }
     const auto &symbols() const { return store->symbols; }
 
-    sema::FunctionCallSchema* get_call_schema(sema::SymbolId symbol_id);
-    void set_call_schema(sema::SymbolId symbol_id, sema::FunctionCallSchema schema);
+    sema::Function_Call_Schema *get_call_schema(sema::Symbol_Id symbol_id);
+    void set_call_schema(sema::Symbol_Id symbol_id,
+                         sema::Function_Call_Schema schema);
 
     bool block_has_save_point(Locus locus) const
     {
@@ -60,7 +61,7 @@ struct SemanticContext {
         block_save_points[locus] = point;
     }
 
-    void register_worker(sema::SymbolId id, Worker worker)
+    void register_worker(sema::Symbol_Id id, Worker worker)
     {
         if (pending_workers.contains(id)) {
             pending_workers[id].append(worker);
@@ -71,17 +72,17 @@ struct SemanticContext {
         }
     }
 
-    void wake_up_workers(sema::SymbolId symbol_id)
+    void wake_up_workers(sema::Symbol_Id symbol_id)
     {
         if (!pending_workers.contains(symbol_id))
             return;
 
         auto &workers = *pending_workers.find(symbol_id);
         for (usize n = 0; n < workers.count(); ++n) {
-            Worker worker = workers[n];
-            WorkerStatus new_status =
-                worker.resume(this);
-            if (new_status == WorkerStatus::Done || new_status == WorkerStatus::Failed) {
+            Worker worker            = workers[n];
+            Worker_Status new_status = worker.resume(this);
+            if (new_status == Worker_Status::Done ||
+                new_status == Worker_Status::Failed) {
                 workers.remove(n);
             }
         }
@@ -92,10 +93,10 @@ struct SemanticContext {
     }
 };
 
-SemanticStorage semastore_init(Mini_Allocator allocator);
-void semastore_init_builtin_types(SemanticStorage *store);
+Semantic_Storage semastore_init(Mini_Allocator allocator);
+void semastore_init_builtin_types(Semantic_Storage *store);
 
-SemanticContext semactx_init(Mini_Allocator allocator,
-                             DiagnosticPool *diagnostics,
-                             SemanticStorage *store);
-void semactx_resolve(SemanticContext *sema, Program *program);
+Semantic_Context semactx_init(Mini_Allocator allocator,
+                              Diagnostic_Pool *diagnostics,
+                              Semantic_Storage *store);
+void semactx_resolve(Semantic_Context *sema, Program *program);

@@ -1,5 +1,5 @@
-#include "semantics/impl.h"
 #include "semantics/type/coercer.h"
+#include "semantics/impl.h"
 
 enum struct CoerceResult {
     Ok,
@@ -8,11 +8,11 @@ enum struct CoerceResult {
     ConstCast,
 };
 
-CoerceResult check_type_coercesion(SemanticContext *sema,
-                                   sema::TypeId target_id,
-                                   sema::TypeId source_id)
+CoerceResult check_type_coercesion(Semantic_Context *sema,
+                                   sema::Type_Id target_id,
+                                   sema::Type_Id source_id)
 {
-    sema::TypeStorage &types = sema->types();
+    sema::Type_Storage &types = sema->types();
 
     sema::Type &target = types.at_index((usize)target_id);
     sema::Type &source = types.at_index((usize)source_id);
@@ -23,7 +23,8 @@ CoerceResult check_type_coercesion(SemanticContext *sema,
 
     if (target.kind.is_signed_integer() && source.kind.is_signed_integer()) {
         bool can_fit = target.kind >= source.kind;
-        if (can_fit) return CoerceResult::Ok;
+        if (can_fit)
+            return CoerceResult::Ok;
     }
 
     if ((target.kind.is_unsigned_integer() &&
@@ -33,8 +34,8 @@ CoerceResult check_type_coercesion(SemanticContext *sema,
         return CoerceResult::IntegerSignChange;
     }
 
-    if (target.kind == sema::TypeKind::Pointer &&
-        source.kind == sema::TypeKind::Pointer)
+    if (target.kind == sema::Type_Kind::Pointer &&
+        source.kind == sema::Type_Kind::Pointer)
         MINI_UNREACHABLE("TODO");
     return CoerceResult::Invalid;
 }
@@ -44,16 +45,16 @@ const char *INVALID_COERCE_REASONS[] = {
         "both types are of different signedness",
     [(int)CoerceResult::Invalid] = "incompatible type"};
 
-static void render_coersion_error(SemanticContext *sema, CoerceResult result,
-                                  Severity sev, sema::TypeId target_id,
-                                  sema::TypeId source_id, Locus target_locus,
+static void render_coersion_error(Semantic_Context *sema, CoerceResult result,
+                                  Severity sev, sema::Type_Id target_id,
+                                  sema::Type_Id source_id, Locus target_locus,
                                   Locus source_locus, Mini_Allocator a)
 {
     MINI_ASSERT(result != CoerceResult::Ok, );
 
-    sema::TypeStorage &types = sema->types();
-    sema::Type &target       = types.at_index((usize)target_id);
-    sema::Type &source       = types.at_index((usize)source_id);
+    sema::Type_Storage &types = sema->types();
+    sema::Type &target        = types.at_index((usize)target_id);
+    sema::Type &source        = types.at_index((usize)source_id);
 
     switch (result) {
     case CoerceResult::Invalid: {
@@ -81,8 +82,8 @@ static void render_coersion_error(SemanticContext *sema, CoerceResult result,
     }
 }
 
-bool sema::coerce_type_into(SemanticContext *sema, TypeId target_id,
-                            TypeId source_id, Locus target_locus,
+bool sema::coerce_type_into(Semantic_Context *sema, Type_Id target_id,
+                            Type_Id source_id, Locus target_locus,
                             Locus source_locus, bool strict)
 {
     CoerceResult cr = check_type_coercesion(sema, target_id, source_id);
@@ -100,8 +101,8 @@ bool sema::coerce_type_into(SemanticContext *sema, TypeId target_id,
     return cr != CoerceResult::Invalid;
 }
 
-bool sema::try_coerce_type_into(SemanticContext *sema, sema::TypeId target_id, sema::TypeId source_id,
-                                bool strict)
+bool sema::try_coerce_type_into(Semantic_Context *sema, sema::Type_Id target_id,
+                                sema::Type_Id source_id, bool strict)
 {
     CoerceResult cr = check_type_coercesion(sema, target_id, source_id);
     if (strict)

@@ -1,9 +1,9 @@
 #pragma once
 
+#include "ast/stmt.h"
 #include "diagnostic.h"
 #include "lexer.h"
 #include "token.h"
-#include "ast/stmt.h"
 #include "token_buffer.h"
 
 #include <mini.c/allocator.h>
@@ -17,14 +17,14 @@
 
 struct Parser {
     TokenBuffer tokens;
-    DiagnosticPool *diagnostics;
+    Diagnostic_Pool *diagnostics;
     Token current, previous;
 
     Mini_Allocator allocator;
 };
 
 Parser parser_create(SourceId id, const Mini_String content,
-                     DiagnosticPool *diagnostics);
+                     Diagnostic_Pool *diagnostics);
 void parser_destroy(Parser *parser);
 
 void parser_set_allocator(Parser *parser, Mini_Allocator allocator);
