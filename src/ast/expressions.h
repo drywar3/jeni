@@ -56,11 +56,17 @@ struct ExprFunction {
 };
 
 enum struct AstOperator : uint {
-    Add       = TOKEN_OP_Add,
-    Sub       = TOKEN_OP_Minus,
-    Mul       = TOKEN_OP_Star,
-    Equals    = TOKEN_OP_Equals,
-    NotEquals = TOKEN_OP_NotEquals,
+    Add               = TOKEN_OP_Add,
+    Sub               = TOKEN_OP_Minus,
+    Mul               = TOKEN_OP_Star,
+    Div               = TOKEN_OP_Div,
+    Equals            = TOKEN_OP_Equals,
+    NotEquals         = TOKEN_OP_NotEquals,
+    Assign            = TOKEN_OP_Assign,
+    LessThanEquals    = TOKEN_OP_LessEq,
+    GreaterThanEquals = TOKEN_OP_GreaterEq,
+    LessThan          = TOKEN_OP_Less,
+    GreaterThan       = TOKEN_OP_Greater,
 };
 
 struct ExprBinaryOperation {

@@ -17,6 +17,10 @@ bool lir::Value::operator==(const Value &other) const
         return ident == other.ident;
     case Kind::CString:
         return string == other.string;
+    case Kind::Cmp:
+        return cmp.op == other.cmp.op &&
+            cmp.first == other.cmp.first &&
+            cmp.second == other.cmp.second;
     default: MINI_UNREACHABLE();
     }
 }

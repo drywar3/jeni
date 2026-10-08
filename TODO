@@ -1,5 +1,5 @@
 
-[ ] actually start using workers for what it was meant for
-[ ] create an mini.cc array wrapper for mini.c
+[x] actually start using workers for what it was meant for
+[x] create an mini.cc array wrapper for mini.c
 [ ] migrate whole the codebase to using namespaces instead of c-like prefixes
 [ ] create a specialized error.h for semantics

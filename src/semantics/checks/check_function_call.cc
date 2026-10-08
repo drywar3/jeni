@@ -21,13 +21,15 @@ ensure_argument_count_is_sufficient(SemanticContext *sema,
     if (argument_count < arity.min) {
         Mini_String message = mini_string_build(
             sema->allocator,
-            "expected a minimum of `%zu` argument[s]", arity.min
+            "expected at least, %zu argument[s]", arity.min
         );
 
         Diagnostic diag = diag_create(
             Severity::Error,
             locus,
-            mini_string_build(sema->allocator, "not expecting `%zu` argument[s]", argument_count),
+            mini_string_build(sema->allocator,
+                              argument_count == 0 ?
+                              "not expecting zero arguments" : "not expecting %zu argument[s]", argument_count),
             message
         );
 
@@ -50,14 +52,14 @@ ensure_argument_count_is_sufficient(SemanticContext *sema,
         } else {
             message = mini_string_build(
                 sema->allocator,
-                "expected a maximum of `%zu` argument[s]", arity.max
+                "expected at most, %zu argument[s]", arity.max
             );
         }
 
         Diagnostic diag = diag_create(
             Severity::Error,
             locus,
-            mini_string_build(sema->allocator, "not expecting `%zu` argument[s]", argument_count),
+            mini_string_build(sema->allocator, "not expecting %zu argument[s]", argument_count),
             message
         );
 

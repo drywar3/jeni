@@ -18,6 +18,8 @@ struct CBackend {
     Mini_String fwd_decl;
     Mini_String code;
     codegen::Context *context;
+
+    Opt<mini::StringView> function_name;
 };
 
 bool is_constant_value(const lir::Module *mod, lir::ValueId val_id)
@@ -225,6 +227,35 @@ void write_value(CBackend *bk, Mini_String *out, lir::ValueId value_id)
     case lir::Value::Kind::CString:
         mini_string_append_fmt(out, "%.*s", SVARG(value.string.base()));
         break;
+    case lir::Value::Kind::True:
+        mini_string_append_string(out, "true");
+        break;
+    case lir::Value::Kind::False:
+        mini_string_append_string(out, "false");
+        break;
+    case lir::Value::Kind::Cmp:
+        mini_string_append_fmt(out, "(");
+        write_value(bk, out, value.cmp.first);
+        const char *op_str;
+        switch (value.cmp.op) {
+        case lir::CmpOp::Equals:      op_str = "=="; break;
+        case lir::CmpOp::NotEquals:   op_str = "!="; break;
+        case lir::CmpOp::LessThan:    op_str = "<";  break;
+        case lir::CmpOp::GreaterThan: op_str = ">";  break;
+
+        case lir::CmpOp::LessThanEquals:    op_str = "<=";  break;
+        case lir::CmpOp::GreaterThanEquals: op_str = ">=";  break;
+
+        case lir::CmpOp::Div:    op_str = "/";  break;
+        case lir::CmpOp::Mul:    op_str = "*";  break;
+        case lir::CmpOp::Add:    op_str = "+";  break;
+        case lir::CmpOp::Sub:    op_str = "-";  break;
+        default: MINI_UNREACHABLE();
+        }
+        mini_string_append_string(out, op_str);
+        write_value(bk, out, value.cmp.second);
+        mini_string_append_fmt(out, ")");
+        break;
     default:
         MINI_UNREACHABLE();
     }
@@ -273,6 +304,7 @@ void emit_function_definition(CBackend *bk,
 
     writec(bk, ")");
 
+    bk->function_name = function->name;
     if (function->body_is_defined) {
         writec(bk, " {\n");
         if (function->name == "main")
@@ -291,6 +323,8 @@ void emit_function_definition(CBackend *bk,
     } else {
         writec(bk, ";");
     }
+
+    bk->function_name = std::nullopt;
     writec(bk, "\n");
 }
 
@@ -327,6 +361,28 @@ void write_instruction(CBackend *bk, Mini_String *out, lir::Instruction inst_)
         write_type(out, inst.as.store.type);
         writeo(out, ")");
         write_value(bk, out, inst.as.store.value);
+        writeo(out, ";\n");
+        break;
+    case lir::InstructionKind::OpCode::PutLabel:
+        writeo(out, "%.*s_L_%d:\n", SVARG(bk->function_name->base()), inst.as.label);
+        break;
+    case lir::InstructionKind::OpCode::Jmp:
+        writeo(out, "goto %.*s_L_%d;\n", SVARG(bk->function_name->base()), inst.as.label);
+        break;
+    case lir::InstructionKind::OpCode::JmpIfEquals:
+        writeo(out, "if (");
+        write_value(bk, out, inst.as.jmp_if_eq.first);
+        writeo(out, "==");
+        write_value(bk, out, inst.as.jmp_if_eq.second);
+        writeo(out, ") goto %.*s_L_%d;\n", SVARG(bk->function_name->base()), inst.as.jmp_if_eq.label);
+        break;
+    case lir::InstructionKind::OpCode::Ret:
+        writeo(out, "return ");
+        if (inst.as.ret.type->kind == lir::Type::Kind::Void) {
+            writeo(out, "(_JeniVoid){};\n");
+            break;
+        }
+        write_value(bk, out, inst.as.ret.value);
         writeo(out, ";\n");
         break;
     case lir::InstructionKind::OpCode::Call: {

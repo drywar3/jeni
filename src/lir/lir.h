@@ -19,6 +19,9 @@ namespace lir
         const SemanticStorage *store;
         Mini_Allocator allocator;
 
+        ValueId const_true;
+        ValueId const_false;
+
         BlockId new_block(std::optional<BlockId> parent);
         Block *get_block(BlockId id);
     };

@@ -99,3 +99,12 @@ bool sema::coerce_type_into(SemanticContext *sema, TypeId target_id,
         return cr == CoerceResult::Ok;
     return cr != CoerceResult::Invalid;
 }
+
+bool sema::try_coerce_type_into(SemanticContext *sema, sema::TypeId target_id, sema::TypeId source_id,
+                                bool strict)
+{
+    CoerceResult cr = check_type_coercesion(sema, target_id, source_id);
+    if (strict)
+        return cr == CoerceResult::Ok;
+    return cr != CoerceResult::Invalid;
+}

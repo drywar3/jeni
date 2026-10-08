@@ -4,6 +4,9 @@ const char *tokenkind_to_string(TokenKind kind)
 {
     return (const char *[]){[TOKEN_KW_Func]   = "func",
                             [TOKEN_KW_Return] = "return",
+                            [TOKEN_KW_If] = "if",
+                            [TOKEN_KW_Else] = "else",
+                            [TOKEN_KW_Then] = "then",
 
                             [TOKEN_OP_Add]     = "+",
                             [TOKEN_OP_Minus]   = "-",
@@ -22,6 +25,7 @@ const char *tokenkind_to_string(TokenKind kind)
                             [TOKEN_SEP_Rbracket]    = "]",
 
                             [TOKEN_LIT_Int] = "integer literal",
+                            [TOKEN_LIT_CString] = "c-string literal",
 
                             [TOKEN_Identifier] = "identifier",
                             [TOKEN_Endoffile]  = "EOF"}[(int)kind];

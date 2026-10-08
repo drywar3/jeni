@@ -8,10 +8,10 @@ typedef struct Name {
     Locus locus;
 } Name;
 
-typedef enum Mutability {
-    MUT_Constant = true,
-    MUT_Mutable  = false,
-} Mutability;
+enum Mutability {
+    Constant = true,
+    Mutable  = false,
+};
 
 static inline Name name_create(Mini_StringView value, Locus locus)
 {

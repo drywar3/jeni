@@ -5,6 +5,8 @@
 #include "expr.h"
 #include "type.h"
 
+#include <mini.cc/array.h>
+
 struct StmtVariable {
     Statement base;
 
@@ -21,4 +23,24 @@ struct StmtBlock {
 
     Statement base;
     Body body;
+};
+
+struct AstIfBranch {
+    Expression *condition;
+    Statement  *then;
+};
+
+struct StmtIf {
+    using Branches = mini::Array<AstIfBranch>;
+
+    Statement   base;
+    Expression *condition;
+    Statement  *then;
+    Branches    branches;
+    Statement  *else_;
+};
+
+struct StmtReturn {
+    Statement   base;
+    Expression *value;
 };

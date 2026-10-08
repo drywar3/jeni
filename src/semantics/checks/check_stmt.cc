@@ -7,6 +7,8 @@
 #include "semantics/checks/check_stmt.h"
 #include "semantics/checks/check_expr.h"
 #include "semantics/checks/check_block.h"
+#include "semantics/checks/check_if_stmt.h"
+#include "semantics/checks/check_return_stmt.h"
 #include "semantics/checks/check_function_definition.h"
 
 #include <mini.cc/array.h>
@@ -15,7 +17,7 @@
 static bool discover_variable(SemanticContext *sema, StatementPointer stmt,
                               sema::ScopeId scope);
 
-bool discover_statement(SemanticContext *sema, StatementPointer stmt)
+bool sema::discover_statement(SemanticContext *sema, StatementPointer stmt)
 {
     switch (stmt->kind) {
     case STMT_Variable:
@@ -28,8 +30,8 @@ bool discover_statement(SemanticContext *sema, StatementPointer stmt)
 WorkerStatus check_variable(SemanticContext *sema, void *data,
                             bool is_resumption);
 
-WorkerStatus check_statement(SemanticContext *sema, void *data,
-                             bool is_resumption)
+WorkerStatus sema::check_statement(SemanticContext *sema, void *data,
+                                   bool is_resumption)
 {
     StatementPointer stmt = (StatementPointer)data;
     switch (stmt->kind) {
@@ -39,6 +41,10 @@ WorkerStatus check_statement(SemanticContext *sema, void *data,
         return check_block(sema, (StmtBlock *)stmt, is_resumption);
     case STMT_Expr:
         return sema::check_expression(sema, stmt);
+    case STMT_If:
+        return sema::check_if_stmt(sema, stmt);
+    case STMT_Return:
+        return sema::check_return_stmt(sema, stmt);
     default:
         MINI_UNREACHABLE();
     }
@@ -155,7 +161,7 @@ WorkerStatus check_variable(SemanticContext *sema, void *data,
 }
 
 bool discover_variable(SemanticContext *sema, StatementPointer stmt,
-                       sema::ScopeId scope)
+                             sema::ScopeId scope)
 {
     MINI_ASSERT(stmt->kind == STMT_Variable, "expected variable statement");
     StmtVariable *variable = (StmtVariable *)stmt;
@@ -185,6 +191,7 @@ bool discover_variable(SemanticContext *sema, StatementPointer stmt,
     symbol.scope_id                   = scope;
     symbol.set_state(sema::SymbolState::Unresolved);
     symbol.variable.is_initialized = variable->is_initialized;
+    symbol.variable.mutability     = variable->mutability;
     sema::register_symbol_in(sema, scope, variable->name.value,
                              variable->name.locus, symbol);
     return true;

@@ -17,13 +17,13 @@ static bool expression_requires_terminator(ExpressionPointer expr)
     }
 }
 
-bool eat_name(Parser *parser, Name *name)
+bool parser::eat_name(Parser *parser, Name *name)
 {
-    if (!equals(parser, TOKEN_Identifier)) {
+    if (!parser::equals(parser, TOKEN_Identifier)) {
         return false;
     }
 
-    Token _current = next(parser);
+    Token _current = parser::next(parser);
     name->value    = mini_string_substr(parser->tokens.lexer.content,
                                         /* the lexer lexes tokens on a 1-based
                                          * cursor   so there is need to substract 1
@@ -35,13 +35,13 @@ bool eat_name(Parser *parser, Name *name)
     return true;
 }
 
-Statement *parse_variable_declaration(Parser *p)
+Statement *parser::parse_variable_declaration(Parser *p)
 {
     MINI_ASSERT(equals_sequence(p, TOKEN_Identifier, TOKEN_SEP_Colon),
                 "cannot parse a variable declaration");
     Token begin = current(p);
     StmtVariable variable{};
-    if (!eat_name(p, &variable.name))
+    if (!parser::eat_name(p, &variable.name))
         MINI_UNREACHABLE();
     /* skip `:` after variable name */
     next(p);
@@ -60,20 +60,20 @@ Statement *parse_variable_declaration(Parser *p)
      * [MUT_Mutable]
      */
     if (equals(p, TOKEN_SEP_Semicolon)) {
-        variable.mutability     = MUT_Mutable;
+        variable.mutability     = Mutability::Mutable;
         variable.is_initialized = false;
         variable.initializer    = NULL;
     } else {
         variable.mutability =
-            try_expect(p, TOKEN_SEP_Colon) ? MUT_Constant
+            try_expect(p, TOKEN_SEP_Colon) ? Mutability::Constant
             : try_expect(p, TOKEN_OP_Assign)
-                ? MUT_Mutable
+            ? Mutability::Mutable
                 : ({
                         diagpool_report(p->diagnostics, Severity::Error,
                                         current(p).locus, "invalid token",
                                         "expected `:`, `=` or `;`");
                       next(p);
-                      MUT_Mutable;
+                      Mutability::Mutable;
                   });
 
         variable.initializer    = parser_parse_expression(p);
@@ -99,7 +99,7 @@ Statement *parse_variable_declaration(Parser *p)
     return stmt;
 }
 
-StatementPointer parse_block(Parser *p)
+StatementPointer parser::parse_block(Parser *p)
 {
     Token begin = next(p); /* consume `{` */
     StmtBlock block{};
@@ -108,8 +108,77 @@ StatementPointer parse_block(Parser *p)
         StatementPointer stmt = parser_parse_statement(p);
         if (stmt)
             mini_array_append(block.body, stmt);
+        else {
+            if (!skip_until_one_of(p, false, STMT_HEAD))
+                return nullptr;
+        }
     }
     expect(p, TOKEN_SEP_Rbrace);
     return ALLOC_STMT(p->allocator, STMT_Block,
                       locus_merge(begin.locus, previous(p).locus), block);
+}
+
+Statement *parser::parse_if_statement(Parser *p)
+{
+    const auto parse_if_header = [](Parser *p, auto &header) -> bool {
+        header.condition = parser_parse_expression(p);
+
+        if (header.condition->is_error()) {
+            if (!skip_until_one_of(p, false, TOKEN_KW_Then, TOKEN_KW_Return, TOKEN_SEP_Lbrace))
+                return false;
+        }
+
+        if (try_expect(p, TOKEN_KW_Then) || equals(p, TOKEN_KW_Return)) {
+            header.then = parser_parse_statement(p);
+            // if (!skip_until_one_of(p, false, TOKEN_SEP_Semicolon, TOKEN_KW_Else))
+            if (!header.then) return false;
+        } else if (equals(p, TOKEN_SEP_Lbrace)) {
+            header.then = parser::parse_block(p);
+            if (!header.then) return false;
+        } else {
+            parser::report_error(p, current(p).locus,
+                                "expected `then` or `{`; `then` must be used for single-statement if");
+            header.then = parser_parse_statement(p);
+            if (!header.then) return false;
+        }
+
+        return true;
+    };
+
+    Token begin = next(p);
+    StmtIf if_stmt{};
+
+    if_stmt.branches = mini::Array<AstIfBranch>(p->allocator);
+
+    if (!parse_if_header(p, if_stmt)) return nullptr;
+
+    while (eat_sequence(p, TOKEN_KW_Else, TOKEN_KW_If)) {
+        AstIfBranch branch{};
+        if (!parse_if_header(p, branch)) return nullptr;
+
+        if_stmt.branches.append(branch);
+    }
+
+
+    if (try_expect(p, TOKEN_KW_Else)) {
+        if_stmt.else_ = parser_parse_statement(p);
+        if (!if_stmt.else_) return nullptr;
+    }
+
+    return ALLOC_STMT(p->allocator, STMT_If,
+                      locus_merge(begin.locus, previous(p).locus), if_stmt);
+}
+
+Statement *parser::parse_return_statement(Parser *p)
+{
+    Token begin = next(p);
+    Expression *expression = parser_parse_expression(p);
+    if (expression->is_error()) {
+        if (!skip_until_one_of(p, false, TOKEN_SEP_Semicolon))
+            return nullptr;
+    }
+    expect(p, TOKEN_SEP_Semicolon);
+    return ALLOC_STMT(p->allocator, STMT_Return,
+                      locus_merge(begin.locus, previous(p).locus),
+                      StmtReturn{.value=expression});
 }

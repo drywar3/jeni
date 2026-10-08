@@ -13,6 +13,7 @@ namespace lir
 
     struct Buildr /* intentional spelling */ {
         Module *mod;
+        /* note: this will eventually stale when mod->globals reallocates. */
         Function *function;
         BlockId current_block;
 
@@ -32,8 +33,14 @@ namespace lir
             return store()->types.at_index(usize(type_id));
         }
 
+        ValueId get_const_true();
+        ValueId get_const_false();
+
         ValueId create_integer(int64 value);
         ValueId create_cstring(mini::StringView value);
+        ValueId create_cmp(lir::CmpOp op, ValueId first, ValueId second);
+
+        void create_ret(lir::TypePtr type, ValueId value);
 
         usize new_local(mini::StringView name);
 
@@ -46,5 +53,10 @@ namespace lir
         ValueId create_deref(ValueId value);
         ValueId create_temporary(lir::TypePtr type);
         ValueId create_call(lir::TypePtr type, ValueId callee, mini::Array<ValueId> args);
+
+        lir::Label new_label();
+        void put_label(lir::Label label);
+        void jmp_if_eq(ValueId first, ValueId second, lir::Label label);
+        void jmp_to_label(lir::Label label);
     };
 } // namespace lir

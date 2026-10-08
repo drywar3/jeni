@@ -19,8 +19,9 @@ namespace sema
         Invalid,
     };
 
-    typedef struct ScopeFunction {
-    } ScopeFunction;
+    struct ScopeFunction {
+        sema::TypeId return_type;
+    };
 
     struct Scope {
         using Map    = ::Map<Mini_StringView, SymbolId>;

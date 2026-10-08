@@ -43,6 +43,25 @@ namespace hir
             using Body = mini::Array<Statement*>;
             Body body;
         };
+
+        struct If {
+            struct Branch {
+                Expression *condition;
+                Statement  *then;
+            };
+
+            using Branches = mini::Array<Branch>;
+
+            Expression *condition;
+            Branches    branches;
+            Statement  *then;
+            Statement  *else_;
+        };
+
+        struct Return {
+            sema::TypeId type_id;
+            Expression  *value;
+        };
     } // namespace stmt
 
     struct Statement {
@@ -51,6 +70,8 @@ namespace hir
             Function,
             Block,
             Expr,
+            If,
+            Return,
         };
 
         Kind kind;
@@ -58,6 +79,8 @@ namespace hir
             stmt::Variable variable;
             stmt::Function function;
             stmt::Block    block;
+            stmt::If       if_;
+            stmt::Return   ret;
             hir::Expression *expr;
         } as;
     };

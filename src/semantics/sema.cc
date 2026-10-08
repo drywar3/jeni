@@ -40,17 +40,17 @@ void semactx_resolve(SemanticContext *sema, Program *program)
 {
     for (usize n = 0; n < mini_array_count(program->ast); ++n) {
         StatementPointer stmt = program->ast[n];
-        discover_statement(sema, stmt);
+        sema::discover_statement(sema, stmt);
     }
 
     for (usize n = 0; n < mini_array_count(program->ast); ++n) {
         StatementPointer stmt = program->ast[n];
-        WorkerStatus status   = check_statement(sema, (void *)stmt);
+        WorkerStatus status   = sema::check_statement(sema, (void *)stmt);
 
         if (status == WorkerStatus::Pending) {
             for (sema::SymbolId id : mini::iterate(status.waiting_on)) {
                 sema->register_worker(id,
-                                      Worker(stmt, check_statement, sema->current_scope));
+                                      Worker(stmt, sema::check_statement, sema->current_scope));
             }
         }
     }

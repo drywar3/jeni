@@ -64,6 +64,8 @@ struct WorkerStatus {
         return *this;
     }
 
+    bool is_done() const { return kind == V::Done; }
+
     void at_scope(sema::ScopeId scope) {
         working_scope = scope;
     }

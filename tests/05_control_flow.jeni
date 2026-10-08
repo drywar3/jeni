@@ -1,0 +1,46 @@
+
+test_invalid_return_value :: func (n : int) -> *const char {
+    if n == 0 return c"null";
+    else if n == 1 return c"first";
+    else if n == 2 return c"first";
+    else if n == 3 return c"third";
+    //else return 10;
+}
+
+test_invalid_if_syntax :: func () {
+    x := 10;
+    if x == 20 then printf(c"x is 20\n");
+}
+
+factorial :: func (n: int) -> int {
+    if n <= 1 return 1;
+    return n * factorial(n - 1);
+}
+
+fibonacci :: func (n: int, a : int, b : int) -> int {
+    if n == 0 return 0;
+
+    printf(c"%d\n", a);
+
+    fibonacci(n-1, b, a + b);
+}
+
+main :: func () -> int {
+    x := 40;
+
+    if x == 10      then printf(c"x is 10\n");
+    else if x == 20 then printf(c"x is 20\n");
+    else if x == 30 then printf(c"x is 30\n");
+    else printf(c"x is unknown\n");
+
+    fact_10 := factorial(4);
+    printf(c"factorial of 4 = %d\n", fact_10);
+
+    printf(c"==================================\n");
+    fibonacci(10, 0, 1);
+    printf(c"==================================\n");
+
+    return 0;
+}
+
+printf :: func (fmt: *const char, ...) ---

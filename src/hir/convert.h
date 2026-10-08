@@ -61,4 +61,9 @@ namespace hir
     hir::Statement *convert_block(hir::Context *ctx, StmtBlock *block);
     hir::Expression *convert_function_call(hir::Context *ctx,
                                            const ExprFunctionCall *call);
+    hir::Expression *convert_binary_op(hir::Context *ctx,
+                                       const ExprBinaryOperation *binop);
+
+    hir::Statement *convert_if_stmt(hir::Context *ctx,
+                                    const StmtIf *if_stmt);
 } // namespace hir

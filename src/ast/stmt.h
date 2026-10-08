@@ -13,6 +13,7 @@ typedef enum {
     STMT_Block,
     STMT_Defer,
     STMT_Expr,
+    STMT_Return,
 } StatementKind;
 
 typedef struct {

@@ -60,6 +60,15 @@ sema::ScopeId sema::enter_scope(SemanticContext *sema, ScopeKind kind)
     return sema->current_scope;
 }
 
+sema::ScopeId sema::enter_scope(SemanticContext *sema, sema::ScopeFunction function_scope,
+                                sema::TypeId return_type)
+{
+    Scope scope = scope_init(sema::ScopeKind::Function, sema->current_scope, sema->allocator);
+    scope.function.return_type = return_type;
+    sema->current_scope = (sema::ScopeId)sema->store->scopes.add_value(scope);
+    return sema->current_scope;
+}
+
 sema::ScopeId sema::leave_scope(SemanticContext *sema)
 {
     auto scope_id      = sema->current_scope;
@@ -146,10 +155,12 @@ sema::eagerly_get_id_of_symbol(SemanticContext *sema, ScopeId start,
     return std::nullopt;
 }
 
-sema::SymbolId sema::get_symbol_at_locus(SemanticContext *sema, Locus locus)
+Opt<sema::SymbolProxy> sema::get_symbol_at_locus(SemanticContext *sema, Locus locus)
 {
-    MINI_ASSERT(sema->store->symbols.contains(locus), );
-    return sema::SymbolId(*sema->store->symbols.get_id(locus));
+    auto symbol_id = sema->store->symbols.get_id(locus);
+    if (!symbol_id)
+        return std::nullopt;
+    return sema::SymbolProxy(sema->store, sema::SymbolId(*symbol_id));
 }
 
 void sema::link_locus_to_symbol(SemanticContext *sema, Locus locus, SymbolId id)
@@ -187,4 +198,10 @@ sema::SymbolProxy sema::get_symbol_by_id(const SemanticContext *sema, sema::Symb
 sema::SymbolProxy sema::get_symbol_by_id(SemanticContext *sema, sema::SymbolId symbol_id)
 {
     return sema::SymbolProxy(sema->store, symbol_id);
+}
+
+Mini_String sema::display_type(SemanticContext *sema, sema::TypeId type_id)
+{
+    const auto &type = sema->types().at_index(usize(type_id));
+    return type.display(sema->allocator, sema->types());
 }

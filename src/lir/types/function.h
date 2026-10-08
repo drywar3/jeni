@@ -40,6 +40,7 @@ namespace lir
         BlockId block;
         mini::Array<Instruction> instructions;
         usize current_local_index;
+        usize current_label_index;
         bool body_is_defined;
         bool is_variadic;
 

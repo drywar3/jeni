@@ -1,3 +1,4 @@
 
 
-printf :: func (fmt: *const char, ...) #extern;
+printf :: func (fmt: *const char, ...)
+       #extern, #no_context ---

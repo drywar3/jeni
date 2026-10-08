@@ -4,6 +4,7 @@
 
 typedef enum {
     TOKEN_KW_If,
+    TOKEN_KW_Then,
     TOKEN_KW_Else,
     TOKEN_KW_For,
     TOKEN_KW_While,
@@ -28,6 +29,8 @@ typedef enum {
     TOKEN_OP_Assign,
     TOKEN_OP_Greater,
     TOKEN_OP_Less,
+    TOKEN_OP_GreaterEq,
+    TOKEN_OP_LessEq,
     TOKEN_OP_Equals,
     TOKEN_OP_NotEquals,
     TOKEN_OP_Bang,

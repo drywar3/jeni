@@ -28,6 +28,8 @@ struct Expression {
     bool is(ExpressionKind kind) const {
         return this->kind == kind;
     }
+
+    bool is_error() const { return is(EXPR_Error); }
 };
 
 typedef Expression *ExpressionPointer;

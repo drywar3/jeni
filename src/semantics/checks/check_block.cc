@@ -24,7 +24,7 @@ WorkerStatus check_block(SemanticContext *sema, StmtBlock *block, bool is_resump
         /* pass `is_resumption` only to the first statement reached when
          * resuming */
         bool stmt_is_resumption = (n == start) ? is_resumption : false;
-        WorkerStatus s = check_statement(sema, stmt, stmt_is_resumption);
+        WorkerStatus s = sema::check_statement(sema, stmt, stmt_is_resumption);
         s.at_scope(sema->current_scope);
         if (s != WorkerStatus::Done) {
             /* do not advance save point past a failing statement */

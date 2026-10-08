@@ -14,6 +14,9 @@ static const TokenSpec KEYWORDS[] = {
     {"func", TOKEN_KW_Func},
     {"return", TOKEN_KW_Return},
     {"const", TOKEN_KW_Const},
+    {"if", TOKEN_KW_If},
+    {"then", TOKEN_KW_Then},
+    {"else", TOKEN_KW_Else},
 };
 static const usize KEYWORD_COUNT = sizeof(KEYWORDS) / sizeof(KEYWORDS[0]);
 
@@ -22,7 +25,8 @@ static const TokenSpec PUNCTUATIONS[] = {
 
     {"++", TOKEN_OP_Inc},      {"--", TOKEN_OP_Dec},
     {"==", TOKEN_OP_Equals},   {"!=", TOKEN_OP_NotEquals},
-    {"->", TOKEN_OP_Arrow},
+    {"->", TOKEN_OP_Arrow}, {">=", TOKEN_OP_GreaterEq},
+    {"<=", TOKEN_OP_LessEq},
 
     {"+", TOKEN_OP_Add},       {"-", TOKEN_OP_Minus},
     {"*", TOKEN_OP_Star},      {"/", TOKEN_OP_Div},

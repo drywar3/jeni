@@ -25,34 +25,44 @@ void parser_set_allocator(Parser *parser, Mini_Allocator allocator)
 
 bool parser_is_done(const Parser *parser)
 {
-    return (current(parser).kind == TOKEN_Endoffile ||
-            previous(parser).kind == TOKEN_Endoffile) ||
+    return (parser::current(parser).kind == TOKEN_Endoffile ||
+            parser::previous(parser).kind == TOKEN_Endoffile) ||
            tokenbuffer_is_truly_done(&parser->tokens);
 }
 
-#define STMT_HEAD                                                              \
-    TOKEN_KW_If, TOKEN_KW_Do, TOKEN_KW_For, TOKEN_KW_Cast, TOKEN_KW_Continue,  \
-        TOKEN_KW_Import, TOKEN_KW_Enum, TOKEN_KW_Break, TOKEN_KW_Func,         \
-        TOKEN_KW_Return, TOKEN_SEP_Lbracket, TOKEN_SEP_Lparen,                 \
-        TOKEN_SEP_Lbrace, TOKEN_OP_Inc, TOKEN_OP_Dec, TOKEN_LIT_Int,           \
-        TOKEN_LIT_Char, TOKEN_LIT_String, TOKEN_LIT_True, TOKEN_LIT_False
 
 Statement *parser_parse_statement(Parser *parser)
 {
     /* check for a variable declaration */
     if (equals_sequence(parser, TOKEN_Identifier, TOKEN_SEP_Colon)) {
-        if (auto variable = parse_variable_declaration(parser))
+        if (auto variable = parser::parse_variable_declaration(parser))
             return variable;
         skip_until_one_of(parser, false, STMT_HEAD);
         return nullptr;
     }
 
-    if (equals(parser, TOKEN_SEP_Lbrace)) {
-        if (auto block = parse_block(parser))
+    if (parser::equals(parser, TOKEN_SEP_Lbrace)) {
+        if (auto block = parser::parse_block(parser))
             return block;
         skip_until_one_of(parser, false, STMT_HEAD);
         return nullptr;
     }
+
+    if (parser::equals(parser, TOKEN_KW_If)) {
+        if (auto if_ = parser::parse_if_statement(parser))
+            return if_;
+        skip_until_one_of(parser, false, STMT_HEAD);
+        return nullptr;
+    }
+
+    if (parser::equals(parser, TOKEN_KW_Return
+              )) {
+        if (auto ret = parser::parse_return_statement(parser))
+            return ret;
+        skip_until_one_of(parser, false, STMT_HEAD);
+        return nullptr;
+    }
+
 
     Expression *expr = parser_parse_expression(parser);
     if (!expr || expr->kind == EXPR_Error) {
@@ -61,7 +71,7 @@ Statement *parser_parse_statement(Parser *parser)
     }
 
     expr->base.kind = STMT_Expr;
-    expect(parser, TOKEN_SEP_Semicolon);
+    parser::expect(parser, TOKEN_SEP_Semicolon);
     return (Statement *)expr;
 }
 

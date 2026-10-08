@@ -106,6 +106,7 @@ WorkerStatus check_function_prototype(SemanticContext *sema,
         param_symbol.scope_id            = current_scope;
         param_symbol.set_state(sema::SymbolState::Resolved);
         param_symbol.variable.type_id = id;
+        param_symbol.variable.mutability = Mutability::Constant;
         sema::register_symbol_in(sema, current_scope, parameter.name.value,
                                  parameter.name.locus, param_symbol);
     }
@@ -145,17 +146,26 @@ WorkerStatus sema::check_function_definition(SemanticContext *sema,
     sema::SymbolId id      = *sema::eagerly_get_id_of_symbol(
         sema, sema->current_scope, symbol->name);
 
-    sema::enter_scope(sema, sema::ScopeKind::Block);
+    sema::enter_scope(sema, sema::ScopeKind::Function);
     auto scope_guard = mini::ScopeGuard([&]() { sema::leave_scope(sema); });
 
     if (WorkerStatus check_proto =
-            check_function_prototype(sema, &function->prototype, id);
+        check_function_prototype(sema, &function->prototype, id);
         check_proto != WorkerStatus::Done) {
         symbol->set_state(check_proto == WorkerStatus::Failed
                           ? sema::SymbolState::Failed
                           : sema::SymbolState::Unresolved);
         return check_proto;
     }
+
+    sema::find_first_scope_of(
+        sema, sema::ScopeKind::Function, [function](auto *sema, auto &scope) {
+            scope.function.return_type =
+                function->prototype.return_type
+                    ? sema::get_type_at_locus(
+                          sema, function->prototype.return_type->locus)
+                    : sema::type_id::Void;
+        });
 
     /* checking function prototype might have relocated the symbol
      * so i refresh the variable here (just in case) */

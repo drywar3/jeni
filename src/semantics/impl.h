@@ -2,6 +2,7 @@
 
 #include "diagnostic.h"
 #include "semantics/sema.h"
+#include "semantics/type/ids.h"
 #include "semantics/entities/type.h"
 #include "semantics/entities/scope.h"
 #include "semantics/entities/symbol.h"
@@ -9,10 +10,28 @@
 
 namespace sema
 {
-    ScopeId current_scope(SemanticContext *sema);
+    sema::ScopeId current_scope(SemanticContext *sema);
 
-    ScopeId enter_scope(SemanticContext *sema, ScopeKind kind);
-    ScopeId leave_scope(SemanticContext *sema);
+    sema::ScopeId enter_scope(SemanticContext *sema, sema::ScopeKind kind);
+    sema::ScopeId enter_scope(SemanticContext *sema, sema::ScopeFunction function_scope,
+                              sema::TypeId return_type = sema::type_id::Void);
+
+    template<typename Fn>
+    Opt<sema::ScopeId> find_first_scope_of(SemanticContext *sema, sema::ScopeKind kind, Fn fn)
+    {
+        Opt<sema::ScopeId> current = sema->current_scope;
+        while (current.has_value()) {
+            sema::Scope &scope = sema->scopes().at_index(usize(*current));
+            if (scope.kind == kind) {
+                fn(sema, scope);
+                return current;
+            }
+            current = scope.parent;
+        }
+        return std::nullopt;
+    }
+
+    sema::ScopeId leave_scope(SemanticContext *sema);
 
     bool symbol_is_defined(SemanticContext *sema, ScopeId scope,
                            mini::StringView name);
@@ -44,11 +63,13 @@ namespace sema
     TypeId get_type_at_locus(SemanticContext *sema, Locus locus);
 
     void link_locus_to_symbol(SemanticContext *sema, Locus locus, SymbolId id);
-    SymbolId get_symbol_at_locus(SemanticContext *sema, Locus locus);
+    Opt<sema::SymbolProxy> get_symbol_at_locus(SemanticContext *sema, Locus locus);
 
 
     void link_locus_to_scope(SemanticContext *sema, Locus locus, ScopeId id);
     ScopeId find_scope_by_locus(SemanticContext *sema, Locus locus);
 
     void report(SemanticContext *sema, Diagnostic diagnostic);
+
+    Mini_String display_type(SemanticContext *sema, sema::TypeId type_id);
 } // namespace sema

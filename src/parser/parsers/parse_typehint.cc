@@ -30,20 +30,20 @@ constexpr std::initializer_list<std::pair<const char *, int>> TYPES = {
  */
 Typehint *parser_parse_typehint(Parser *p)
 {
-    Locus begin = current(p).locus;
+    Locus begin = parser::current(p).locus;
 
     /* check for pointer */
-    if (try_expect(p, TOKEN_OP_Star)) {
+    if (parser::try_expect(p, TOKEN_OP_Star)) {
         TypePointer pointer{};
-        pointer.mutability = (Mutability)try_expect(p, TOKEN_KW_Const);
+        pointer.mutability = (Mutability)parser::try_expect(p, TOKEN_KW_Const);
         pointer.typehint   = parser_parse_typehint(p);
         return ALLOC_TYPE(p->allocator, TYPEHINT_Pointer,
-                          locus_merge(begin, current(p).locus), pointer);
+                          locus_merge(begin, parser::current(p).locus), pointer);
     }
 
-    if (equals(p, TOKEN_Identifier)) {
+    if (parser::equals(p, TOKEN_Identifier)) {
         Name name;
-        MINI_ASSERT(eat_name(p, &name), "");
+        MINI_ASSERT(parser::eat_name(p, &name), "");
 
         /* check for integer */
         {
@@ -51,7 +51,7 @@ Typehint *parser_parse_typehint(Parser *p)
                 if (mini_sv_equals_cstr(name.value, t)) {
                     return ALLOC_TYPE(
                         p->allocator, TYPEHINT_Integer,
-                        locus_merge(begin, previous(p).locus),
+                        locus_merge(begin, parser::previous(p).locus),
                         TypeInteger{.kind = (TypeInteger::Kind)k});
                 }
             }
@@ -60,7 +60,7 @@ Typehint *parser_parse_typehint(Parser *p)
         {
             if (mini_sv_equals_cstr(name.value, "char")) {
                 return ALLOC_TYPE(p->allocator, TYPEHINT_Char,
-                                  locus_merge(begin, previous(p).locus),
+                                  locus_merge(begin, parser::previous(p).locus),
                                   TypeChar{});
             }
         }
@@ -68,7 +68,7 @@ Typehint *parser_parse_typehint(Parser *p)
         {
             if (mini_sv_equals_cstr(name.value, "string")) {
                 return ALLOC_TYPE(p->allocator, TYPEHINT_String,
-                                  locus_merge(begin, previous(p).locus),
+                                  locus_merge(begin, parser::previous(p).locus),
                                   TypeString{});
             }
         }

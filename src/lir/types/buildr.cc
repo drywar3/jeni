@@ -149,3 +149,44 @@ void lir::Buildr::add_global(lir::Global glob)
 {
     mod->globals.append(glob);
 }
+
+lir::ValueId lir::Buildr::get_const_true()  { return mod->context->const_true;  }
+lir::ValueId lir::Buildr::get_const_false() { return mod->context->const_false; }
+
+lir::Label lir::Buildr::new_label() {
+    usize current_label_index = function->current_label_index++;
+    return lir::Label(current_label_index);
+}
+
+void lir::Buildr::put_label(lir::Label label)
+{
+    MINI_ASSERT(function != nullptr,
+                "cannot add instruction when there is no function context");
+    function->add_instruction(lir::Instruction{std::nullopt, InstructionKind::PutLabel(label)});
+}
+
+void lir::Buildr::jmp_if_eq(ValueId first, ValueId second, lir::Label label)
+{
+    MINI_ASSERT(function != nullptr,
+                "cannot add instruction when there is no function context");
+    function->add_instruction(lir::Instruction{std::nullopt, InstructionKind::JmpIfEquals(label, first, second)});
+}
+
+void lir::Buildr::jmp_to_label(lir::Label label)
+{
+    MINI_ASSERT(function != nullptr,
+                "cannot add instruction when there is no function context");
+    function->add_instruction(lir::Instruction{std::nullopt, InstructionKind::Jmp(label)});
+}
+
+lir::ValueId lir::Buildr::create_cmp(lir::CmpOp op, ValueId first, ValueId second)
+{
+    return valuestore_index(&mod->context->values, lir::Value::Cmp(op, first, second));
+}
+
+void lir::Buildr::create_ret(lir::TypePtr type, ValueId value)
+{
+    MINI_ASSERT(function != nullptr,
+                "cannot add instruction when there is no function context");
+    function->add_instruction(lir::Instruction{std::nullopt, InstructionKind::Ret(type, value)});
+}

@@ -1,13 +1,14 @@
-#include "semantics/checks/check_expr.h"
 #include "ast/expr.h"
-#include "ast/expressions.h"
 #include "ast/misc.h"
-#include "mini.c/string_view.h"
-#include "semantics/checks/check_function_call.h"
 #include "semantics/impl.h"
+#include "ast/expressions.h"
+#include "semantics/worker.h"
+#include "mini.c/string_view.h"
 #include "semantics/type/ids.h"
 #include "semantics/type/resolver.h"
-#include "semantics/worker.h"
+#include "semantics/checks/check_expr.h"
+#include "semantics/checks/check_binary_op.h"
+#include "semantics/checks/check_function_call.h"
 
 static WorkerStatus check_identifier(SemanticContext *sema,
                                      ExprIdentifier *ident);
@@ -33,10 +34,11 @@ WorkerStatus sema::check_expression(SemanticContext *sema, void *data)
         Locus locus  = expr->locus;
         auto type_id = sema::register_or_get_type(
             sema,
-            sema::Type::Pointer(Mutability::MUT_Constant, sema::type_id::Char));
+            sema::Type::Pointer(Mutability::Constant, sema::type_id::Char));
         sema::link_locus_to_type(sema, locus, type_id);
         return WorkerStatus::Done;
     }
+    case EXPR_Binop: return check_binary_op(sema, (ExprBinaryOperation*)expr);
     default:
         MINI_UNREACHABLE("TODO: %d\n", expr->kind);
     }

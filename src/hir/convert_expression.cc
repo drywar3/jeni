@@ -33,8 +33,8 @@ hir::Expression *hir::convert_expression(hir::Context *ctx,
             hir::Expression::Kind::Identifier,
             sema::TypeId(*ctx->types().get_id(expression->locus)), hir_ident);
     } break;
-    case EXPR_FunctionCall:
-        return convert_function_call(ctx, (const ExprFunctionCall *)expression);
+    case EXPR_FunctionCall: return convert_function_call(ctx, (const ExprFunctionCall *)expression);
+    case EXPR_Binop: return convert_binary_op(ctx, (const ExprBinaryOperation *)expression);
     default:
         MINI_UNREACHABLE();
     }

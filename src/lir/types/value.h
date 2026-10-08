@@ -6,7 +6,29 @@
 namespace lir
 {
     enum struct ValueId {};
+    enum struct CmpOp {
+        Equals,
+        NotEquals,
+        LessThan,
+        GreaterThan,
+        LessThanEquals,
+        GreaterThanEquals,
+
+        /* todo: hack */
+        Sub,
+        Add,
+        Mul,
+        Div,
+    };
+
     struct Value {
+
+        struct Cmp {
+            CmpOp op;
+            ValueId first;
+            ValueId second;
+        };
+
         enum struct Kind {
             Integer,
             String,
@@ -15,6 +37,9 @@ namespace lir
             GlobalRef,
             ParamRef,
             Deref,
+            True,
+            False,
+            Cmp,
         };
 
         Kind kind;
@@ -24,7 +49,18 @@ namespace lir
             mini::StringView ident;
             mini::StringView string;
             ValueId          valueid;
+            Cmp cmp;
         };
+
+        static Value True()
+        {
+            return Value{.kind = Kind::True};
+        }
+
+        static Value False()
+        {
+            return Value{.kind = Kind::False};
+        }
 
         static Value Integer(int64 value)
         {
@@ -54,6 +90,11 @@ namespace lir
         static Value Deref(ValueId value)
         {
             return Value{.kind = Kind::Deref, .valueid = value };
+        }
+
+        static Value Cmp(CmpOp op, ValueId first, ValueId second)
+        {
+            return Value{.kind = Kind::Cmp, .cmp = {op, first, second}};
         }
 
         bool operator==(const Value &other) const;

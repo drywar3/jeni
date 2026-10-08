@@ -26,6 +26,15 @@ hir::Statement *hir::convert_statement(hir::Context *ctx,
         return convert_variable_stmt(ctx, stmt);
     case STMT_Block:
         return convert_block(ctx, (StmtBlock *)stmt);
+    case STMT_If:
+        return convert_if_stmt(ctx, (StmtIf *)stmt);
+    case STMT_Return: {
+        auto *ret_ = (StmtReturn *)stmt;
+        hir::stmt::Return ret{};
+        ret.value = hir::convert_expression(ctx, ret_->value);
+        ret.type_id = sema::TypeId(*ctx->types().get_id(ret_->value->locus));
+        return ctx->new_stmt(hir::Statement::Kind::Return, ret);
+    } break;
     case STMT_Expr: {
         hir::Expression *expression =
             convert_expression(ctx, (const ::Expression *)stmt);

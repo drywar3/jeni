@@ -7,6 +7,9 @@ lir::Context lir::ctx_init(Mini_Allocator allocator,
                          .blocks = BlockStorage(allocator)};
     context.allocator = allocator;
     context.store     = store;
+
+    context.const_true  = valuestore_index(&context.values, Value::True());
+    context.const_false = valuestore_index(&context.values, Value::False());
     return context;
 }
 

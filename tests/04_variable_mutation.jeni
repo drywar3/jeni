@@ -1,0 +1,18 @@
+
+test_consecutive_assignment :: func () {
+    x :: 10;
+    y := 10;
+    z := 10;
+
+    x = y = z = 20;
+
+    printf(c"x = %d\n", x);
+    printf(c"y = %d\n", y);
+    printf(c"z = %d\n", z);
+}
+
+main :: func () -> int {
+    test_consecutive_assignment() = 10;
+}
+
+printf :: func (fmt : *const char, ...) -> int ---
