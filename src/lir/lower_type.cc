@@ -10,8 +10,18 @@ lir::TypePtr lir::lower_type(Buildr *builder, sema::Type_Id type_id)
     case sema::Type_Kind::Int:
         type.kind = lir::Type::Kind::Int32;
         break;
+    case sema::Type_Kind::Struct: {
+        auto type_id = builder->mod->context->get_id_of_type(type_layout.strukt.name.value);
+        return lir::Type::Struct(builder->allocator(), type_id);
+    } break;
     case sema::Type_Kind::Int64:
         type.kind = lir::Type::Kind::Int64;
+        break;
+    case sema::Type_Kind::Float64:
+        type.kind = lir::Type::Kind::Float64;
+        break;
+    case sema::Type_Kind::Float32:
+        type.kind = lir::Type::Kind::Float32;
         break;
     case sema::Type_Kind::Void:
         type.kind = lir::Type::Kind::Void;

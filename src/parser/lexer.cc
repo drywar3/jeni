@@ -20,6 +20,19 @@ static const TokenSpec KEYWORDS[] = {
     {"for", TOKEN_KW_For},
     {"break", TOKEN_KW_Break},
     {"continue", TOKEN_KW_Continue},
+    {"struct", TOKEN_KW_Struct},
+
+    {"int", TOKEN_TK_Int},
+    {"int8", TOKEN_TK_Int8},
+    {"int16", TOKEN_TK_Int16},
+    {"int32", TOKEN_TK_Int},
+    {"int64", TOKEN_TK_Int64},
+    {"uint", TOKEN_TK_Uint},
+    {"char", TOKEN_TK_Char},
+    {"void", TOKEN_TK_Void},
+    {"float", TOKEN_TK_Float32},
+    {"float32", TOKEN_TK_Float32},
+    {"float64", TOKEN_TK_Float64},
 };
 static const usize KEYWORD_COUNT = sizeof(KEYWORDS) / sizeof(KEYWORDS[0]);
 
@@ -41,6 +54,7 @@ static const TokenSpec PUNCTUATIONS[] = {
     {"}", TOKEN_SEP_Rbrace},   {"]", TOKEN_SEP_Rbracket},
     {":", TOKEN_SEP_Colon},    {";", TOKEN_SEP_Semicolon},
     {",", TOKEN_SEP_Comma},
+    {".", TOKEN_SEP_Dot},
 };
 static const usize PUNCT_COUNT = sizeof(PUNCTUATIONS) / sizeof(PUNCTUATIONS[0]);
 
@@ -54,10 +68,11 @@ Lexer lexer_create(SourceId id, const Mini_String content)
 }
 
 static bool set_token_and_return(Token *token, TokenKind kind, Locus locus,
-                                 bool value)
+                                 bool value, int base = 10)
 {
     token->kind  = kind;
     token->locus = locus;
+    token->base  = base;
     return value;
 }
 
@@ -291,9 +306,10 @@ bool lexer_next_token(Lexer *lexer, Token *token, Diagnostic *diagnostic)
      */
     if (codepoint_isdigit(current(lexer), 10)) {
         int continue_base = 10;
-        // if (current(lexer) == '0') {
-        //     MINI_UNREACHABLE("TODO");
-        // }
+
+        if (eat_prefix(lexer, "0x"))        continue_base = 16;
+        else if (eat_prefix(lexer, "0b"))   continue_base = 2;
+        else if (eat_prefix(lexer, "0o"))   continue_base = 8;
 
         /* lex decimal part */
         while (!lexer_is_done(lexer) &&
@@ -306,12 +322,14 @@ bool lexer_next_token(Lexer *lexer, Token *token, Diagnostic *diagnostic)
             while (!lexer_is_done(lexer) &&
                    codepoint_isdigit(current(lexer), continue_base))
                 next(lexer);
+            return set_token_and_return(token, TOKEN_LIT_Float,
+                                        lexer_get_locus(lexer), true, continue_base);
         }
 
         /* todo: lex integer suffixes i.e u8, i8, i16, uz */
 
         return set_token_and_return(token, TOKEN_LIT_Int,
-                                    lexer_get_locus(lexer), true);
+                                    lexer_get_locus(lexer), true, continue_base);
     }
 
     /* lex punctuations (operators and separators) */

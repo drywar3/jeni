@@ -1,10 +1,12 @@
 #include "lir/lir.h"
+#include "lir/types/type.h"
 
 lir::Context lir::ctx_init(Mini_Allocator allocator,
                            const Semantic_Storage *store)
 {
     lir::Context context{.values = ValueStorage(allocator),
-                         .blocks = BlockStorage(allocator)};
+                         .blocks = BlockStorage(allocator),
+                         .types  = Type_Storage(allocator)};
     context.allocator = allocator;
     context.store     = store;
 
@@ -19,6 +21,35 @@ lir::BlockId lir::Context::new_block(std::optional<lir::BlockId> parent)
 {
     blocks.append(Block{parent, Block::LocalMap(allocator)});
     return lir::BlockId(blocks.count() - 1);
+}
+
+lir::Type_Id lir::Context::new_type(lir::Type_Builder type_builder)
+{
+    types.append(type_builder);
+    return lir::Type_Id(types.count() - 1);
+}
+
+lir::Type_Builder *lir::Context::get_type(lir::Type_Id type_id)
+{
+    return &types[usize(type_id)];
+}
+
+lir::Type_Builder *lir::Context::get_type(mini::StringView name)
+{
+    for (auto &type_builder : types.iter()) {
+        if (type_builder.name == name) return &type_builder;
+    }
+    return nullptr;
+}
+
+lir::Type_Id lir::Context::get_id_of_type(mini::StringView name)
+{
+    usize n = 0;
+    for (auto &type_builder : types.iter()) {
+        if (type_builder.name == name) return lir::Type_Id(n);
+        n += 1;
+    }
+    MINI_UNREACHABLE();
 }
 
 void lir::ctx_destroy(lir::Context *context) { MINI_UNREACHABLE(); }
@@ -78,6 +109,26 @@ lir::Global lir::lower_glob_function(lir::Buildr *b, const hir::Statement *stmt)
                        .function = g_function};
 }
 
+static lir::Global lower_struct_type(lir::Buildr *b,
+                                     const hir::Statement *stmt)
+{
+    const auto &strukt = stmt->as.strukt;
+    lir::Global g{};
+    lir::Type_Builder type_builder(b->allocator(), strukt.name);
+
+    for (const auto field : strukt.fields.iter()) {
+        lir::Type_Member member{};
+        member.name = field.name;
+        member.type = lir::lower_type(b, field.type_id);
+        type_builder.add_member(member);
+    }
+
+    lir::Type_Id type_id = b->mod->context->new_type(type_builder);
+    g.kind = lir::Global::Kind::Type;
+    g.type_id = type_id;
+    return g;
+}
+
 static lir::Global lower_glob_statement(lir::Buildr *builder,
                                         const hir::Statement *stmt)
 {
@@ -86,6 +137,8 @@ static lir::Global lower_glob_statement(lir::Buildr *builder,
         return lower_glob_variable(builder, stmt);
     case hir::Statement::Function:
         return lower_glob_function(builder, stmt);
+    case hir::Statement::Struct:
+        return lower_struct_type(builder, stmt);
     default:
         MINI_UNREACHABLE();
     }

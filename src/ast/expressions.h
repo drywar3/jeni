@@ -13,15 +13,15 @@ namespace ast
 {
     struct Function_Parameter {
         Name name;
-        Typehint *typehint;
+        Expression *typehint;
         Expression *default_expression;
     };
 
     struct Function_Prototype {
         using Parameters = mini::Array<ast::Function_Parameter>;
 
-        Parameters parameters;
-        Typehint *return_type;
+        Parameters  parameters;
+        Expression *return_type;
         /* consider moving this to its own struct because the
          * variadic mark carry a name also
          *
@@ -55,10 +55,22 @@ namespace ast
         Name name;
     };
 
+    struct Struct_Field {
+        mini::Array<Name> names;
+        Expression       *typehint;
+        Expression       *default_value;
+        bool              type_is_defined;
+        bool              has_default_value;
+    };
+
     namespace expr
     {
         struct Integer : Expression {
-            int64 value;
+            long value;
+        };
+
+        struct Float : Expression {
+            double value;
         };
 
         struct Identifier : Expression {
@@ -77,21 +89,32 @@ namespace ast
 
         struct Binary_Operation : Expression {
             ast::Operator op;
-            ExpressionPointer left;
-            ExpressionPointer right;
+            Expression *left;
+            Expression *right;
         };
 
         struct Unary_Operation : Expression {
             ast::Operator op;
-            ExpressionPointer expression;
+            Expression *expression;
         };
 
         struct Function_Call : Expression {
-            ExpressionPointer callee;
+            Expression *callee;
             mini::Array<ast::Function_Call_Argument> arguments;
         };
 
         struct ExprError : Expression {};
+
+        struct Struct : Expression {
+            using Fields = mini::Array<Struct_Field>;
+
+            Fields fields;
+        };
+
+        struct Member_Access : Expression {
+            Expression *receiver;
+            Name member;
+        };
 
         template <typename Derived_Expresssion>
         static inline Expression *

@@ -14,13 +14,16 @@ namespace lir
         enum struct Kind {
             Variable,
             Function,
+            Type,
         };
 
         mini::StringView name;
         Kind kind;
+
         union {
             Variable variable;
             Function function;
+            lir::Type_Id type_id;
         };
     };
 } // namespace lir

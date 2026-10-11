@@ -112,7 +112,7 @@ namespace parser
                              const char *message,
                              const char *tag = "here")
     {
-        report(p, diag_add_label(Severity::Error, at.locus, message, tag));
+        report(p, diag_create(Severity::Error, at.locus, message, tag));
     }
 
     template<>
@@ -122,5 +122,27 @@ namespace parser
                              const char *tag)
     {
         report(p, diag_create(Severity::Error, at, message, tag));
+    }
+
+    INLINE void push_state(Parser *p, parser::State state)
+    {
+        p->state_stack.append(state);
+    }
+
+    INLINE Opt<parser::State> pop_state(Parser *p)
+    {
+        if (p->state_stack.empty()) return None;
+        return p->state_stack.pop();
+    }
+
+    INLINE bool is_within_state(Parser *p, parser::State state)
+    {
+        if (p->state_stack.empty()) return false;
+        usize index = p->state_stack.count() - 1;
+        while (index >= 0) {
+            const State &current_state = p->state_stack[index--];
+            if (current_state.kind == state.kind) return true;
+        }
+        return false;
     }
 } // namespace parser

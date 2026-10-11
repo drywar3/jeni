@@ -21,6 +21,18 @@ CoerceResult check_type_coercesion(Semantic_Context *sema,
         return CoerceResult::Ok;
     }
 
+    // hack
+    if ((target.kind == sema::Type_Kind::Float32 && source.kind == sema::Type_Kind::Int) ||
+        (source.kind == sema::Type_Kind::Float32 && target.kind == sema::Type_Kind::Int)) {
+        return CoerceResult::Ok;
+    }
+
+    if ((target.kind == sema::Type_Kind::Char && source.kind == sema::Type_Kind::Int) ||
+        (source.kind == sema::Type_Kind::Char && target.kind == sema::Type_Kind::Int)) {
+        return CoerceResult::Ok;
+    }
+    // hack-end
+
     if (target.kind.is_signed_integer() && source.kind.is_signed_integer()) {
         bool can_fit = target.kind >= source.kind;
         if (can_fit)

@@ -18,6 +18,7 @@ namespace lir
             JmpIfEquals,
             Jmp,
             Ret,
+            Member_Ptr,
         };
 
         OpCode opcode;
@@ -50,7 +51,23 @@ namespace lir
                 ValueId value;
                 lir::TypePtr type;
             } ret;
+
+            struct Member_Ptr {
+                ValueId receiver;
+                lir::TypePtr member_type;
+                mini::StringView member_name;
+            } member_ptr;
         } as;
+
+        static InstructionKind Member_Ptr(lir::TypePtr member_type, ValueId receiver, mini::StringView member_name)
+        {
+            InstructionKind kind{};
+            kind.opcode                    = OpCode::Member_Ptr;
+            kind.as.member_ptr.receiver    = receiver;
+            kind.as.member_ptr.member_type = member_type;
+            kind.as.member_ptr.member_name = member_name;
+            return kind;
+        }
 
         static InstructionKind Ret(lir::TypePtr type, ValueId value)
         {

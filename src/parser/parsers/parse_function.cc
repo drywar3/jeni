@@ -1,8 +1,8 @@
-#include "parser/parsers/parse_function.h"
+#include "parser/token.h"
 #include "ast/expressions.h"
 #include "parser/parser_impl.h"
-#include "parser/parsers/parse_typehint.h"
-#include "parser/token.h"
+#include "parser/parsers/parse_function.h"
+#include "parser/parsers/parse_expressions.h"
 
 bool parse_function_parameters(Parser *p, ast::Function_Prototype *prototype)
 {
@@ -26,7 +26,7 @@ bool parse_function_parameters(Parser *p, ast::Function_Prototype *prototype)
                 return false;
         } else {
             parser::expect(p, TOKEN_SEP_Colon);
-            parameter.typehint = parser_parse_typehint(p);
+            parameter.typehint = parser::parse_typehint_expression(p);
             parameters.append(parameter);
         }
 
@@ -51,7 +51,7 @@ ExpressionPointer parse_function(Parser *p)
         MINI_UNREACHABLE("TODO");
 
     if (parser::try_expect(p, TOKEN_OP_Arrow)) {
-        function.prototype.return_type = parser_parse_typehint(p);
+        function.prototype.return_type = parser::parse_typehint_expression(p);
         if (!function.prototype.return_type)
             return nullptr;
     }

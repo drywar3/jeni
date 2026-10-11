@@ -1,9 +1,10 @@
 #pragma once
 
-#include "ast/stmt.h"
-#include "diagnostic.h"
 #include "lexer.h"
 #include "token.h"
+#include "ast/stmt.h"
+#include "diagnostic.h"
+#include "parser/state.h"
 #include "token_buffer.h"
 
 #include <mini.c/allocator.h>
@@ -16,15 +17,18 @@
         TOKEN_LIT_Char, TOKEN_LIT_String, TOKEN_LIT_True, TOKEN_LIT_False
 
 struct Parser {
+    using State_Stack = mini::Array<parser::State>;
+
     TokenBuffer tokens;
     Diagnostic_Pool *diagnostics;
     Token current, previous;
 
     Mini_Allocator allocator;
+    State_Stack    state_stack;
 };
 
 Parser parser_create(SourceId id, const Mini_String content,
-                     Diagnostic_Pool *diagnostics);
+                     Diagnostic_Pool *diagnostics, Mini_Allocator allocator);
 void parser_destroy(Parser *parser);
 
 void parser_set_allocator(Parser *parser, Mini_Allocator allocator);

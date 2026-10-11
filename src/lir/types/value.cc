@@ -8,6 +8,9 @@ bool lir::Value::operator==(const Value &other) const
     switch (kind) {
     case Kind::Integer:
         return integer == other.integer;
+    case Kind::ZeroFill: return true;
+    case Kind::Float:
+        return float_ == other.float_;
     case Kind::LocalRef:
     case Kind::ParamRef:
         return index == other.index;

@@ -11,6 +11,7 @@ static bool expression_requires_terminator(ExpressionPointer expr)
     if (!expr) return true;
     switch (expr->kind) {
     case EXPR_Function:
+    case EXPR_Struct:
         return false;
     default:
         return true;
@@ -48,7 +49,7 @@ Statement *parser::parse_variable_declaration(Parser *p)
 
     /* check and parse a typehint */
     if (!equals(p, TOKEN_SEP_Colon) && !equals(p, TOKEN_OP_Assign)) {
-        variable.typehint = parser_parse_typehint(p);
+        variable.typehint = parser::parse_typehint_expression(p);
         if (variable.typehint)
             variable.type_is_defined = true;
     } else {
@@ -76,7 +77,7 @@ Statement *parser::parse_variable_declaration(Parser *p)
                     Mutability::Mutable;
                 });
 
-        variable.initializer    = parser_parse_expression(p);
+        variable.initializer    = parser::parse_expression(p);
         if (!variable.initializer || variable.initializer->kind == EXPR_Error) {
             variable.is_initialized = false;
             skip_until_one_of(p, true, TOKEN_SEP_Semicolon);
@@ -121,7 +122,7 @@ StatementPointer parser::parse_block(Parser *p)
 Statement *parser::parse_if_statement(Parser *p)
 {
     const auto parse_if_header = [](Parser *p, auto &header) -> bool {
-        header.condition = parser_parse_expression(p);
+        header.condition = parser::parse_expression(p);
 
         if (header.condition->is_error()) {
             if (!skip_until_one_of(p, false, TOKEN_KW_Then, TOKEN_KW_Return, TOKEN_SEP_Lbrace))
@@ -171,7 +172,7 @@ Statement *parser::parse_if_statement(Parser *p)
 Statement *parser::parse_return_statement(Parser *p)
 {
     Token begin = next(p);
-    Expression *expression = parser_parse_expression(p);
+    Expression *expression = parser::parse_expression(p);
     if (expression->is_error()) {
         if (!skip_until_one_of(p, false, TOKEN_SEP_Semicolon))
             return nullptr;

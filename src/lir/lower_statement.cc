@@ -51,7 +51,9 @@ void lower_variable(lir::Buildr *b, const hir::Statement *stmt)
     const hir::stmt::Variable &variable = stmt->as.variable;
     lir::TypePtr var_type = lir::lower_type(b, variable.type_id);
     auto value = b->create_alloca(variable.name, var_type);
-    auto init  = lir::lower_expression(b, variable.initializer);
+    lir::ValueId init  = b->create_zerofill();
+    if (variable.initializer)
+        init = lir::lower_expression(b, variable.initializer);
     b->create_store(b->create_deref(value), var_type, init);
 }
 

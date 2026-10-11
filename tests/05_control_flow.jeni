@@ -65,8 +65,6 @@ main :: func () -> int {
     test_for_loop();
     test_scopes();
 
-    break;
-
     return 0;
 }
 

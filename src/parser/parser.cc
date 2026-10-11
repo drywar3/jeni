@@ -7,13 +7,15 @@
 #include "parsers/parse_statements.h"
 
 Parser parser_create(SourceId id, const Mini_String content,
-                     Diagnostic_Pool *diagnostics)
+                     Diagnostic_Pool *diagnostics,
+                     Mini_Allocator allocator)
 {
     Parser parser = {.tokens = tokenbuffer_create(id, content, diagnostics)};
     parser.diagnostics = diagnostics;
-    parser.allocator   = mini_default_allocator();
+    parser.allocator   = allocator;
     tokenbuffer_prepare(&parser.tokens, 10);
     parser.current = tokenbuffer_peek(&parser.tokens, 0);
+    parser.state_stack = Parser::State_Stack(allocator);
     // next(&parser);
     // printf("[%s]\n", tokenkind_to_string(parser.current.kind));
     return parser;
@@ -76,7 +78,7 @@ Statement *parser_parse_statement(Parser *parser)
         return nullptr;
     }
 
-    Expression *expr = parser_parse_expression(parser);
+    Expression *expr = parser::parse_expression(parser);
     if (!expr || expr->kind == EXPR_Error) {
         skip_until_one_of(parser, false, STMT_HEAD);
         return nullptr;

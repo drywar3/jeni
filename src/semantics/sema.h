@@ -27,7 +27,10 @@ struct Semantic_Context {
     using Block_Save_Points = HashMap<Locus, usize>;
 
     Diagnostic_Pool *diagnostics;
+
     Mini_Allocator allocator;
+    Mini_Allocator persistent_allocator;
+
     Semantic_Storage *store;
 
     sema::Scope_Id global_scope;
@@ -97,6 +100,7 @@ Semantic_Storage semastore_init(Mini_Allocator allocator);
 void semastore_init_builtin_types(Semantic_Storage *store);
 
 Semantic_Context semactx_init(Mini_Allocator allocator,
+                              Mini_Allocator persistent_allocator,
                               Diagnostic_Pool *diagnostics,
                               Semantic_Storage *store);
 void semactx_resolve(Semantic_Context *sema, Program *program);

@@ -26,8 +26,8 @@ int main(int argc, char **argv)
         output_name = argv[2];
     }
 
-    Mini_BulkAllocator bka   = mini_bka_create(mini_default_allocator());
-    Mini_Allocator allocator = mini_bka_allocator(&bka);
+    Mini_BulkAllocator bka_1   = mini_bka_create(mini_default_allocator());
+    Mini_Allocator allocator   = mini_bka_allocator(&bka_1);
 
     const char *input_path = argv[1];
 
@@ -35,16 +35,14 @@ int main(int argc, char **argv)
     SourceId root_file = sourcemgr_open_file(&sources, input_path, allocator);
 
     Diagnostic_Pool diagnostics = diagpool_create();
-
-    auto scope_guard = mini::ScopeGuard([&]() {
+    auto scope_guard_1 = mini::ScopeGuard([&]() {
         sourcemgr_destroy(&sources);
         diagpool_destroy(&diagnostics);
-        mini_bka_destroy(&bka);
+        mini_bka_destroy(&bka_1);
     });
 
     const Mini_String &content = sourcemgr_get_content(&sources, root_file);
-    Parser parser = parser_create(root_file, content, &diagnostics);
-    parser_set_allocator(&parser, allocator);
+    Parser parser = parser_create(root_file, content, &diagnostics, allocator);
 
     Program program = program_init(allocator);
     while (!parser_is_done(&parser)) {
@@ -66,15 +64,17 @@ int main(int argc, char **argv)
     Semantic_Storage storage = semastore_init(allocator);
     semastore_init_builtin_types(&storage);
 
-    Semantic_Context sema = semactx_init(allocator, &diagnostics, &storage);
-    semactx_resolve(&sema, &program);
+    {
+        Semantic_Context sema = semactx_init(allocator, allocator, &diagnostics, &storage);
+        semactx_resolve(&sema, &program);
 
-    if (!diagpool_is_empty(&diagnostics)) {
-        for (usize n = 0; n < mini_array_count(diagnostics.diagnostics); n++) {
-            const Diagnostic *diagnostic = &diagnostics.diagnostics[n];
-            diag_report(diagnostic, &sources);
+        if (!diagpool_is_empty(&diagnostics)) {
+            for (usize n = 0; n < mini_array_count(diagnostics.diagnostics); n++) {
+                const Diagnostic *diagnostic = &diagnostics.diagnostics[n];
+                diag_report(diagnostic, &sources);
+            }
+            return 1;
         }
-        return 1;
     }
 
     hir::Context hir         = hir::ctx_init(allocator, &storage);

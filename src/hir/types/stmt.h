@@ -60,7 +60,7 @@ namespace hir
 
         struct Return {
             sema::Type_Id type_id;
-            Expression *value;
+            Expression   *value;
         };
 
         struct Break {};
@@ -69,18 +69,29 @@ namespace hir
             Expression *condition;
             Statement  *body;
         };
+
+        struct Struct {
+            struct Field {
+                mini::StringView name;
+                sema::Type_Id    type_id;
+            };
+
+            mini::StringView   name;
+            mini::Array<Field> fields;
+        };
     } // namespace stmt
 
     struct Statement {
         enum Kind {
             Variable,
             Function,
-            Block,
             Expr,
+            Block,
             If,
             Return,
             Loop,
             Break,
+            Struct,
         };
 
         Kind kind;
@@ -92,6 +103,7 @@ namespace hir
             stmt::Return ret;
             stmt::Break  break_;
             stmt::Loop loop;
+            stmt::Struct strukt;
             hir::Expression *expr;
         } as;
     };

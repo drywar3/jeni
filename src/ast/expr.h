@@ -15,8 +15,11 @@ enum Expression_Kind {
     EXPR_Unary,
     EXPR_Cast,
     EXPR_Function,
+    EXPR_Struct,
     EXPR_Function_Call,
+    EXPR_Member_Access,
     EXPR_Error,
+    EXPR_Typehint,
 };
 
 struct Expression : Statement {

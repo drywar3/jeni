@@ -42,6 +42,8 @@ namespace sema
     Symbol_Proxy get_symbol_by_id(Semantic_Context *sema,
                                   sema::Symbol_Id symbol_id);
 
+    sema::Type *get_type_by_id(Semantic_Context *sema, sema::Type_Id type_id);
+
     Opt<Symbol_Proxy> find_symbol_in(Semantic_Context *sema, Scope_Id scope,
                                      mini::StringView name);
     Opt<Symbol_Proxy> find_symbol_in(const Semantic_Context *sema,
@@ -73,8 +75,8 @@ namespace sema
                                                       mini::StringView name);
 
     void link_locus_to_type(Semantic_Context *sema, Locus locus, Type_Id id);
+    void link_locus_to_type_at_locus(Semantic_Context *sema, Locus source, Locus target);
     Type_Id get_type_at_locus(Semantic_Context *sema, Locus locus);
-
     void link_locus_to_symbol(Semantic_Context *sema, Locus locus,
                               Symbol_Id id);
     Opt<sema::Symbol_Proxy> get_symbol_at_locus(Semantic_Context *sema,
@@ -85,21 +87,31 @@ namespace sema
 
     void report(Semantic_Context *sema, Diagnostic diagnostic);
 
+    using Diag_Labels = std::initializer_list<::Label>;
+
     template<typename Something_With_Locus>
     static inline
     void report_error(Semantic_Context *sema, const Something_With_Locus &at,
-                      const char *message, const char *tag = "here")
+                      const char *message, const char *tag = "here", Diag_Labels labels = {})
     {
-        sema::report(sema, diag_create(Severity::Error, at.locus,
-                                       message, tag));
+        auto diag = diag_create(Severity::Error, at.locus,
+                                message, tag);
+        for (const auto label : labels) {
+            diag = diag_add_label(diag, label);
+        }
+        sema::report(sema, diag);
     }
 
     template<>
     void report_error<Locus>(Semantic_Context *sema, const Locus &at,
-                             const char *message, const char *tag)
+                             const char *message, const char *tag, Diag_Labels labels)
     {
-        sema::report(sema, diag_create(Severity::Error, at,
-                                       message, tag));
+        auto diag = diag_create(Severity::Error, at,
+                                message, tag);
+        for (const auto label : labels) {
+            diag = diag_add_label(diag, label);
+        }
+        sema::report(sema, diag);
     }
 
     Mini_String display_type(Semantic_Context *sema, sema::Type_Id type_id);

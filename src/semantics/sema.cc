@@ -19,6 +19,7 @@ Semantic_Storage semastore_init(Mini_Allocator allocator)
 }
 
 Semantic_Context semactx_init(Mini_Allocator allocator,
+                              Mini_Allocator persistent_allocator,
                               Diagnostic_Pool *diagnostics,
                               Semantic_Storage *store)
 {
@@ -27,10 +28,11 @@ Semantic_Context semactx_init(Mini_Allocator allocator,
             HashMap<sema::Symbol_Id, mini::Array<Worker>>(allocator),
         .current_scope     = {},
         .block_save_points = Semantic_Context::Block_Save_Points(allocator)};
-    sema.allocator    = allocator;
-    sema.diagnostics  = diagnostics;
-    sema.store        = store;
-    sema.global_scope = (sema::Scope_Id)sema.store->scopes.add_value(
+    sema.allocator            = allocator;
+    sema.persistent_allocator = persistent_allocator;
+    sema.diagnostics          = diagnostics;
+    sema.store                = store;
+    sema.global_scope         = (sema::Scope_Id)sema.store->scopes.add_value(
         scope_init(sema::Scope_Kind::Global, std::nullopt, allocator));
     sema.current_scope = sema.global_scope;
     return sema;
@@ -104,6 +106,8 @@ constexpr sema::Type TYPES[] = {
     [(int)Char]   = sema::Type(sema::Type_Kind::Char),
     [(int)Bool]   = sema::Type(sema::Type_Kind::Bool),
     [(int)Int64]  = sema::Type(sema::Type_Kind::Int64),
+    [(int)Float32]  = sema::Type(sema::Type_Kind::Float32),
+    [(int)Float64]  = sema::Type(sema::Type_Kind::Float64),
 };
 
 void semastore_init_builtin_types(Semantic_Storage *store)

@@ -51,6 +51,12 @@ void sema::link_locus_to_type(Semantic_Context *sema, Locus locus, Type_Id id)
     sema->store->types.link(locus, (usize)id);
 }
 
+void sema::link_locus_to_type_at_locus(Semantic_Context *sema, Locus source, Locus target)
+{
+    sema::Type_Id type_id = sema::get_type_at_locus(sema, source);
+    sema::link_locus_to_type(sema, target, type_id);
+}
+
 sema::Type_Id sema::get_type_at_locus(Semantic_Context *sema, Locus locus)
 {
     return (sema::Type_Id)*sema->store->types.get_id(locus);
@@ -206,6 +212,11 @@ sema::Symbol_Proxy sema::get_symbol_by_id(const Semantic_Context *sema,
                                           sema::Symbol_Id symbol_id)
 {
     return sema::Symbol_Proxy(sema->store, symbol_id);
+}
+
+sema::Type *sema::get_type_by_id(Semantic_Context *sema, sema::Type_Id type_id)
+{
+    return sema->types().at_index_ptr(usize(type_id));
 }
 
 sema::Symbol_Proxy sema::get_symbol_by_id(Semantic_Context *sema,

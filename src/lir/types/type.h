@@ -19,6 +19,8 @@ namespace lir
     struct Type;
     using TypePtr = Type *;
 
+    enum struct Type_Id : usize {};
+
     struct Type {
         struct Pointer {
             TypePtr inner;
@@ -36,9 +38,12 @@ namespace lir
             Int32,
             Int64,
             Uint32,
+            Float32,
+            Float64,
             String,
             Pointer,
             Function,
+            Struct,
         };
 
         Kind kind;
@@ -46,6 +51,7 @@ namespace lir
         union {
             Pointer pointer;
             Function function;
+            lir::Type_Id type_id;
         };
 
         static TypePtr PointerTo(Mini_Allocator allocator,
@@ -68,6 +74,34 @@ namespace lir
             fn_type.function.parameters  = params;
             return Box(allocator, fn_type);
         }
+
+        static TypePtr Struct(Mini_Allocator allocator, lir::Type_Id type_id)
+        {
+            Type struct_type{};
+            struct_type.kind = Kind::Struct;
+            struct_type.type_id = type_id;
+            return Box(allocator, struct_type);
+        }
     };
 
+    struct Type_Member {
+        mini::StringView name; // name of the member
+        lir::TypePtr     type; // type of the member
+    };
+
+    struct Type_Builder {
+        using Members = mini::Array<Type_Member>;
+
+        mini::StringView name; // name of the type
+        Members          members;
+
+        Type_Builder(Mini_Allocator allocator, mini::StringView name);
+
+        void add_member(lir::Type_Member member);
+
+        lir::Type_Member *get_member(mini::StringView name);
+        const lir::Type_Member *get_member(mini::StringView name) const;
+    };
+
+    using Type_Storage = mini::Array<Type_Builder>;
 } // namespace lir

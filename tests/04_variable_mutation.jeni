@@ -1,6 +1,6 @@
 
 test_consecutive_assignment :: func () {
-    x :: 10;
+    x := 10;
     y := 10;
     z := 10;
 
@@ -12,7 +12,7 @@ test_consecutive_assignment :: func () {
 }
 
 main :: func () -> int {
-    test_consecutive_assignment() = 10;
+    test_consecutive_assignment();
 }
 
 printf :: func (fmt : *const char, ...) -> int ---

@@ -4,7 +4,7 @@
 #include <mini.c/string_view.h>
 
 typedef struct Name {
-    Mini_StringView value;
+    mini::StringView value;
     Locus locus;
 } Name;
 

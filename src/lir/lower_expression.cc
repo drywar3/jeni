@@ -21,7 +21,6 @@ static lir::ValueId lower_binary_op(lir::Buildr *b,
     case ast::Operator::Div:
         op = lir::CmpOp::Div;
         break;
-
     case ast::Operator::Equals:
         op = lir::CmpOp::Equals;
         break;
@@ -57,6 +56,21 @@ static lir::ValueId lower_assign(lir::Buildr *b,
     return value;
 }
 
+static lir::ValueId lower_member_access(lir::Buildr *b,
+                                        const hir::Expression *expression)
+{
+    const auto &member_access = expression->as.member_access;
+    mini::StringView member_name = member_access.member_name;
+
+    auto receiver = lir::lower_expression(b, member_access.receiver);
+    auto type     = lir::lower_type(b, expression->type_id);
+
+    auto temp     = b->create_temporary(type);
+    b->member_ptr(temp, receiver, type, member_name);
+    return b->create_deref(temp);
+}
+
+
 lir::ValueId lir::lower_expression(Buildr *b, const hir::Expression *expression)
 {
     switch (expression->kind) {
@@ -64,6 +78,8 @@ lir::ValueId lir::lower_expression(Buildr *b, const hir::Expression *expression)
         return b->create_cstring(expression->as.string.value);
     case hir::Expression::Kind::Integer:
         return b->create_integer(expression->as.integer.value);
+    case hir::Expression::Kind::Float:
+        return b->create_float(expression->as.float_.value);
     case hir::Expression::Kind::Boolean:
         return b->create_boolean(expression->as.boolean.value);
     case hir::Expression::Kind::Identifier:
@@ -77,6 +93,8 @@ lir::ValueId lir::lower_expression(Buildr *b, const hir::Expression *expression)
         return lower_assign(b, expression);
     case hir::Expression::Kind::Binary_Operation:
         return lower_binary_op(b, expression);
+    case hir::Expression::Kind::Member_Access:
+        return lower_member_access(b, expression);
     default:
         MINI_UNREACHABLE("%d", expression->kind);
     }

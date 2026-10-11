@@ -21,7 +21,10 @@ bool sema::Symbol::is_state(Symbol_State state) const
 
 void sema::Symbol::set_state(Symbol_State state)
 {
-    // printf("(%.*s) %s => %s\n", SVARG(name.base()),
-    // state_name(resolve_state), state_name(state));
     resolve_state = state;
+}
+
+bool sema::Symbol::is(Symbol_Kind kind) const
+{
+    return this->kind == kind;
 }

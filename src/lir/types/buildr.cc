@@ -36,6 +36,11 @@ lir::ValueId lir::Buildr::create_integer(int64 value)
     return valuestore_index(&mod->context->values, Value::Integer(value));
 }
 
+lir::ValueId lir::Buildr::create_float(double value)
+{
+    return valuestore_index(&mod->context->values, Value::Float(value));
+}
+
 lir::ValueId lir::Buildr::create_boolean(bool value)
 {
     if (value) return get_const_true();
@@ -220,4 +225,21 @@ void lir::Buildr::create_ret(lir::TypePtr type, ValueId value)
                 "cannot add instruction when there is no function context");
     function->add_instruction(
         lir::Instruction{std::nullopt, InstructionKind::Ret(type, value)});
+}
+
+lir::ValueId lir::Buildr::create_zerofill()
+{
+    return valuestore_index(&mod->context->values,
+                            lir::Value::ZeroFill());
+}
+
+void lir::Buildr::member_ptr(lir::ValueId dst,
+                             lir::ValueId receiver,
+                             lir::TypePtr member_type,
+                             mini::StringView member_name)
+{
+    MINI_ASSERT(function != nullptr,
+                "cannot add instruction when there is no function context");
+    function->add_instruction(
+                              lir::Instruction{dst, InstructionKind::Member_Ptr(member_type, receiver, member_name)});
 }

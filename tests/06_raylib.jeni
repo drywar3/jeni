@@ -1,0 +1,91 @@
+
+Color :: struct {
+      r: char;
+      g: char;
+      b: char;
+      a: char;
+}
+
+make_color :: func (r: char, g: char, b: char, a: char) -> Color {
+   x: Color;
+   x.r = r;
+   x.g = g;
+   x.b = b;
+   x.a = a;
+   return x;
+}
+
+SCREEN_WIDTH  :: 800;
+SCREEN_HEIGHT :: 600;
+
+main :: func () {
+     RED   :: make_color(0xff, 0, 0, 0xff);
+     BLUE  :: make_color(0, 0, 0xff, 0xff);
+     GREEN :: make_color(0, 0xff, 0, 0xff);
+
+    SetTraceLogLevel(LOG_NONE);
+
+    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, c"06-raylib");
+    SetTargetFPS(60);
+
+    printf(c"0xFF = %d\n", 0xFF);
+    printf(c"0b11 = %d\n", 0b11);
+    printf(c"0o17 = %d\n", 0o17);
+
+    x_pos : float = 400;
+    y_pos : float = 300;
+
+    SIZE : int : 50;
+    inc := 2;
+
+    for {
+        if WindowShouldClose() then break;
+
+        BeginDrawing();
+        ClearBackground(RED);
+
+        DrawRectangle(x_pos, y_pos, SIZE, SIZE, GREEN);
+
+        x_pos = x_pos + inc;
+        //y_pos = y_pos + inc;
+
+        if x_pos + SIZE >= SCREEN_WIDTH {
+            inc = 0-inc;
+            x_pos = SCREEN_WIDTH - SIZE - 10;
+        }
+
+        if x_pos <= 0 {
+            inc = 0-inc;
+            x_pos = 10;
+        }
+
+        EndDrawing();
+    }
+
+    CloseWindow();
+}
+
+
+InitWindow        :: func (a : int, b: int, c : *const char) ---
+CloseWindow       :: func () ---
+BeginDrawing      :: func () ---
+WindowShouldClose :: func () -> int ---
+EndDrawing        :: func () ---
+ClearBackground   :: func (color : Color) ---
+ColorFromHSV      :: func (hue: float, saturation: float, value: float) -> Color ---
+DrawRectangle     :: func (posX: int, posY: int, width: int, height: int, color: Color) ---
+DrawCircle        :: func (centerX: int, centerY: int, radius: float, color: Color) ---
+SetTargetFPS      :: func (fps: int) ---
+
+SetTraceLogLevel  :: func (x : int) ---
+printf :: func (fmt: *const char, ...) -> int ---
+
+
+LOG_ALL     :: 0;
+LOG_TRACE   :: 1;
+LOG_DEBUG   :: 2;
+LOG_INFO    :: 3;
+LOG_WARNING :: 4;
+LOG_ERROR   :: 5;
+LOG_FATAL   :: 6;
+LOG_NONE    :: 7;

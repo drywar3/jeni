@@ -30,7 +30,9 @@ namespace lir
         };
 
         enum struct Kind {
+            ZeroFill,
             Integer,
+            Float,
             String,
             CString,
             LocalRef,
@@ -46,11 +48,17 @@ namespace lir
         union {
             usize index;
             int64            integer;
+            double           float_;
             mini::StringView ident;
             mini::StringView string;
             ValueId          valueid;
             Cmp cmp;
         };
+
+        static Value ZeroFill()
+        {
+            return Value{.kind = Kind::ZeroFill};
+        }
 
         static Value True()
         {
@@ -65,6 +73,11 @@ namespace lir
         static Value Integer(int64 value)
         {
             return Value{.kind = Kind::Integer, .integer = value};
+        }
+
+        static Value Float(double value)
+        {
+            return Value{.kind = Kind::Float, .float_ = value};
         }
 
         static Value CString(mini::StringView value)

@@ -13,8 +13,15 @@ Mini_String sema::Type::display(Mini_Allocator a, Type_Storage &types) const
         return mini_string_build(a, "int");
     case Type_Kind::Int64:
         return mini_string_build(a, "int64");
+    case Type_Kind::Float32:
+        return mini_string_build(a, "float");
+    case Type_Kind::Float64:
+        return mini_string_build(a, "float64");
     case Type_Kind::Uint:
         return mini_string_build(a, "uint");
+    case Type_Kind::Struct: {
+        return mini_string_build(a, "%.*s", SVARG(strukt.name.value.base()));
+    } break;
     case Type_Kind::Pointer: {
         Mini_String output = mini_string_build(a, "*");
         if (pointer.mutability)
@@ -43,4 +50,12 @@ Mini_String sema::Type::display(Mini_Allocator a, Type_Storage &types) const
     default:
         MINI_UNREACHABLE("%d", kind.kind);
     }
+}
+
+Opt<sema::Struct_Type::Field_Data> sema::Struct_Type::get_field_data(mini::StringView field_name) const
+{
+    for (const auto &field_data : fields.iter()) {
+        if (field_data.name.value == field_name) return field_data;
+    }
+    return None;
 }

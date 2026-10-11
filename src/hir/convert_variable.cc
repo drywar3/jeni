@@ -6,15 +6,16 @@
 hir::Statement *hir::convert_variable_stmt(hir::Context *ctx, const ::Statement *stmt)
 {
     auto *variable     = (ast::stmt::Variable*)stmt;
-    if (variable->is_initialized &&
-        variable->initializer->is(EXPR_Function))
+
+    if (variable->is_initialized && variable->initializer->is(EXPR_Function))
         return hir::convert_function_stmt(ctx, variable);
+    else if (variable->is_initialized && variable->initializer->is(EXPR_Struct))
+        return hir::convert_struct_decl(ctx, variable);
 
     const auto *symbol = ctx->symbols().find(variable->name.locus);
-
     MINI_ASSERT(symbol != nullptr,);
 
-    hir::stmt::Variable hir_variable;
+    hir::stmt::Variable hir_variable{};
     hir_variable.name = variable->name.value;
     hir_variable.mutability  = symbol->variable.mutability;
     hir_variable.type_id     = *symbol->variable.type_id;

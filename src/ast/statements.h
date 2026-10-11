@@ -21,7 +21,7 @@ namespace ast
             Name name;
             Mutability mutability;
             bool type_is_defined;
-            Typehint *typehint;
+            Expression *typehint;
             bool is_initialized;
             Expression *initializer;
         };

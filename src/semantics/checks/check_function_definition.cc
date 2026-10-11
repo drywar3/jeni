@@ -1,14 +1,15 @@
-#include "semantics/checks/check_function_definition.h"
-#include "ast/expressions.h"
+#include "semantics/impl.h"
 #include "ast/statements.h"
+#include "ast/expressions.h"
+#include "semantics/worker.h"
+#include "semantics/type/ids.h"
 #include "mini.cc/scope_guard.h"
-#include "semantics/checks/check_stmt.h"
+#include "semantics/type/resolver.h"
 #include "semantics/entities/scope.h"
 #include "semantics/entities/symbol.h"
-#include "semantics/impl.h"
-#include "semantics/type/ids.h"
-#include "semantics/type/resolver.h"
-#include "semantics/worker.h"
+#include "semantics/checks/check_stmt.h"
+#include "semantics/checks/check_expr.h"
+#include "semantics/checks/check_function_definition.h"
 
 #include <mini.cc/dtor.h>
 
@@ -16,7 +17,7 @@ static void generate_function_call_schema(Semantic_Context *sema,
                                           ast::Function_Prototype *proto,
                                           sema::Symbol_Id symbol_id)
 {
-    sema::Function_Call_Schema schema{sema->allocator};
+    sema::Function_Call_Schema schema{sema->persistent_allocator};
 
     schema.arity.min   = 0;
     schema.arity.max   = proto->parameters.count();
@@ -57,7 +58,7 @@ static void generate_function_call_schema(Semantic_Context *sema,
                 Severity::Error, parameter.name.locus,
                 mini_string_build(sema->allocator,
                                   "redefinition of parameter `%.*s`",
-                                  SVARG(parameter.name.value)),
+                                  SVARG(parameter.name.value.base())),
                 "parameter with this name already declared");
             sema::report(sema, diag);
         } else {
@@ -77,16 +78,15 @@ Worker_Status check_function_prototype(Semantic_Context *sema,
     /* ensure all the parameters are resolvable */
     for (usize n = 0; n < proto->parameters.count(); ++n) {
         ast::Function_Parameter &parameter = proto->parameters[n];
-        if (auto s = sema::resolve_typehint(sema, parameter.typehint,
-                                            parameter.name.locus);
+        if (auto s = sema::resolve_typehint(sema,
+                                            parameter.typehint, parameter.name.locus);
             s != Worker_Status::Done) {
             return s;
         }
     }
 
     if (proto->return_type) {
-        Worker_Status status = sema::resolve_typehint(
-            sema, proto->return_type, proto->return_type->locus);
+        Worker_Status status = sema::check_expression(sema, proto->return_type);
         if (status != Worker_Status::Done)
             return status;
     }
@@ -171,7 +171,7 @@ Worker_Status sema::check_function_definition(Semantic_Context *sema,
 
     /* checking function prototype might have relocated the symbol
      * so i refresh the variable here (just in case) */
-    symbol = sema::get_symbol_by_id(sema, id);
+    //symbol = sema::get_symbol_by_id(sema, id);
     symbol->set_state(sema::Symbol_State::Resolved);
 
     sema->wake_up_workers(id);

@@ -49,12 +49,15 @@ namespace lir
         ValueId get_const_true();
         ValueId get_const_false();
 
+        ValueId create_zerofill();
         ValueId create_integer(int64 value);
+        ValueId create_float(double value);
         ValueId create_boolean(bool value);
         ValueId create_cstring(mini::StringView value);
         ValueId create_cmp(lir::CmpOp op, ValueId first, ValueId second);
 
         void create_ret(lir::TypePtr type, ValueId value);
+        void member_ptr(lir::ValueId dst, lir::ValueId receiver, lir::TypePtr member_type, mini::StringView member_name);
 
         usize new_local(mini::StringView name);
 

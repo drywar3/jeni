@@ -1,0 +1,20 @@
+
+Thing :: struct {
+    x : int;
+    y : int;
+}
+
+make_thing :: func (x : int, y : int) -> Thing {
+    thing: Thing;
+    thing.x = x;
+    thing.y = y;
+    return thing;
+}
+
+main :: func () -> int {
+    one_thing := make_thing(10, 20);
+    printf(c".x = %d\n", one_thing.x);
+    printf(c".y = %d\n", one_thing.y);
+}
+
+printf :: func (fmt: *const char, ...) ---

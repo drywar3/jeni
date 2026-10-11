@@ -17,6 +17,15 @@ hir::Expression *hir::convert_expression(hir::Context *ctx,
         return ctx->new_expr(hir::Expression::Kind::Integer,
                              sema::Type_Id(*type_id), hir_integer);
     } break;
+    case EXPR_Float: {
+        const auto *float_ = (const ast::expr::Float *)expression;
+        const auto type_id  = ctx->types().get_id(expression->locus);
+        MINI_ASSERT(type_id.has_value(), "missing type link");
+        hir::expr::Float hir_float;
+        hir_float.value = float_->value;
+        return ctx->new_expr(hir::Expression::Kind::Float,
+                             sema::Type_Id(*type_id), hir_float);
+    } break;
     case EXPR_CString: {
         const ast::expr::String *string = (const ast::expr::String *)expression;
         hir::expr::String hir_string;
@@ -41,6 +50,8 @@ hir::Expression *hir::convert_expression(hir::Context *ctx,
     case EXPR_Binop:
         return convert_binary_op(
             ctx, (const ast::expr::Binary_Operation *)expression);
+    case EXPR_Member_Access:
+        return convert_member_access(ctx, (const ast::expr::Member_Access *)expression);
     default:
         MINI_UNREACHABLE();
     }

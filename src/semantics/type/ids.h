@@ -13,6 +13,8 @@ namespace sema::type_id
     constexpr auto String = (Type_Id)6;
 
     constexpr auto Int64 = (Type_Id)7;
+    constexpr auto Float32 = (Type_Id)8;
+    constexpr auto Float64 = (Type_Id)9;
 
-    constexpr auto _LAST_ = (Type_Id)8;
+    constexpr auto _LAST_ = (Type_Id)10;
 } // namespace sema::type_id

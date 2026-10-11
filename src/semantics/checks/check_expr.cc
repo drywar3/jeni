@@ -1,17 +1,19 @@
-#include "semantics/checks/check_expr.h"
-#include "ast/expr.h"
-#include "ast/expressions.h"
 #include "ast/misc.h"
-#include "mini.c/string_view.h"
-#include "semantics/checks/check_binary_op.h"
-#include "semantics/checks/check_function_call.h"
+#include "ast/expr.h"
 #include "semantics/impl.h"
+#include "ast/expressions.h"
+#include "semantics/worker.h"
+#include "mini.c/string_view.h"
 #include "semantics/type/ids.h"
 #include "semantics/type/resolver.h"
-#include "semantics/worker.h"
+#include "semantics/checks/check_expr.h"
+#include "semantics/checks/check_binary_op.h"
+#include "semantics/checks/check_struct_decl.h"
+#include "semantics/checks/check_member_access.h"
+#include "semantics/checks/check_function_call.h"
 
-static Worker_Status check_identifier(Semantic_Context *sema,
-                                      ast::expr::Identifier *ident);
+static Worker_Status check_typehint(Semantic_Context *sema,
+                                    Expression *ident);
 
 static void check_integer(Semantic_Context *sema, ast::expr::Integer *integer)
 {
@@ -19,12 +21,23 @@ static void check_integer(Semantic_Context *sema, ast::expr::Integer *integer)
     sema::link_locus_to_type(sema, locus, sema::type_id::Int);
 }
 
+static void check_float(Semantic_Context *sema, ast::expr::Float *float_)
+{
+    Locus locus = float_->locus;
+    sema::link_locus_to_type(sema, locus, sema::type_id::Float32);
+}
+
+
 Worker_Status sema::check_expression(Semantic_Context *sema, void *data)
 {
     auto *expr = (Expression *)data;
     switch (expr->kind) {
     case EXPR_Integer: {
         check_integer(sema, (ast::expr::Integer *)expr);
+        return Worker_Status::Done;
+    };
+    case EXPR_Float: {
+        check_float(sema, (ast::expr::Float *)expr);
         return Worker_Status::Done;
     };
     case EXPR_Identifier:
@@ -41,13 +54,15 @@ Worker_Status sema::check_expression(Semantic_Context *sema, void *data)
     }
     case EXPR_Binop:
         return check_binary_op(sema, (ast::expr::Binary_Operation *)expr);
+    case EXPR_Typehint: return check_typehint(sema, expr);
+    case EXPR_Member_Access: return check_member_access(sema, expr);
     default:
         MINI_UNREACHABLE("TODO: %d\n", expr->kind);
     }
 }
 
-static Worker_Status check_identifier(Semantic_Context *sema,
-                                      ast::expr::Identifier *ident)
+Worker_Status sema::check_identifier(Semantic_Context *sema,
+                                     ast::expr::Identifier *ident)
 {
     Locus locus           = ident->locus;
     mini::StringView name = ident->value;
@@ -87,8 +102,15 @@ static Worker_Status check_identifier(Semantic_Context *sema,
         return Worker_Status::Failed;
     }
 
-    sema::link_locus_to_type(sema, locus, *symbol->variable.type_id);
+    sema::link_locus_to_type_at_locus(sema, symbol->locus, locus);
     sema::link_locus_to_symbol(sema, locus, sym_id);
 
     return Worker_Status::Done;
+}
+
+Worker_Status check_typehint(Semantic_Context *sema,
+                             Expression *ty_expr)
+{
+    auto *typehint = (Typehint *)ty_expr;
+    return sema::resolve_typehint(sema, typehint, typehint->locus);
 }

@@ -18,6 +18,7 @@ struct CBackend {
     Mini_String fwd_decl;
     Mini_String code;
     codegen::Context *context;
+    lir::Context     *lir;
 
     Opt<mini::StringView> function_name;
 };
@@ -40,7 +41,7 @@ bool is_constant_value(const lir::Module *mod, lir::ValueId val_id)
     }
 }
 
-static void write_type(Mini_String *out, lir::TypePtr type);
+static void write_type(CBackend *bk, Mini_String *out, lir::TypePtr type);
 static void write_value(CBackend *bk, Mini_String *out, lir::ValueId value_id);
 static void write_instruction(CBackend *bk, Mini_String *out,
                               lir::Instruction inst);
@@ -63,19 +64,33 @@ static void emit_module_prelude(CBackend *bk)
 static void emit_function_fwd_declaration(CBackend *bk,
                                           const lir::Global::Function *function)
 {
-    write_type(&bk->fwd_decl, function->prototype.return_type);
+    write_type(bk, &bk->fwd_decl, function->prototype.return_type);
     writef(bk, " %.*s (", SVARG(function->name.base()));
     usize n = 0;
     for (const auto &param_type : function->prototype.parameters.iter()) {
         if (n != 0)
             writef(bk, ", ");
-        write_type(&bk->fwd_decl, param_type);
+        write_type(bk, &bk->fwd_decl, param_type);
         writef(bk, " param_%zu", n);
         n += 1;
     }
     if (function->is_variadic)
         writef(bk, ", ...");
     writef(bk, ");\n");
+}
+
+static void emit_type_definition(CBackend *bk, const lir::Type_Id type_id)
+{
+    lir::Type_Builder &type_builder = *bk->lir->get_type(type_id);
+    Mini_String *out = &bk->fwd_decl;
+
+    writeo(out, "typedef struct %.*s {\n", SVARG(type_builder.name.base()));
+    for (const auto &member : type_builder.members.iter()) {
+        writeo(out, INDENT);
+        write_type(bk, out, member.type);
+        writeo(out, " %.*s;\n", SVARG(member.name.base()));
+    }
+    writeo(out, "} %.*s;\n", SVARG(type_builder.name.base()));
 }
 
 static void emit_global_declarations(CBackend *bk)
@@ -86,7 +101,7 @@ static void emit_global_declarations(CBackend *bk)
             continue;
 
         const auto &variable = global.variable;
-        write_type(&bk->fwd_decl, variable.type);
+        write_type(bk, &bk->fwd_decl, variable.type);
 
         if (is_constant_value(&mod, variable.initializer)) {
             writef(bk, " %.*s = ", SVARG(global.name.base()));
@@ -142,6 +157,9 @@ static void emit_forward_declarations(CBackend *bk)
         case lir::Global::Kind::Function:
             emit_function_fwd_declaration(bk, &global.function);
             break;
+        case lir::Global::Kind::Type:
+            emit_type_definition(bk, global.type_id);
+            break;
         default:
             MINI_UNREACHABLE();
         }
@@ -157,6 +175,7 @@ Mini_String codegen::c_backend_entry_point(codegen::Context *context)
     backend.fwd_decl = mini_string_init(context->allocator);
     backend.code     = mini_string_init(context->allocator);
     backend.context  = context;
+    backend.lir      = context->mod->context;
 
     emit_module_prelude(&backend);
     emit_global_declarations(&backend);
@@ -172,7 +191,7 @@ Mini_String codegen::c_backend_entry_point(codegen::Context *context)
     return output;
 }
 
-void write_type(Mini_String *out, lir::TypePtr type)
+void write_type(CBackend *bk, Mini_String *out, lir::TypePtr type)
 {
     switch (type->kind) {
     case lir::Type::Kind::Int8:
@@ -184,6 +203,12 @@ void write_type(Mini_String *out, lir::TypePtr type)
     case lir::Type::Kind::Int64:
         mini_string_append_string(out, "int64_t");
         break;
+    case lir::Type::Kind::Float32:
+        mini_string_append_string(out, "float");
+        break;
+    case lir::Type::Kind::Float64:
+        mini_string_append_string(out, "double");
+        break;
     case lir::Type::Kind::String:
         mini_string_append_string(out, "char *");
         break;
@@ -194,9 +219,13 @@ void write_type(Mini_String *out, lir::TypePtr type)
         if (type->pointer.mutability) {
             writeo(out, "const ");
         }
-        write_type(out, type->pointer.inner);
+        write_type(bk, out, type->pointer.inner);
         mini_string_append_string(out, "*");
         break;
+    case lir::Type::Kind::Struct: {
+        const auto &type_builder = *bk->lir->get_type(type->type_id);
+        writeo(out, "%.*s", SVARG(type_builder.name.base()));
+    } break;
     case lir::Type::Kind::Function:
     default:
         MINI_UNREACHABLE("%d", type->kind);
@@ -210,6 +239,9 @@ void write_value(CBackend *bk, Mini_String *out, lir::ValueId value_id)
     switch (value.kind) {
     case lir::Value::Kind::Integer:
         mini_string_append_fmt(out, "%ld", value.integer);
+        break;
+    case lir::Value::Kind::Float:
+        mini_string_append_fmt(out, "%f", value.float_);
         break;
     case lir::Value::Kind::ParamRef:
         mini_string_append_fmt(out, "param_%zu", value.index);
@@ -232,6 +264,9 @@ void write_value(CBackend *bk, Mini_String *out, lir::ValueId value_id)
         break;
     case lir::Value::Kind::False:
         mini_string_append_string(out, "false");
+        break;
+    case lir::Value::Kind::ZeroFill:
+        mini_string_append_string(out, "{0}");
         break;
     case lir::Value::Kind::Cmp:
         mini_string_append_fmt(out, "(");
@@ -273,7 +308,7 @@ void emit_stack_slots(CBackend *bk, Mini_String *out,
             writeo(out, INDENT);
             MINI_ASSERT(inst_.dst.has_value(),
                         "no valid destination for alloca instruction");
-            write_type(out, inst.as.alloca.type);
+            write_type(bk, out, inst.as.alloca.type);
             writeo(out, " ");
             write_value(bk, out, *inst_.dst);
             writeo(out, "_slot;\n");
@@ -287,13 +322,13 @@ void emit_stack_slots(CBackend *bk, Mini_String *out,
 void emit_function_definition(CBackend *bk,
                               const lir::Global::Function *function)
 {
-    write_type(&bk->code, function->prototype.return_type);
+    write_type(bk, &bk->code, function->prototype.return_type);
     writec(bk, " %.*s (", SVARG(function->name.base()));
     usize n = 0;
     for (const auto &param_type : function->prototype.parameters.iter()) {
         if (n != 0)
             writec(bk, ", ");
-        write_type(&bk->code, param_type);
+        write_type(bk, &bk->code, param_type);
         writec(bk, " param_%zu", n);
         n += 1;
     }
@@ -346,7 +381,7 @@ void write_instruction(CBackend *bk, Mini_String *out, lir::Instruction inst_)
         MINI_ASSERT(inst_.dst.has_value(),
                     "no valid destination for alloca instruction");
 
-        write_type(out, inst.as.alloca.type);
+        write_type(bk, out, inst.as.alloca.type);
         writeo(out, " *");
         write_value(bk, out, *inst_.dst);
         writeo(out, " = &");
@@ -358,7 +393,7 @@ void write_instruction(CBackend *bk, Mini_String *out, lir::Instruction inst_)
                     "no valid destination for store instruction");
         write_value(bk, out, *inst_.dst);
         writeo(out, " = (");
-        write_type(out, inst.as.store.type);
+        write_type(bk, out, inst.as.store.type);
         writeo(out, ")");
         write_value(bk, out, inst.as.store.value);
         writeo(out, ";\n");
@@ -385,6 +420,16 @@ void write_instruction(CBackend *bk, Mini_String *out, lir::Instruction inst_)
         write_value(bk, out, inst.as.ret.value);
         writeo(out, ";\n");
         break;
+    case lir::InstructionKind::OpCode::Member_Ptr: {
+        MINI_ASSERT(inst_.dst.has_value(),
+                    "no valid destination for member_ptr instruction");
+        write_value(bk, out, *inst_.dst);
+        writeo(out, " = (");
+        write_type(bk, out, inst.as.member_ptr.member_type);
+        writeo(out, " *)&(");
+        write_value(bk, out, inst.as.member_ptr.receiver);
+        writeo(out, ").%.*s;\n", SVARG(inst.as.member_ptr.member_name.base()));
+    } break;
     case lir::InstructionKind::OpCode::Call: {
         if (inst_.dst.has_value()) {
             write_value(bk, out, *inst_.dst);

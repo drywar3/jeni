@@ -8,3 +8,5 @@
 
 template<typename T>
 using Opt = std::optional<T>;
+
+constexpr auto None = std::nullopt;

@@ -70,21 +70,23 @@ bool check_basic_compatibility(Semantic_Context *sema, Locus locus,
     sema::Type_Id right_type_id = sema::get_type_at_locus(sema, right->locus);
 
     /* for now only int is ok */
-    if (left_type_id != sema::type_id::Int ||
-        right_type_id != sema::type_id::Int) {
+    if ((left_type_id != sema::type_id::Int &&
+        left_type_id != sema::type_id::Float32) ||
+        (right_type_id != sema::type_id::Float32 &&
+         right_type_id != sema::type_id::Int)) {
         sema::report(
             sema,
             diag_create(Severity::Error, locus,
                         "invalid operands to binary operator",
                         mini_string_build(
-                            sema->allocator, "cannot operator on `%s` and `%s`",
+                            sema->allocator, "cannot operate on `%s` and `%s`",
                             sema::display_type(sema, left_type_id),
                             sema::display_type(sema, right_type_id))));
         sema::link_locus_to_type(sema, locus, sema::type_id::Error);
         return false;
     }
 
-    sema::link_locus_to_type(sema, locus, left_type_id);
+    sema::link_locus_to_type(sema, locus, right_type_id);
     return true;
 }
 
@@ -97,6 +99,7 @@ static bool expression_is_lvalue(const Expression *expr)
     case EXPR_Function_Call:
         return false;
     case EXPR_Identifier:
+    case EXPR_Member_Access:
         return true;
     default:
         MINI_UNREACHABLE();

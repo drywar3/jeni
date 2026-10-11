@@ -14,16 +14,23 @@
 namespace lir
 {
     struct Context {
-        ValueStorage values;
-        BlockStorage blocks;
+        lir::ValueStorage values;
+        lir::BlockStorage blocks;
+        lir::Type_Storage types;
+
         const Semantic_Storage *store;
         Mini_Allocator allocator;
 
-        ValueId const_true;
-        ValueId const_false;
+        lir::ValueId const_true;
+        lir::ValueId const_false;
 
-        BlockId new_block(std::optional<BlockId> parent);
-        Block *get_block(BlockId id);
+        lir::BlockId new_block(std::optional<BlockId> parent);
+        lir::Block *get_block(lir::BlockId id);
+
+        lir::Type_Id new_type(lir::Type_Builder type_builder);
+        lir::Type_Builder *get_type(lir::Type_Id type_id);
+        lir::Type_Builder *get_type(mini::StringView name);
+        lir::Type_Id get_id_of_type(mini::StringView name);
     };
 
     struct Module {

@@ -15,9 +15,7 @@ main :: func (argc : int) -> int {
     putchar(68);
     putchar(33);
     putchar(10);
-
-    printf(c"Hello World", argc);
+    x := 10;
 }
 
 putchar :: func (c: int) ---
-printf  :: func (fmt: *const char, ...) ---

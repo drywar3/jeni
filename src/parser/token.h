@@ -20,6 +20,23 @@ typedef enum {
     TOKEN_KW_Cast,
     TOKEN_KW_Func,
 
+    TOKEN_TYPE_KEYWORDS,
+    TOKEN_TK_Void,
+    TOKEN_TK_Int,
+    TOKEN_TK_Int8,
+    TOKEN_TK_Int16,
+    TOKEN_TK_Int32,
+    TOKEN_TK_Int64,
+    TOKEN_TK_Float32,
+    TOKEN_TK_Float64,
+    TOKEN_TK_Uint,
+    TOKEN_TK_String,
+    TOKEN_TK_Char,
+    TOKEN_TK_Bool,
+    TOKEN_TK_Usize,
+    TOKEN_TK_Isize,
+    TOKEN_TYPE_KEYWORDS_END,
+
     TOKEN_OP_Add,
     TOKEN_OP_Minus,
     TOKEN_OP_Div,
@@ -45,11 +62,13 @@ typedef enum {
     TOKEN_SEP_Rbracket,
     TOKEN_SEP_Lparen,
     TOKEN_SEP_Rparen,
+    TOKEN_SEP_Dot,
     // used to indicate that a function has no body
     TOKEN_SEP_Nobody, // ---
     TOKEN_SEP_Vararg, // ...
 
     TOKEN_LIT_Int,
+    TOKEN_LIT_Float,
     TOKEN_LIT_String,
     TOKEN_LIT_RString,
     TOKEN_LIT_CString,
@@ -65,8 +84,9 @@ typedef enum {
 typedef struct {
     TokenKind kind;
     Locus locus;
+    int   base;
 } Token;
 
-Token token_create(TokenKind kind, Locus locus);
+Token token_create(TokenKind kind, Locus locus, int base = 10);
 
 const char *tokenkind_to_string(TokenKind kind);

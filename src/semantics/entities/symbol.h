@@ -25,6 +25,10 @@ namespace sema
         Failed,
     };
 
+    struct Symbol_Type {
+        sema::Type_Id type_id;
+    };
+
     struct Symbol_Variable {
         bool is_initialized;
         std::optional<sema::Type_Id> type_id;
@@ -41,10 +45,13 @@ namespace sema
 
         union {
             Symbol_Variable variable;
+            Symbol_Type     type;
         };
 
         void set_state(Symbol_State state);
         bool is_state(Symbol_State state) const;
+
+        bool is(Symbol_Kind kind) const;
     };
 
     using Symbol_Storage = DenseMap<Locus, Symbol>;

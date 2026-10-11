@@ -4,33 +4,54 @@
 #include "type.h"
 #include "expr.h"
 
-struct TypeString {
-    Typehint base;
-};
 
-struct TypeChar {
-    Typehint base;
-};
+namespace ast
+{
+    namespace type
+    {
+        struct String : Typehint {};
+        struct Char   : Typehint {};
+        struct Float  : Typehint {
+            enum Width {
+                Float32,
+                Float64,
+            } width;
+        };
 
-typedef struct TypePointer {
-    Typehint base;
-    Mutability mutability;
-    TypehintPointer typehint;
-} TypePointer;
+        struct Pointer : Typehint {
+            Mutability mutability;
+            Expression  *typehint;
+        };
 
-typedef struct TypeArray {
-    Typehint base;
-    ExpressionPointer element_count;
-    TypehintPointer element_type;
-} TypeArray;
+        struct Array : Typehint {
+            ExpressionPointer element_count;
+            Expression *element_type;
+        };
 
-typedef struct TypeInteger {
-    Typehint base;
-    enum Kind {
-        Int,
-        Uint,
-        Usize,
-        Isize,
-        Int64,
-    } kind;
-} TypeInteger;
+        struct Integer : Typehint {
+            enum Kind {
+                Int,
+                Uint,
+                Usize,
+                Isize,
+                Int64,
+            } kind;
+        };
+
+
+        template <typename Derived_Typehint>
+        static inline Typehint *
+        alloc_typehint(Mini_Allocator allocator, Typehint_Kind kind,
+                       Locus locus, Derived_Typehint e)
+        {
+            Typehint *expression =
+                (Typehint *)MINI_ALLOC(allocator, Derived_Typehint);
+            new (expression) Derived_Typehint(std::move(e));
+            expression->kind  = kind;
+            expression->locus = locus;
+            return expression;
+        }
+
+
+    } // namespace type
+} // namespace ast

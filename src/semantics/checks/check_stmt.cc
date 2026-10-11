@@ -3,6 +3,7 @@
 #include "semantics/checks/check_block.h"
 #include "semantics/checks/check_expr.h"
 #include "semantics/checks/check_for_ever.h"
+#include "semantics/checks/check_struct_decl.h"
 #include "semantics/checks/check_function_definition.h"
 #include "semantics/checks/check_if_stmt.h"
 #include "semantics/checks/check_return_stmt.h"
@@ -95,6 +96,8 @@ Worker_Status check_variable(Semantic_Context *sema, void *data,
 
     if (variable->is_initialized && initializer->kind == EXPR_Function)
         return sema::check_function_definition(sema, variable, is_resumption);
+    else if (variable->is_initialized && initializer->kind == EXPR_Struct)
+        return sema::check_struct_decl(sema, variable, is_resumption);
 
     symbol->set_state(sema::Symbol_State::Resolving);
 
@@ -113,7 +116,7 @@ Worker_Status check_variable(Semantic_Context *sema, void *data,
     }
 
     if (variable->type_is_defined) {
-        TypehintPointer typehint = variable->typehint;
+        Expression *typehint = variable->typehint;
         Worker_Status type_status =
             sema::resolve_typehint(sema, typehint, variable->name.locus);
 
@@ -126,27 +129,28 @@ Worker_Status check_variable(Semantic_Context *sema, void *data,
             return type_status;
         }
 
+        auto expected_type =
+            sema::get_type_at_locus(sema, variable->name.locus);
+
         if (variable->is_initialized) {
             auto recieved_type =
                 sema::get_type_at_locus(sema, initializer->locus);
-            auto expected_type =
-                sema::get_type_at_locus(sema, variable->name.locus);
-
             if (!sema::coerce_type_into(sema, expected_type, recieved_type,
                                         typehint->locus, initializer->locus)) {
                 symbol->set_state(sema::Symbol_State::Failed);
                 return Worker_Status::Failed;
             }
 
-            symbol->variable.type_id = expected_type;
         }
+        symbol->variable.type_id = expected_type;
+        sema::link_locus_to_type(sema, symbol->locus, expected_type);
     } else {
         if (variable->is_initialized) {
             auto inferred_type =
                 sema::get_type_at_locus(sema, initializer->locus);
             symbol->variable.type_id = inferred_type;
+            sema::link_locus_to_type(sema, symbol->locus, inferred_type);
         } else {
-            // Handle error case: var x; without type or initializer
             Diagnostic diag = diag_create(
                 Severity::Error, variable->name.locus, "type error",
                 "variables without initializers must specify an explicit type");
@@ -181,7 +185,7 @@ bool discover_variable(Semantic_Context *sema, StatementPointer stmt,
             Severity::Error, variable->name.locus, "variable redeclaration",
             mini_string_build(sema->allocator,
                               "symbol `%.*s` is already defined",
-                              SVARG(variable->name.value)));
+                              SVARG(variable->name.value.base())));
         sema::report(sema,
                      diag_add_label(diag, Label{"symbol was first defined here",
                                                 first->locus}));

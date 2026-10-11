@@ -26,6 +26,9 @@ namespace sema
             Pointer,
             Slice,
             Function,
+            Struct,
+            Float32,
+            Float64,
         } kind;
 
         constexpr Type_Kind(V v) : kind(v) {}
@@ -59,12 +62,27 @@ namespace sema
         Type_Id return_type;
     };
 
+    struct Struct_Type {
+        struct Field_Data {
+            Name name;
+            sema::Type_Id type_id;
+        };
+
+        using Fields = mini::Array<Field_Data>;
+
+        Name   name;
+        Fields fields;
+
+        Opt<Field_Data> get_field_data(mini::StringView field_name) const;
+    };
+
     struct Type {
         Type_Kind kind;
 
         union {
             Function_Type function;
             Pointer_Type pointer;
+            Struct_Type  strukt;
         };
 
         bool operator==(const Type &other) const
@@ -109,6 +127,13 @@ namespace sema
         {
             auto type    = Type(Type_Kind::Pointer);
             type.pointer = Pointer_Type{mutability, type_id};
+            return type;
+        }
+
+        static auto Struct(Name name, Struct_Type::Fields fields)
+        {
+            auto type    = Type(Type_Kind::Struct);
+            type.strukt = Struct_Type{name, fields};
             return type;
         }
 

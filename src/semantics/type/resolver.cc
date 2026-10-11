@@ -1,12 +1,14 @@
-#include "semantics/type/resolver.h"
 #include "ast/type.h"
 #include "ast/types.h"
-#include "mini.c/mini_def.h"
-#include "semantics/entities/type.h"
 #include "semantics/impl.h"
 #include "semantics/sema.h"
-#include "semantics/type/ids.h"
+#include "mini.c/mini_def.h"
+#include "ast/expressions.h"
 #include "semantics/worker.h"
+#include "semantics/type/ids.h"
+#include "semantics/entities/type.h"
+#include "semantics/type/resolver.h"
+#include "semantics/checks/check_expr.h"
 
 sema::Type_Id sema::register_or_get_type(Semantic_Context *sema,
                                          sema::Type type)
@@ -27,9 +29,9 @@ static Worker_Status
 resolve_pointer_typehint(Semantic_Context *sema, const Typehint *typehint,
                          std::optional<Locus> resolve_location)
 {
-    TypePointer *pointer = (TypePointer *)typehint;
-    Worker_Status status = sema::resolve_typehint(sema, pointer->typehint,
-                                                  pointer->typehint->locus);
+    ast::type::Pointer *pointer = (ast::type::Pointer *)typehint;
+    Worker_Status status = sema::check_expression(sema, pointer->typehint);
+
     if (status != Worker_Status::Done)
         return status;
 
@@ -48,32 +50,73 @@ resolve_pointer_typehint(Semantic_Context *sema, const Typehint *typehint,
 }
 
 Worker_Status sema::resolve_typehint(Semantic_Context *sema,
-                                     const TypehintPointer typehint,
+                                     const Expression *ty_expr,
                                      std::optional<Locus> resolve_location)
 {
-    MINI_ASSERT(typehint != nullptr, "invalid typehint");
+    MINI_ASSERT(ty_expr != nullptr, "invalid typehint");
+
+    if (ty_expr->kind == EXPR_Identifier) {
+        auto *ident = (ast::expr::Identifier *)ty_expr;
+        Worker_Status status = check_identifier(sema, ident);
+        if (status != Worker_Status::Done) return status;
+        if (auto sym_opt = sema::eagerly_lookup_symbol(sema, sema->current_scope, ident->value);
+            sym_opt.has_value()) {
+            auto symbol = *sym_opt;
+            if (!symbol->is(sema::Symbol_Kind::Type)) {
+                sema::report_error(sema,
+                                   *ty_expr,
+                                   "expected a type",
+                                   "this symbol does not refer to a type");
+                return Worker_Status::Failed;
+            }
+
+            if (resolve_location.has_value()) {
+                sema::link_locus_to_type(sema, *resolve_location, symbol->type.type_id);
+            }
+        }
+        return Worker_Status::Done;
+    }
+
+    MINI_ASSERT(ty_expr->kind == EXPR_Typehint, );
 
     Type_Id id;
 
+    const auto *typehint = (const Typehint *)ty_expr;
+
     switch (typehint->kind) {
     case TYPEHINT_Integer: {
-        const auto *integer = (const TypeInteger *)typehint;
+        const auto *integer = (const ast::type::Integer *)typehint;
         switch (integer->kind) {
-        case TypeInteger::Int:
+        case ast::type::Integer::Int:
             id = sema::type_id::Int;
             break;
-        case TypeInteger::Int64:
+        case ast::type::Integer::Int64:
             id = sema::type_id::Int64;
+            break;
+        default:
+            MINI_UNREACHABLE("%d", integer->kind);
+        }
+    } break;
+
+    case TYPEHINT_Float: {
+        const auto *float_ = (const ast::type::Float *)typehint;
+        switch (float_->width) {
+        case ast::type::Float::Float32:
+            id = sema::type_id::Float32;
+            break;
+        case ast::type::Float::Float64:
+            id = sema::type_id::Float64;
             break;
         default:
             MINI_UNREACHABLE();
         }
     } break;
+
     case TYPEHINT_String:
         id = sema::type_id::String;
         break;
     case TYPEHINT_Pointer:
-        return resolve_pointer_typehint(sema, typehint, resolve_location);
+        return resolve_pointer_typehint(sema, (const Typehint *)typehint, resolve_location);
     case TYPEHINT_Char:
         id = sema::type_id::Char;
         break;

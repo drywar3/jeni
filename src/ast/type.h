@@ -1,9 +1,11 @@
 #pragma once
 
 #include "misc.h"
+#include "ast/expr.h"
 
-typedef enum TypehintKind {
+typedef enum Typehint_Kind {
     TYPEHINT_Integer,
+    TYPEHINT_Float,
     TYPEHINT_Char,
     TYPEHINT_String,
     TYPEHINT_Bool,
@@ -12,30 +14,12 @@ typedef enum TypehintKind {
     TYPEHINT_Slice,
     TYPEHINT_Pointer,
     TYPEHINT_Function
-} TypehintKind;
+} Typehint_Kind;
 
-typedef struct Typehint {
-    TypehintKind kind;
-    Locus locus;
-} Typehint;
-
-typedef Typehint *TypehintPointer;
-
-#define ALLOC_TYPE(allocator, kind, locus, derived)                            \
-    ({                                                                         \
-        typeof(derived) derived_tmp = derived;                                 \
-        TypehintPointer typehint =                                             \
-            (TypehintPointer)MINI_ALLOC(allocator, typeof(derived_tmp));       \
-        *((typeof(derived_tmp) *)typehint) = derived;                          \
-        typehint_ctor(typehint, kind, locus);                                  \
-        typehint;                                                              \
-    })
-
-static inline void typehint_ctor(TypehintPointer _this, TypehintKind kind,
-                                 Locus locus)
-{
-    _this->kind  = kind;
-    _this->locus = locus;
-}
+struct Typehint : Expression {
+    Typehint_Kind kind;
+    Typehint_Kind get_type_kind() const { return kind; }
+    void set_type_kind(Typehint_Kind kind) { this->kind = kind; }
+};
 
 void typehint_destroy(Typehint *stmt, Mini_Allocator allocator);
