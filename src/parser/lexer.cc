@@ -21,6 +21,7 @@ static const TokenSpec KEYWORDS[] = {
     {"break", TOKEN_KW_Break},
     {"continue", TOKEN_KW_Continue},
     {"struct", TOKEN_KW_Struct},
+    {"cast", TOKEN_KW_Cast},
 
     {"int", TOKEN_TK_Int},
     {"int8", TOKEN_TK_Int8},
@@ -28,7 +29,9 @@ static const TokenSpec KEYWORDS[] = {
     {"int32", TOKEN_TK_Int},
     {"int64", TOKEN_TK_Int64},
     {"uint", TOKEN_TK_Uint},
+    {"bool", TOKEN_TK_Bool},
     {"char", TOKEN_TK_Char},
+    {"uchar", TOKEN_TK_Uchar},
     {"void", TOKEN_TK_Void},
     {"float", TOKEN_TK_Float32},
     {"float32", TOKEN_TK_Float32},
@@ -48,6 +51,7 @@ static const TokenSpec PUNCTUATIONS[] = {
     {"*", TOKEN_OP_Star},      {"/", TOKEN_OP_Div},
     {"=", TOKEN_OP_Assign},    {">", TOKEN_OP_Greater},
     {"<", TOKEN_OP_Less},      {"!", TOKEN_OP_Bang},
+    {"^", TOKEN_OP_Caret},
 
     {"{", TOKEN_SEP_Lbrace},   {"[", TOKEN_SEP_Lbracket},
     {"(", TOKEN_SEP_Lparen},   {")", TOKEN_SEP_Rparen},

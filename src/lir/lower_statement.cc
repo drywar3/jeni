@@ -111,6 +111,7 @@ void lower_loop_stmt(lir::Buildr *b, const hir::Statement *stmt)
     b->put_label(loop_start);
         b->jmp_if_eq(condition, false_v, loop_end);
         lir::lower_statement(b, loop.body);
+        condition = lir::lower_expression(b, loop.condition);
         b->jmp_if_eq(condition, true_v, loop_start);
    b->put_label(loop_end);
 

@@ -17,6 +17,7 @@ namespace sema
             _SignedIntEnd,
             _UnsignedInt,
             Uint,
+            Uint8,
             _UnsignedIntEnd,
             String,
             Char,
@@ -76,13 +77,20 @@ namespace sema
         Opt<Field_Data> get_field_data(mini::StringView field_name) const;
     };
 
+    struct Array_Type {
+        sema::Type_Id element_type;
+        // this should work for now.
+        usize         element_count;
+    };
+
     struct Type {
         Type_Kind kind;
 
         union {
             Function_Type function;
-            Pointer_Type pointer;
-            Struct_Type  strukt;
+            Pointer_Type  pointer;
+            Struct_Type   strukt;
+            Array_Type    array;
         };
 
         bool operator==(const Type &other) const
@@ -106,6 +114,9 @@ namespace sema
             } else if (kind == Type_Kind::Pointer) {
                 return pointer.mutability == other.pointer.mutability &&
                        pointer.target_type == other.pointer.target_type;
+            } else if (kind == Type_Kind::Struct) {
+                return strukt.name.value == other.strukt.name.value &&
+                    strukt.name.locus == other.strukt.name.locus;
             }
 
             return true;
@@ -137,6 +148,12 @@ namespace sema
             return type;
         }
 
+        static auto Array(usize element_count, sema::Type_Id element_type)
+        {
+            auto type  = Type(Type_Kind::Array);
+            type.array = Array_Type{element_type, element_count};
+            return type;
+        }
         Mini_String display(Mini_Allocator a, Type_Storage &types) const;
     };
 } // namespace sema

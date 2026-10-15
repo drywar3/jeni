@@ -41,6 +41,7 @@ namespace ast
         Div               = TOKEN_OP_Div,
         Equals            = TOKEN_OP_Equals,
         NotEquals         = TOKEN_OP_NotEquals,
+        Not               = TOKEN_OP_Bang,
         Assign            = TOKEN_OP_Assign,
         LessThanEquals    = TOKEN_OP_LessEq,
         GreaterThanEquals = TOKEN_OP_GreaterEq,
@@ -114,6 +115,25 @@ namespace ast
         struct Member_Access : Expression {
             Expression *receiver;
             Name member;
+        };
+
+        struct AddressOf : Expression {
+            Expression *value;
+            Mutability  mutability;
+        };
+
+        struct Dereference : Expression {
+            Expression *value;
+        };
+
+        struct Subscript : Expression {
+            Expression *expr;
+            Expression *index;
+        };
+
+        struct Cast : Expression {
+            Expression *typehint;
+            Expression *value;
         };
 
         template <typename Derived_Expresssion>

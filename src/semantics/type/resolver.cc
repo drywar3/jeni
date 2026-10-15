@@ -25,6 +25,50 @@ sema::Type_Id sema::register_or_get_type(Semantic_Context *sema,
     return id;
 }
 
+
+static Worker_Status
+resolve_array_typehint(Semantic_Context *sema, const Typehint *typehint,
+                          std::optional<Locus> resolve_location)
+{
+    const auto is_valid_element_count_expr = [&] (const auto *expr) -> bool {
+        switch (expr->kind) {
+        case EXPR_Integer:
+            return true;
+        case EXPR_Identifier: {
+            MINI_UNREACHABLE();
+            auto symbol = *sema::get_symbol_at_locus(sema, expr->locus);
+            if (symbol->kind != sema::Symbol_Kind::Variable) return false;
+            if (!symbol->variable.mutability) return false;
+        } break;
+        default: return false;
+        }
+    };
+
+    const auto *array = (const ast::type::Array *)typehint;
+    auto status       = sema::check_expression(sema, array->element_type);
+    if (!status.is_done()) return status;
+
+    status       = sema::check_expression(sema, array->element_count);
+    if (!status.is_done()) return status;
+
+
+    if (!is_valid_element_count_expr(array->element_count)) {
+        sema::report_error(sema, *array->element_count,
+                           "invalid expression",
+                           "expected an integer literal or constant variable");
+        return Worker_Status::Failed;
+    }
+
+    usize element_count = ((ast::expr::Integer *)(array->element_count))->value;
+    auto  element_type  = sema::get_type_at_locus(sema, array->element_type->locus);
+    auto type_id        = sema::register_or_get_type(sema, sema::Type::Array(element_count, element_type));
+
+    if (resolve_location) {
+        sema::link_locus_to_type(sema, *resolve_location, type_id);
+    }
+    return Worker_Status::Done;
+}
+
 static Worker_Status
 resolve_pointer_typehint(Semantic_Context *sema, const Typehint *typehint,
                          std::optional<Locus> resolve_location)
@@ -93,6 +137,9 @@ Worker_Status sema::resolve_typehint(Semantic_Context *sema,
         case ast::type::Integer::Int64:
             id = sema::type_id::Int64;
             break;
+        case ast::type::Integer::Uint8:
+            id = sema::type_id::Uint8;
+            break;
         default:
             MINI_UNREACHABLE("%d", integer->kind);
         }
@@ -117,8 +164,15 @@ Worker_Status sema::resolve_typehint(Semantic_Context *sema,
         break;
     case TYPEHINT_Pointer:
         return resolve_pointer_typehint(sema, (const Typehint *)typehint, resolve_location);
+    case TYPEHINT_Array: return resolve_array_typehint(sema, typehint, resolve_location);
+    case TYPEHINT_Bool:
+        id = sema::type_id::Bool;
+        break;
     case TYPEHINT_Char:
         id = sema::type_id::Char;
+        break;
+    case TYPEHINT_Void:
+        id = sema::type_id::Void;
         break;
     default:
         MINI_UNREACHABLE("TODO");

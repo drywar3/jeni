@@ -102,6 +102,7 @@ constexpr sema::Type TYPES[] = {
     [(int)Void]   = sema::Type(sema::Type_Kind::Void),
     [(int)Int]    = sema::Type(sema::Type_Kind::Int),
     [(int)Uint]   = sema::Type(sema::Type_Kind::Uint),
+    [(int)Uint8]   = sema::Type(sema::Type_Kind::Uint8),
     [(int)String] = sema::Type(sema::Type_Kind::String),
     [(int)Char]   = sema::Type(sema::Type_Kind::Char),
     [(int)Bool]   = sema::Type(sema::Type_Kind::Bool),

@@ -32,6 +32,7 @@ typedef enum {
     TOKEN_TK_Uint,
     TOKEN_TK_String,
     TOKEN_TK_Char,
+    TOKEN_TK_Uchar,
     TOKEN_TK_Bool,
     TOKEN_TK_Usize,
     TOKEN_TK_Isize,
@@ -52,6 +53,7 @@ typedef enum {
     TOKEN_OP_NotEquals,
     TOKEN_OP_Bang,
     TOKEN_OP_Arrow,
+    TOKEN_OP_Caret,
 
     TOKEN_SEP_Semicolon,
     TOKEN_SEP_Colon,

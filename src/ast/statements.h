@@ -47,6 +47,11 @@ namespace ast
             Statement *body;
         };
 
+        struct While_Loop : Statement {
+            Expression *condition;
+            Statement  *body;
+        };
+
         struct Break : Statement {};
 
         template <typename Derived_Statement>

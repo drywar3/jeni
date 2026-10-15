@@ -49,7 +49,8 @@ lir::Type_Id lir::Context::get_id_of_type(mini::StringView name)
         if (type_builder.name == name) return lir::Type_Id(n);
         n += 1;
     }
-    MINI_UNREACHABLE();
+
+    MINI_UNREACHABLE("cannot find type: %.*s", SVARG(name.base()));
 }
 
 void lir::ctx_destroy(lir::Context *context) { MINI_UNREACHABLE(); }
@@ -147,7 +148,16 @@ static lir::Global lower_glob_statement(lir::Buildr *builder,
 void lir::inflate_module(lir::Module *mod, const hir::Program program)
 {
     lir::Buildr buildr = mod->new_buildr();
+
     for (const hir::Statement *stmt : mini::iterate(program)) {
+        if (stmt->kind == hir::Statement::Struct) {
+            lir::Global global = lower_glob_statement(&buildr, stmt);
+            mod->globals.append(global);
+        }
+    }
+
+    for (const hir::Statement *stmt : mini::iterate(program)) {
+        if (stmt->kind == hir::Statement::Struct) continue;
         lir::Global global = lower_glob_statement(&buildr, stmt);
         mod->globals.append(global);
     }

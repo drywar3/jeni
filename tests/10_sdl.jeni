@@ -1,0 +1,75 @@
+// SDL2 Constants
+SDL_INIT_VIDEO         :: 0x00000020;
+SDL_WINDOWPOS_CENTERED :: 0x1FFF0000;
+SDL_WINDOW_SHOWN       :: 0x00000004;
+
+update_motion :: func (pos: *float, vel: *float, limit: float) {
+    pos^ = pos^ + vel^;
+
+    if pos^ >= limit {
+        vel^ = 0.0 - vel^;
+        pos^ = limit;
+    }
+
+    if pos^ <= 0.0 {
+        vel^ = 0.0 - vel^;
+        pos^ = 0.0;
+    }
+}
+
+main :: func () {
+    SDL_Init(SDL_INIT_VIDEO);
+
+    window := SDL_CreateWindow(c"JeniLang SDL2 Pointers", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, SDL_WINDOW_SHOWN);
+    renderer := SDL_CreateRenderer(window, 0-1, 0);
+
+    box_x := 50.0;
+    box_vx := 4.0;
+
+    box_y := 200.0;
+    box_vy := 2.5;
+
+    for {
+        SDL_PumpEvents();
+
+        update_motion(*box_x, *box_vx, 750.0);
+        update_motion(*box_y, *box_vy, 550.0);
+
+        SDL_SetRenderDrawColor(renderer, 20, 24, 33, 255);
+        SDL_RenderClear(renderer);
+
+
+        rect: SDL_Rect;
+        rect.x = box_x;
+        rect.y = box_y;
+        rect.w = 50;
+        rect.h = 50;
+
+        SDL_SetRenderDrawColor(renderer, 100, 200, 255, 255);
+        SDL_RenderFillRect(renderer, *rect);
+
+        SDL_RenderPresent(renderer);
+        SDL_Delay(16); /* ~60 FPS cap */
+    }
+
+    SDL_Quit();
+}
+
+SDL_Rect :: struct {
+    x: int;
+    y: int;
+    w: int;
+    h: int;
+}
+
+// SDL2 FFI Bindings
+SDL_Init            :: func (flags: int) -> int ---
+SDL_CreateWindow    :: func (title: *const char, x: int, y: int, w: int, h: int, flags: int) -> *void ---
+SDL_CreateRenderer  :: func (window: *void, index: int, flags: int) -> *void ---
+SDL_SetRenderDrawColor :: func (renderer: *void, r: uchar, g: uchar, b: uchar, a: uchar) -> int ---
+SDL_RenderClear     :: func (renderer: *void) -> int ---
+SDL_RenderFillRect  :: func (renderer: *void, rect: *const SDL_Rect) -> int ---
+SDL_RenderPresent   :: func (renderer: *void) ---
+SDL_Delay           :: func (ms: int) ---
+SDL_Quit            :: func () ---
+SDL_PumpEvents      :: func () ---

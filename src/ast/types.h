@@ -9,8 +9,10 @@ namespace ast
 {
     namespace type
     {
-        struct String : Typehint {};
-        struct Char   : Typehint {};
+        struct String    : Typehint {};
+        struct Char      : Typehint {};
+        struct Void      : Typehint {};
+        struct Boolean   : Typehint {};
         struct Float  : Typehint {
             enum Width {
                 Float32,
@@ -24,7 +26,11 @@ namespace ast
         };
 
         struct Array : Typehint {
-            ExpressionPointer element_count;
+            Expression *element_count;
+            Expression *element_type;
+        };
+
+        struct Slice : Typehint {
             Expression *element_type;
         };
 
@@ -32,6 +38,7 @@ namespace ast
             enum Kind {
                 Int,
                 Uint,
+                Uint8,
                 Usize,
                 Isize,
                 Int64,

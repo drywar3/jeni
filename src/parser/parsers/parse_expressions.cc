@@ -21,6 +21,12 @@ Expression *parse_relational(Parser *p, bool is_within_typehint_context = false)
 
 Expression *parse_primary(Parser *p, bool is_within_typehint_context = false)
 {
+    if (parser::equals(p, TOKEN_SEP_Lbracket)) {
+        Expression *typehint = parser_parse_typehint(p);
+        typehint->kind       = EXPR_Typehint;
+        return typehint;
+    }
+
     if (!is_within_typehint_context && parser::equals(p, TOKEN_LIT_Int)) {
         /* todo: add conversion mechanism to mini.string_view(c) and mini.string_view(cc)
          *       so we don't have to allocate a temporary buffer here */
@@ -105,9 +111,22 @@ Expression *parse_primary(Parser *p, bool is_within_typehint_context = false)
     return &ERROR_EXPR;
 }
 
-Expression *parse_member_access(Parser *p, bool is_within_typehint_context = false)
+Expression *parse_dereference(Parser *p, bool is_within_typehint_context = false)
 {
     Expression *base = parse_primary(p, is_within_typehint_context);
+    if (is_within_typehint_context) return base;
+
+    while (parser::try_expect(p, TOKEN_OP_Caret)) {
+        base = ast::expr::alloc_expression(p->allocator, EXPR_Dereference,
+                                           locus_merge(base->locus, parser::previous(p).locus),
+                                           ast::expr::Dereference{.value = base});
+    }
+    return base;
+}
+
+Expression *parse_member_access(Parser *p, bool is_within_typehint_context = false)
+{
+    Expression *base = parse_dereference(p, is_within_typehint_context);
     if (is_within_typehint_context) return base;
 
     while (parser::equals(p, TOKEN_SEP_Dot)) {
@@ -132,7 +151,7 @@ Expression *parse_member_access(Parser *p, bool is_within_typehint_context = fal
 
 Expression *parse_postfix(Parser *p, bool is_within_typehint_context = false)
 {
-    Expression *base = parse_member_access(p, is_within_typehint_context);
+    Expression *base = parse_dereference(p, is_within_typehint_context);
     if (is_within_typehint_context) return base;
     while (true) {
         if (parser::try_expect(p, TOKEN_SEP_Lparen) && !is_within_typehint_context) {
@@ -164,6 +183,34 @@ Expression *parse_postfix(Parser *p, bool is_within_typehint_context = false)
             continue;
         }
 
+        if (parser::try_expect(p, TOKEN_SEP_Lbracket)) {
+            Expression *index = parser::parse_expression(p);
+            parser::expect(p, TOKEN_SEP_Rbracket);
+            base = ast::expr::alloc_expression(p->allocator, EXPR_Subscript,
+                                               locus_merge(base->locus, parser::previous(p).locus),
+                                               ast::expr::Subscript{.expr = base, .index = index});
+            continue;
+        }
+
+        if (parser::equals(p, TOKEN_SEP_Dot)) {
+            Token dot = parser::next(p);
+            Name member;
+
+            if (parser::equals(p, TOKEN_Identifier)) {
+                parser::eat_name(p, &member);
+            } else {
+                parser::report_error(p, dot, "expected identifier after `.`");
+                return parser::error_expr();
+            }
+
+            base = ast::expr::alloc_expression(p->allocator,
+                                               EXPR_Member_Access,
+                                               locus_merge(base->locus, member.locus),
+                                               ast::expr::Member_Access{.receiver = base, .member = member});
+            continue;
+        }
+
+
         break;
     }
 
@@ -177,6 +224,15 @@ Expression *parse_unary(Parser *p, bool is_within_typehint_context = false)
         if (typehint->is_error()) return typehint;
         typehint->kind = EXPR_Typehint;
         return typehint;
+    }
+
+    if (parser::try_expect(p, TOKEN_OP_Star)) {
+        Token begin = parser::previous(p);
+        auto *value = parser::parse_expression(p);
+        return ast::expr::alloc_expression(p->allocator,
+                                           EXPR_Address_Of,
+                                           locus_merge(begin.locus, value->locus),
+                                           ast::expr::AddressOf{.value = value});
     }
 
     if (!is_within_typehint_context) {

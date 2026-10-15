@@ -1,18 +1,18 @@
-#include <mini.c/bulk_allocator.h>
-#include <mini.c/debug_allocator.h>
+#include <stdio.h>
 #include <mini.c/fs.h>
 #include <mini.c/string.h>
 #include <mini.cc/scope_guard.h>
-#include <stdio.h>
+#include <mini.c/bulk_allocator.h>
+#include <mini.c/debug_allocator.h>
 
+#include "source.h"
 #include "ast/ast.h"
-#include "codegen/backends/c.h"
-#include "codegen/codegen.h"
-#include "hir/convert.h"
 #include "lir/lir.h"
+#include "hir/convert.h"
 #include "parser/parser.h"
 #include "semantics/sema.h"
-#include "source.h"
+#include "codegen/codegen.h"
+#include "codegen/backends/c.h"
 
 int main(int argc, char **argv)
 {

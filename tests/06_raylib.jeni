@@ -1,27 +1,27 @@
 
 Color :: struct {
-      r: char;
-      g: char;
-      b: char;
-      a: char;
+    r: uchar;
+    g: uchar;
+    b: uchar;
+    a: uchar;
 }
 
-make_color :: func (r: char, g: char, b: char, a: char) -> Color {
-   x: Color;
-   x.r = r;
-   x.g = g;
-   x.b = b;
-   x.a = a;
-   return x;
+make_color :: func (r: uchar, g: uchar, b: uchar, a: uchar) -> Color {
+    x: Color;
+    x.r = r;
+    x.g = g;
+    x.b = b;
+    x.a = a;
+    return x;
 }
 
 SCREEN_WIDTH  :: 800;
 SCREEN_HEIGHT :: 600;
 
 main :: func () {
-     RED   :: make_color(0xff, 0, 0, 0xff);
-     BLUE  :: make_color(0, 0, 0xff, 0xff);
-     GREEN :: make_color(0, 0xff, 0, 0xff);
+    RED   :: make_color(0xff, 0, 0, 0xff);
+    BLUE  :: make_color(0, 0, 0xff, 0xff);
+    GREEN :: make_color(0, 0xff, 0, 0xff);
 
     SetTraceLogLevel(LOG_NONE);
 
@@ -38,9 +38,7 @@ main :: func () {
     SIZE : int : 50;
     inc := 2;
 
-    for {
-        if WindowShouldClose() then break;
-
+    for !WindowShouldClose() {
         BeginDrawing();
         ClearBackground(RED);
 
@@ -69,7 +67,7 @@ main :: func () {
 InitWindow        :: func (a : int, b: int, c : *const char) ---
 CloseWindow       :: func () ---
 BeginDrawing      :: func () ---
-WindowShouldClose :: func () -> int ---
+WindowShouldClose :: func () -> bool ---
 EndDrawing        :: func () ---
 ClearBackground   :: func (color : Color) ---
 ColorFromHSV      :: func (hue: float, saturation: float, value: float) -> Color ---

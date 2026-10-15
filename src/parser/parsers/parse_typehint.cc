@@ -43,6 +43,19 @@ Typehint *parser_parse_typehint(Parser *p)
             locus_merge(begin, parser::current(p).locus), pointer);
     }
 
+    if (parser::try_expect(p, TOKEN_SEP_Lbracket)) {
+        if (parser::equals(p, TOKEN_SEP_Rbracket)) {
+            MINI_UNREACHABLE("TODO: parse slice type");
+        }
+        Expression *element_count = parser::parse_expression(p);
+        parser::expect(p, TOKEN_SEP_Rbracket);
+        Expression *element_type  =  parser::parse_typehint_expression(p);
+        return ast::type::alloc_typehint(p->allocator, TYPEHINT_Array,
+                                         locus_merge(begin, parser::current(p).locus),
+                                         ast::type::Array{.element_type = element_type,
+                                                          .element_count = element_count});
+    }
+
     Token token = parser::next(p);
 
     if (token.kind > TOKEN_TYPE_KEYWORDS &&
@@ -68,6 +81,17 @@ Typehint *parser_parse_typehint(Parser *p)
                 p->allocator, TYPEHINT_Char,
                 locus_merge(begin, parser::previous(p).locus),
                 ast::type::Char{});
+        case TOKEN_TK_Void:
+            return ast::type::alloc_typehint(
+                p->allocator, TYPEHINT_Void,
+                locus_merge(begin, parser::previous(p).locus),
+                ast::type::Void{});
+        case TOKEN_TK_Uchar:
+            return ast::type::alloc_typehint(
+                p->allocator, TYPEHINT_Integer,
+                locus_merge(begin, parser::previous(p).locus),
+                ast::type::Integer{.kind =
+                                   ast::type::Integer::Kind::Uint8});
         case TOKEN_TK_Float32:
             return ast::type::alloc_typehint(
                 p->allocator, TYPEHINT_Float,
@@ -83,9 +107,15 @@ Typehint *parser_parse_typehint(Parser *p)
                 p->allocator, TYPEHINT_String,
                 locus_merge(begin, parser::previous(p).locus),
                 ast::type::String{});
+        case TOKEN_TK_Bool:
+            return ast::type::alloc_typehint(
+                p->allocator, TYPEHINT_Bool,
+                locus_merge(begin, parser::previous(p).locus),
+                ast::type::Boolean{});
         default:
             break;
         }
     }
+
     MINI_UNREACHABLE("TODO");
 }

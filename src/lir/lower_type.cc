@@ -14,8 +14,19 @@ lir::TypePtr lir::lower_type(Buildr *builder, sema::Type_Id type_id)
         auto type_id = builder->mod->context->get_id_of_type(type_layout.strukt.name.value);
         return lir::Type::Struct(builder->allocator(), type_id);
     } break;
+    case sema::Type_Kind::Array: {
+        auto type = lir::lower_type(builder, type_layout.array.element_type);
+        auto count = type_layout.array.element_count;
+        return lir::Type::Array(builder->allocator(), count, type);
+    } break;
     case sema::Type_Kind::Int64:
         type.kind = lir::Type::Kind::Int64;
+        break;
+    case sema::Type_Kind::Uint8:
+        type.kind = lir::Type::Kind::Uint8;
+        break;
+    case sema::Type_Kind::Bool:
+        type.kind = lir::Type::Kind::Bool;
         break;
     case sema::Type_Kind::Float64:
         type.kind = lir::Type::Kind::Float64;

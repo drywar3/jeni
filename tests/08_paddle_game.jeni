@@ -1,0 +1,121 @@
+Color :: struct {
+    r: uchar;
+    g: uchar;
+    b: uchar;
+    a: uchar;
+}
+
+make_color :: func (r: uchar, g: uchar, b: uchar, a: uchar) -> Color {
+   x: Color;
+   x.r = r;
+   x.g = g;
+   x.b = b;
+   x.a = a;
+   return x;
+}
+
+SCREEN_WIDTH  :: 800;
+SCREEN_HEIGHT :: 600;
+
+main :: func () {
+    BG_COLOR   :: make_color(20, 20, 30, 255);
+    BALL_COLOR :: make_color(255, 100, 150, 255);
+    PAD_COLOR  :: make_color(100, 200, 255, 255);
+
+    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, c"JeniLang Paddle Bounce");
+    SetTargetFPS(60);
+
+    // Ball state (floats)
+    ball_x      := 400.0;
+    ball_y      := 100.0;
+    ball_dx     := 4.0;
+    ball_dy     := 3.0;
+    ball_radius := 15.0;
+
+    // Paddle state (floats)
+    pad_x     := 350.0;
+    pad_y     := 530.0;
+    pad_w     := 100.0;
+    pad_h     := 20.0;
+    pad_speed := 8.0;
+
+    // Raylib key codes for Left/Right arrows
+    KEY_LEFT  :: 263;
+    KEY_RIGHT :: 262;
+
+    for {
+        if WindowShouldClose() then break;
+
+        // Input handling for paddle movement
+        if IsKeyDown(KEY_LEFT) {
+            pad_x = pad_x - pad_speed;
+            if pad_x < 0.0 then pad_x = 0.0;
+        }
+
+        if IsKeyDown(KEY_RIGHT) {
+            printf(c"Foobar\n");
+            pad_x = pad_x + pad_speed;
+            if pad_x + pad_w > SCREEN_WIDTH then pad_x = SCREEN_WIDTH - pad_w;
+        }
+
+        // Update ball position
+        ball_x = ball_x + ball_dx;
+        ball_y = ball_y + ball_dy;
+
+        // Wall collisions (left, right, top)
+        if ball_x - ball_radius <= 0.0 {
+            ball_dx = 0.0 - ball_dx;
+            ball_x = ball_radius;
+        }
+        if ball_x + ball_radius >= SCREEN_WIDTH {
+            ball_dx = 0.0 - ball_dx;
+            ball_x = SCREEN_WIDTH - ball_radius;
+        }
+        if ball_y - ball_radius <= 0.0 {
+            ball_dy = 0.0 - ball_dy;
+            ball_y = ball_radius;
+        }
+
+        // Paddle collision check
+        if ball_y + ball_radius >= pad_y {
+            if ball_x >= pad_x {
+                if ball_x <= pad_x + pad_w {
+                    ball_dy = 0.0 - ball_dy;
+                    ball_y = pad_y - ball_radius;
+                }
+            }
+        }
+
+        // Reset ball if it misses the paddle and goes off screen
+        if ball_y > SCREEN_HEIGHT {
+            ball_x  = 400.0;
+            ball_y  = 100.0;
+            ball_dy = 3.0;
+        }
+
+        // Render frame
+        BeginDrawing();
+        ClearBackground(BG_COLOR);
+
+        DrawRectangle(pad_x, pad_y, pad_w, pad_h, PAD_COLOR);
+        DrawCircle(ball_x, ball_y, ball_radius, BALL_COLOR);
+
+        EndDrawing();
+    }
+
+    CloseWindow();
+}
+
+// Raylib FFI Bindings
+InitWindow        :: func (width: int, height: int, title: *const char) ---
+CloseWindow       :: func () ---
+BeginDrawing      :: func () ---
+EndDrawing        :: func () ---
+WindowShouldClose :: func () -> int ---
+ClearBackground   :: func (color: Color) ---
+SetTargetFPS      :: func (fps: int) ---
+IsKeyDown         :: func (key: int) -> char ---
+DrawRectangle     :: func (posX: int, posY: int, width: int, height: int, color: Color) ---
+DrawCircle        :: func (centerX: int, centerY: int, radius: float, color: Color) ---
+
+printf :: func (fmt: *const char, ...) ---

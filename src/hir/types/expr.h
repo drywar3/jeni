@@ -51,6 +51,14 @@ namespace hir
             Expression *receiver;
             mini::StringView member_name;
         };
+
+        struct AddressOf {
+            Expression *value;
+        };
+
+        struct Dereference {
+            Expression *value;
+        };
     } // namespace expr
 
     struct Expression {
@@ -64,6 +72,8 @@ namespace hir
             Assign,
             Boolean,
             Member_Access,
+            AddressOf,
+            Dereference,
         };
 
         Kind kind;
@@ -79,6 +89,8 @@ namespace hir
             expr::Assign assign;
             expr::Boolean boolean;
             expr::Member_Access member_access;
+            expr::AddressOf addr_of;
+            expr::Dereference deref;
         } as;
     };
 } // namespace hir

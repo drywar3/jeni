@@ -1,6 +1,7 @@
 #include "ast/statements.h"
 #include "semantics/impl.h"
 #include "semantics/checks/check_stmt.h"
+#include "semantics/checks/check_expr.h"
 #include "semantics/checks/check_for_ever.h"
 
 Worker_Status sema::check_for_ever_stmt(Semantic_Context *sema, void *data)
@@ -27,4 +28,16 @@ Worker_Status sema::check_break_stmt(Semantic_Context *sema, void *data)
     }
 
     return Worker_Status::Done;
+}
+
+Worker_Status sema::check_while_loop(Semantic_Context *sema, void *data)
+{
+    auto *loop = (ast::stmt::While_Loop *)data;
+    Worker_Status status = sema::check_expression(sema, loop->condition);
+    if (!status.is_done()) return status;
+
+    sema::enter_scope(sema, sema::Scope_Kind::Loop);
+    status = sema::check_statement(sema, loop->body);
+    sema::leave_scope(sema);
+    return status;
 }

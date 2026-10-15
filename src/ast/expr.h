@@ -18,6 +18,9 @@ enum Expression_Kind {
     EXPR_Struct,
     EXPR_Function_Call,
     EXPR_Member_Access,
+    EXPR_Address_Of,
+    EXPR_Dereference,
+    EXPR_Subscript,
     EXPR_Error,
     EXPR_Typehint,
 };

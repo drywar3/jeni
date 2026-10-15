@@ -95,6 +95,14 @@ lir::ValueId lir::lower_expression(Buildr *b, const hir::Expression *expression)
         return lower_binary_op(b, expression);
     case hir::Expression::Kind::Member_Access:
         return lower_member_access(b, expression);
+    case hir::Expression::Kind::Dereference: {
+        auto value = lir::lower_expression(b, expression->as.deref.value);
+        return b->create_deref(value);
+    } break;
+    case hir::Expression::Kind::AddressOf: {
+        auto value = lir::lower_expression(b, expression->as.deref.value);
+        return b->get_ptr(value);
+    } break;
     default:
         MINI_UNREACHABLE("%d", expression->kind);
     }

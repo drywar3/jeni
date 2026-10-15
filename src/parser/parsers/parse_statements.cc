@@ -195,9 +195,22 @@ Statement *parser::parse_for_loop(Parser *p)
                                           STMT_For_Ever,
                                           locus_merge(begin.locus, previous(p).locus),
                                           for_ever);
+    } else {
+        ast::stmt::While_Loop loop{};
+        loop.condition = parser::parse_expression(p);
+        if (loop.condition->is_error()) return nullptr;
+        if (!parser::equals(p, TOKEN_SEP_Lbrace)) {
+            parser::report_error(p, *loop.condition,
+                                 "invalid token", "expected `{` after loop condition");
+            return nullptr;
+        }
+        loop.body = parser_parse_statement(p);
+        if (!loop.body) return nullptr;
+        return ast::stmt::alloc_statement(p->allocator,
+                                          STMT_While_Loop,
+                                          locus_merge(begin.locus, previous(p).locus),
+                                          loop);
     }
-
-    MINI_UNREACHABLE();
 }
 
 Statement *parser::parse_break(Parser *p)

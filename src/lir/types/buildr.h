@@ -68,6 +68,7 @@ namespace lir
         ValueId create_alloca(mini::StringView name, lir::TypePtr type);
         void create_store(ValueId dst, lir::TypePtr type, ValueId value);
         ValueId create_deref(ValueId value);
+        ValueId get_ptr(ValueId value);
         ValueId create_temporary(lir::TypePtr type);
         ValueId create_call(lir::TypePtr type, ValueId callee,
                             mini::Array<ValueId> args);

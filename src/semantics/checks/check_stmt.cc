@@ -49,6 +49,7 @@ Worker_Status sema::check_statement(Semantic_Context *sema, void *data,
         return sema::check_return_stmt(sema, stmt);
     case STMT_For_Ever:
         return sema::check_for_ever_stmt(sema, stmt);
+    case STMT_While_Loop: return sema::check_while_loop(sema, stmt);
     case STMT_Break:
         return sema::check_break_stmt(sema, stmt);
     default:
@@ -109,7 +110,6 @@ Worker_Status check_variable(Semantic_Context *sema, void *data,
         }
 
         if (init_status != Worker_Status::Done) {
-            // Restore Unresolved status so worker re-entry tracks clean state
             symbol->set_state(sema::Symbol_State::Unresolved);
             return init_status;
         }
@@ -175,8 +175,8 @@ bool discover_variable(Semantic_Context *sema, StatementPointer stmt,
 
     if (sema::symbol_is_defined(sema, scope, variable->name.value)) {
         auto first = *sema::find_symbol_in(sema, scope, variable->name.value);
-        if ((first->is_state(sema::Symbol_State::Resolved) ||
-             first->is_state(sema::Symbol_State::Resolving)) &&
+        if (// (first->is_state(sema::Symbol_State::Resolved) ||
+            //  first->is_state(sema::Symbol_State::Resolving)) &&
             first->locus == variable->name.locus) {
             return true;
         }

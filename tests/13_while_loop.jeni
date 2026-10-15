@@ -1,0 +1,11 @@
+
+main :: func () -> int {
+    x := 0;
+    for x < 10 {
+        printf(c"x = %d\n", x);
+        x = x + 1;
+    }
+    return 0;
+}
+
+printf :: func (fmt: *const char, ...) -> int ---

@@ -20,10 +20,10 @@ Worker_Status sema::check_struct_decl(Semantic_Context *sema, ast::stmt::Variabl
         if (field.type_is_defined) {
             auto *typehint = field.typehint;
             auto status    = sema::resolve_typehint(sema, typehint, typehint->locus);
+            if (!status.is_done()) return status;
             for (const auto &name : field.names.iter()) {
                 sema::link_locus_to_type_at_locus(sema, typehint->locus, name.locus);
             }
-            if (!status.is_done()) return status;
         }
     }
 

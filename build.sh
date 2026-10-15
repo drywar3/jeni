@@ -69,7 +69,7 @@ run_tests() {
 
     while IFS= read -r -d '' file; do
         local test_bin="${file}.test"
-        if ./build/jeni "$file" -o "$test_bin" > /dev/null 2>&1; then
+        if ./build/jeni "$file" "$test_bin" > /dev/null 2>&1; then
             if "$test_bin"; then
                 printf "test '%s' passed\n" "$file"
                 ((passed++))

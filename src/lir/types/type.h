@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ast/misc.h"
+#include "lir/types/value.h"
 
 #include <new>
 #include <memory>
@@ -32,11 +33,18 @@ namespace lir
             mini::Array<TypePtr> parameters{};
         };
 
+        struct Array {
+            TypePtr element_type;
+            usize   element_count;
+        };
+
         enum class Kind {
             Void,
+            Bool,
             Int8,
             Int32,
             Int64,
+            Uint8,
             Uint32,
             Float32,
             Float64,
@@ -44,6 +52,7 @@ namespace lir
             Pointer,
             Function,
             Struct,
+            Array,
         };
 
         Kind kind;
@@ -52,6 +61,7 @@ namespace lir
             Pointer pointer;
             Function function;
             lir::Type_Id type_id;
+            Array array;
         };
 
         static TypePtr PointerTo(Mini_Allocator allocator,
@@ -81,6 +91,15 @@ namespace lir
             struct_type.kind = Kind::Struct;
             struct_type.type_id = type_id;
             return Box(allocator, struct_type);
+        }
+
+        static TypePtr Array(Mini_Allocator allocator, usize element_count, lir::TypePtr type)
+        {
+            Type array_type{};
+            array_type.kind = Kind::Array;
+            array_type.array.element_type = type;
+            array_type.array.element_count= element_count;
+            return Box(allocator, array_type);
         }
     };
 

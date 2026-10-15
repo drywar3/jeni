@@ -31,6 +31,11 @@ CoerceResult check_type_coercesion(Semantic_Context *sema,
         (source.kind == sema::Type_Kind::Char && target.kind == sema::Type_Kind::Int)) {
         return CoerceResult::Ok;
     }
+
+    if ((target.kind == sema::Type_Kind::Uint8 && source.kind == sema::Type_Kind::Int) ||
+        (source.kind == sema::Type_Kind::Uint8 && target.kind == sema::Type_Kind::Int)) {
+        return CoerceResult::Ok;
+    }
     // hack-end
 
     if (target.kind.is_signed_integer() && source.kind.is_signed_integer()) {

@@ -1,7 +1,8 @@
-#include "semantics/checks/check_binary_op.h"
-#include "semantics/checks/check_expr.h"
 #include "semantics/impl.h"
 #include "semantics/type/ids.h"
+#include "semantics/type/coercer.h"
+#include "semantics/checks/check_expr.h"
+#include "semantics/checks/check_binary_op.h"
 
 using CheckOpCompatibilityFn = bool (*)(Semantic_Context *sema, Locus locus,
                                         const Expression *left,
@@ -70,10 +71,7 @@ bool check_basic_compatibility(Semantic_Context *sema, Locus locus,
     sema::Type_Id right_type_id = sema::get_type_at_locus(sema, right->locus);
 
     /* for now only int is ok */
-    if ((left_type_id != sema::type_id::Int &&
-        left_type_id != sema::type_id::Float32) ||
-        (right_type_id != sema::type_id::Float32 &&
-         right_type_id != sema::type_id::Int)) {
+    if (!sema::try_coerce_type_into(sema, left_type_id, right_type_id, false)) {
         sema::report(
             sema,
             diag_create(Severity::Error, locus,
@@ -90,16 +88,19 @@ bool check_basic_compatibility(Semantic_Context *sema, Locus locus,
     return true;
 }
 
-static bool expression_is_lvalue(const Expression *expr)
+bool sema::expression_is_lvalue(const Expression *expr)
 {
     switch (expr->kind) {
     case EXPR_Integer:
     case EXPR_String:
     case EXPR_Binop:
     case EXPR_Function_Call:
+    case EXPR_Address_Of:
         return false;
     case EXPR_Identifier:
     case EXPR_Member_Access:
+    case EXPR_Dereference:
+    case EXPR_Subscript:
         return true;
     default:
         MINI_UNREACHABLE();
@@ -110,9 +111,9 @@ bool check_assign_compatibility(Semantic_Context *sema, Locus locus,
                                 const Expression *left, const Expression *right)
 {
     sema::Type_Id left_type_id  = sema::get_type_at_locus(sema, left->locus);
-    sema::Type_Id right_type_id = sema::get_type_at_locus(sema, left->locus);
+    sema::Type_Id right_type_id = sema::get_type_at_locus(sema, right->locus);
 
-    if (left_type_id != right_type_id) {
+    if (!sema::try_coerce_type_into(sema, left_type_id, right_type_id)) {
         sema::report(sema,
                      diag_create(Severity::Error, right->locus,
                                  "invalid operands to binary operator",
@@ -123,7 +124,7 @@ bool check_assign_compatibility(Semantic_Context *sema, Locus locus,
         return false;
     }
 
-    if (!expression_is_lvalue(left)) {
+    if (!sema::expression_is_lvalue(left)) {
         sema::report(
             sema,
             diag_create(
@@ -159,7 +160,7 @@ bool check_equality_compatibility(Semantic_Context *sema, Locus locus,
     sema::Type_Id left_type_id  = sema::get_type_at_locus(sema, left->locus);
     sema::Type_Id right_type_id = sema::get_type_at_locus(sema, right->locus);
 
-    if (left_type_id != right_type_id) {
+    if (!sema::try_coerce_type_into(sema, left_type_id, right_type_id)) {
         sema::report(sema,
                      diag_create(Severity::Error, right->locus,
                                  "invalid operands to binary operator",
@@ -174,6 +175,7 @@ bool check_equality_compatibility(Semantic_Context *sema, Locus locus,
 
     switch (left_type_id) {
     case sema::type_id::Int:
+    case sema::type_id::Char:
         is_ok_to_compare = true;
         break;
     default:

@@ -1,0 +1,63 @@
+
+Thing :: struct {
+    x: int;
+    msg: *const char;
+}
+
+asprintf :: func (ptr: **const char, fmt: *const char, ...) -> int ---
+
+fill_messages :: func (head: *Thing, length: int) {
+    index := 0;
+    for {
+        if index >= length then break;
+
+        it := *head[index];
+
+        asprintf(*it.msg, c"i am thing number [%d]\n", index + 1);
+
+        index = index + 1;
+    }
+}
+
+update_everything :: func (x: *Thing, length: int) -> int {
+    index := 0;
+    for {
+        if index >= length then break;
+
+        it := *x[index];
+
+        it.x = 20;
+
+        index = index + 1;
+    }
+}
+
+main :: func () -> int {
+
+    xs : [20]Thing;
+
+
+    xs_first_ptr := *xs[19];
+    xs_first_ptr^.x = 100;
+
+    printf(c"Hello World %d\n", xs[19].x);
+
+    update_everything(*xs[0], 20);
+    fill_messages(*xs[0], 20);
+
+
+    index := 0;
+    for {
+        if index >= 20 then break;
+
+        printf(c"%s", xs[index].msg);
+
+        index = index + 1;
+    }
+
+    printf(c"Hello World %d\n", xs[19].x);
+
+    return 0;
+}
+
+printf :: func (fmt: *const char, ...) -> int ---

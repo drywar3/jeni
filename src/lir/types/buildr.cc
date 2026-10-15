@@ -227,6 +227,11 @@ void lir::Buildr::create_ret(lir::TypePtr type, ValueId value)
         lir::Instruction{std::nullopt, InstructionKind::Ret(type, value)});
 }
 
+lir::ValueId lir::Buildr::get_ptr(lir::ValueId value)
+{
+    return valuestore_index(&mod->context->values, lir::Value::AddrOf(value));
+}
+
 lir::ValueId lir::Buildr::create_zerofill()
 {
     return valuestore_index(&mod->context->values,

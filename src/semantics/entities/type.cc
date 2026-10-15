@@ -22,6 +22,17 @@ Mini_String sema::Type::display(Mini_Allocator a, Type_Storage &types) const
     case Type_Kind::Struct: {
         return mini_string_build(a, "%.*s", SVARG(strukt.name.value.base()));
     } break;
+    case Type_Kind::Array: {
+        Mini_String output = mini_string_build(a, "[");
+        mini_string_append_fmt(
+            &output,
+            "%d]",
+            array.element_count);
+        mini_string_append_string(
+            &output,
+            types.at_index(usize(array.element_type)).display(a, types));
+        return output;
+    }
     case Type_Kind::Pointer: {
         Mini_String output = mini_string_build(a, "*");
         if (pointer.mutability)
@@ -45,6 +56,8 @@ Mini_String sema::Type::display(Mini_Allocator a, Type_Storage &types) const
             types.at_index(usize(function.return_type)).display(a, types));
         return output;
     } break;
+    case Type_Kind::Uint8:
+        return mini_string_build(a, "uint8");
     case Type_Kind::Error:
         return mini_string_build(a, "!error!");
     default:

@@ -51,6 +51,13 @@ namespace hir
             *mem   = obj;
             return expr;
         }
+
+        hir::Expression *create_dereference(sema::Type_Id type_id, hir::Expression *expr)
+        {
+            return new_expr(hir::Expression::Kind::Dereference,
+                            type_id,
+                            hir::expr::Dereference{expr});
+        }
     };
 
     Context ctx_init(Mini_Allocator allocator, const Semantic_Storage *store);
@@ -72,6 +79,8 @@ namespace hir
                                     const ast::stmt::If *if_stmt);
     hir::Statement *convert_for_ever_stmt(hir::Context *ctx,
                                           const ast::stmt::For_Ever *for_ever);
+    hir::Statement *convert_while_loop(hir::Context *ctx,
+                                       const ast::stmt::While_Loop *loop);
 
     hir::Statement *convert_struct_decl(hir::Context *ctx, const ast::stmt::Variable *variable);
     hir::Expression *convert_member_access(hir::Context *ctx, const ast::expr::Member_Access *member_access);

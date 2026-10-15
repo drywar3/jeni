@@ -13,8 +13,8 @@ make_thing :: func (x : int, y : int) -> Thing {
 
 main :: func () -> int {
     one_thing := make_thing(10, 20);
+    x := printf(c".y = %d\n", one_thing.y);
     printf(c".x = %d\n", one_thing.x);
-    printf(c".y = %d\n", one_thing.y);
 }
 
 printf :: func (fmt: *const char, ...) ---

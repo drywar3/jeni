@@ -1,0 +1,17 @@
+
+Thing :: struct {
+    x: int;
+    y: int;
+}
+
+main :: func () -> int {
+    thing: Thing;
+
+    thing_ptr   := *thing;
+    thing_ptr.x = 10;
+
+    printf(c"thing.x = %d\n", thing.x);
+    return 0;
+}
+
+printf :: func (fmt: *const char, ...) -> int ---

@@ -115,4 +115,5 @@ namespace sema
     }
 
     Mini_String display_type(Semantic_Context *sema, sema::Type_Id type_id);
+    bool expression_is_lvalue(const Expression *expr);
 } // namespace sema

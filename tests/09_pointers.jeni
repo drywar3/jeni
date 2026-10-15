@@ -1,0 +1,34 @@
+
+Int_Wrapper :: struct {
+    inner: int;
+}
+
+Thing :: struct {
+   x : Int_Wrapper;
+}
+
+intw_init :: func (inner: int) -> Int_Wrapper {
+    intw : Int_Wrapper;
+    intw.inner = inner;
+    return intw;
+}
+
+mutate_thing :: func (thing: *Thing) {
+    thing^.x = intw_init(100);
+}
+
+main :: func () -> int {
+    x : Thing;
+
+    x_ptr := *x.x;
+
+    x_ptr^ = intw_init(69);
+
+    printf(c"x before mutation = %d\n", x.x.inner);
+    mutate_thing(*x);
+    printf(c"x after mutation  = %d\n", x.x.inner);
+
+    return 0;
+}
+
+printf :: func (fmt: *const char, ...) -> int ---

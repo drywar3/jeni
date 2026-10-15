@@ -42,7 +42,8 @@ hir::Statement *hir::convert_statement(hir::Context *ctx,
         ret.type_id = sema::Type_Id(*ctx->types().get_id(ret_->value->locus));
         return ctx->new_stmt(hir::Statement::Kind::Return, ret);
     } break;
-    case STMT_For_Ever: return hir::convert_for_ever_stmt(ctx, (ast::stmt::For_Ever *)stmt);
+    case STMT_For_Ever:   return hir::convert_for_ever_stmt(ctx, (ast::stmt::For_Ever *)stmt);
+    case STMT_While_Loop: return hir::convert_while_loop(ctx, (ast::stmt::While_Loop *)stmt);
     case STMT_Break:    return ctx->new_stmt(hir::Statement::Kind::Break, hir::stmt::Break{});
     case STMT_Expr: {
         hir::Expression *expression =

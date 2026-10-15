@@ -39,6 +39,7 @@ namespace lir
             GlobalRef,
             ParamRef,
             Deref,
+            AddrOf,
             True,
             False,
             Cmp,
@@ -103,6 +104,11 @@ namespace lir
         static Value Deref(ValueId value)
         {
             return Value{.kind = Kind::Deref, .valueid = value };
+        }
+
+        static Value AddrOf(ValueId value)
+        {
+            return Value{.kind = Kind::AddrOf, .valueid = value };
         }
 
         static Value Cmp(CmpOp op, ValueId first, ValueId second)

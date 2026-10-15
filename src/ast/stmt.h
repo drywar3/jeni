@@ -15,6 +15,7 @@ enum Statement_Kind {
     STMT_Expr,
     STMT_Return,
     STMT_For_Ever,
+    STMT_While_Loop,
     STMT_Break,
     STMT_Continue,
 };
