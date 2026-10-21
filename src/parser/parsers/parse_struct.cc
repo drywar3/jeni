@@ -10,7 +10,7 @@ Expression *parser::parse_struct_decl(Parser *p)
     Token begin = parser::next(p);
 
     if (!parser::expect(p, TOKEN_SEP_Lbrace)) {
-        skip_until_one_of(p, true, TOKEN_SEP_Rbrace);
+        parser::skip_until_one_of(p, true, {TOKEN_SEP_Rbrace});
         return parser::error_expr();
     }
 

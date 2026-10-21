@@ -34,6 +34,8 @@ static void generate_function_call_schema(Semantic_Context *sema,
             locus_merge(parameter.name.locus, parameter.typehint->locus);
         param_spec.type_id =
             sema::get_type_at_locus(sema, parameter.name.locus);
+        param_spec.symbol_id=
+            *sema::get_id_of_symbol(sema, sema->current_scope, parameter.name.value);
         param_spec.index              = n;
         param_spec.default_expression = parameter.default_expression;
 
@@ -71,7 +73,8 @@ static void generate_function_call_schema(Semantic_Context *sema,
 
 Worker_Status check_function_prototype(Semantic_Context *sema,
                                        ast::Function_Prototype *proto,
-                                       sema::Symbol_Id symbol_id)
+                                       sema::Symbol_Id symbol_id,
+                                       sema::Symbol_Proxy symbol)
 {
     MINI_ASSERT(proto != nullptr, );
 
@@ -101,12 +104,19 @@ Worker_Status check_function_prototype(Semantic_Context *sema,
         parameter_type_ids.append(id);
         sema::Symbol param_symbol{};
         param_symbol.name     = parameter.name.value;
-        param_symbol.kind     = sema::Symbol_Kind::Variable;
+        param_symbol.kind     = sema::Symbol_Kind::Parameter;
         param_symbol.locus    = parameter.name.locus;
-        param_symbol.scope_Id = current_scope;
+        param_symbol.scope_id = current_scope;
         param_symbol.set_state(sema::Symbol_State::Resolved);
         param_symbol.variable.type_id    = id;
         param_symbol.variable.mutability = Mutability::Constant;
+
+
+        hir::Profile *profile   = &param_symbol.profile;
+        profile->name           = param_symbol.name.to_string(sema->allocator);
+        profile->canonical_name = profile->name;
+
+
         sema::register_symbol_in(sema, current_scope, parameter.name.value,
                                  parameter.name.locus, param_symbol);
     }
@@ -120,8 +130,7 @@ Worker_Status check_function_prototype(Semantic_Context *sema,
 
     /* refresh the symbol pointer using symbol_id in case register_symbol_in
      * reallocated storage */
-    sema::Symbol *symbol     = sema->symbols().at_index_ptr(usize(symbol_id));
-    symbol->variable.type_id = function_type;
+    //auto symbol     = sema::get_symbol_by_id(sema, symbol_id);
     sema::link_locus_to_type(sema, symbol->locus, function_type);
     generate_function_call_schema(sema, proto, symbol_id);
     return Worker_Status::Done;
@@ -140,19 +149,19 @@ Worker_Status sema::check_function_definition(Semantic_Context *sema,
     MINI_ASSERT(symbol_opt.has_value(), );
 
     sema::Symbol_Proxy symbol = *symbol_opt;
-
+    symbol->kind               = sema::Symbol_Kind::Function;
+    symbol->function.statement = (Statement *)variable;
     symbol->set_state(sema::Symbol_State::Resolving);
 
     ast::expr::Function *function =
         (ast::expr::Function *)variable->initializer;
-    sema::Symbol_Id id = *sema::eagerly_get_id_of_symbol(
-        sema, sema->current_scope, symbol->name);
+    sema::Symbol_Id id = symbol.get_id();
 
     sema::enter_scope(sema, sema::Scope_Kind::Function);
     auto scope_guard = mini::ScopeGuard([&]() { sema::leave_scope(sema); });
 
     if (Worker_Status check_proto =
-            check_function_prototype(sema, &function->prototype, id);
+        check_function_prototype(sema, &function->prototype, id, symbol);
         check_proto != Worker_Status::Done) {
         symbol->set_state(check_proto == Worker_Status::Failed
                               ? sema::Symbol_State::Failed
@@ -169,28 +178,45 @@ Worker_Status sema::check_function_definition(Semantic_Context *sema,
                     : sema::type_id::Void;
         });
 
-    /* checking function prototype might have relocated the symbol
-     * so i refresh the variable here (just in case) */
-    //symbol = sema::get_symbol_by_id(sema, id);
     symbol->set_state(sema::Symbol_State::Resolved);
-
     sema->wake_up_workers(id);
+
+    hir::Profile *profile   = &symbol->profile;
+    profile->name           = symbol->name.to_string(sema->allocator);
+    profile->canonical_name = mini_string_build(sema->allocator, "");
+    if (symbol->name != "main") {
+        if (symbol->def_ns)
+            generate_canon_name(sema, *symbol->def_ns, &profile->canonical_name);
+        mini_string_append_fmt(&profile->canonical_name, "_%zu%.*s", symbol->name.length(), SVARG(symbol->name.base()));
+    } else {
+        profile->canonical_name = mini_sv_to_string(symbol->name, sema->allocator);
+    }
+
+
+    for (const auto &attr : function->attributes.iter()) {
+        switch (attr.kind) {
+        case ast::Attribute::Kind::Canon_Name:
+            profile->canonical_name = mini_sv_to_string(attr.canon_name, sema->allocator);
+            break;
+        default: MINI_UNREACHABLE();
+        }
+    }
 
     if (function->body_is_defined) {
         auto s = check_statement(sema, function->body, is_resumption);
-        if (s == Worker_Status::Failed)
+        if (s == Worker_Status::Failed) {
             symbol->set_state(sema::Symbol_State::Failed);
-        else if (s == Worker_Status::Pending) {
+            return s;
+        } else if (s == Worker_Status::Pending) {
             // symbol->resolve_state = sema::Symbol_State::Unresolved;
             for (const auto symbold_id : mini::iterate(s.waiting_on)) {
                 sema->register_worker(
                     symbold_id,
                     Worker(function->body, check_statement,
-                           s.working_scope.value_or(sema->current_scope)));
+                           s.working_scope.value_or(sema->current_scope), sema->my_id));
             }
             return Worker_Status::Pending;
         }
-        return s;
     }
 
     return Worker_Status::Done;

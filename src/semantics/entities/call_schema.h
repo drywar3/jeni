@@ -2,8 +2,8 @@
 
 #include "ast/expr.h"
 #include "misc/map.h"
-#include "semantics/entities/symbol.h"
-#include "semantics/entities/type.h"
+#include "semantics/entities/type_id.h"
+#include "semantics/entities/symbol_id.h"
 
 #include <mini.cc/string_view.h>
 
@@ -13,6 +13,7 @@ namespace sema
         Locus locus;
         usize index;
         sema::Type_Id type_id;
+        sema::Symbol_Id symbol_id;
         const ::Expression *default_expression;
     };
 

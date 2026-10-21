@@ -12,6 +12,7 @@ static bool expression_requires_terminator(ExpressionPointer expr)
     switch (expr->kind) {
     case EXPR_Function:
     case EXPR_Struct:
+    case EXPR_Namespace:
         return false;
     default:
         return true;
@@ -80,7 +81,7 @@ Statement *parser::parse_variable_declaration(Parser *p)
         variable.initializer    = parser::parse_expression(p);
         if (!variable.initializer || variable.initializer->kind == EXPR_Error) {
             variable.is_initialized = false;
-            skip_until_one_of(p, true, TOKEN_SEP_Semicolon);
+            parser::skip_until_one_of(p, true, {TOKEN_SEP_Semicolon});
             return
                 ast::stmt::alloc_statement(p->allocator, STMT_Variable,
                                            locus_merge(begin.locus, previous(p).locus), variable);
@@ -104,11 +105,11 @@ StatementPointer parser::parse_block(Parser *p)
 {
     Token begin = next(p); /* consume `{` */
     ast::stmt::Block block{};
-    block.body = MINI_ARRAY_INIT(p->allocator, StatementPointer);
+    block.body = ast::stmt::Block::Body(p->allocator);
     while (!equals(p, TOKEN_SEP_Rbrace) && !parser_is_done(p)) {
         StatementPointer stmt = parser_parse_statement(p);
         if (stmt)
-            mini_array_append(block.body, stmt);
+            block.body.append(stmt);
         else {
             if (!skip_until_one_of(p, false, STMT_HEAD))
                 return nullptr;
@@ -125,7 +126,7 @@ Statement *parser::parse_if_statement(Parser *p)
         header.condition = parser::parse_expression(p);
 
         if (header.condition->is_error()) {
-            if (!skip_until_one_of(p, false, TOKEN_KW_Then, TOKEN_KW_Return, TOKEN_SEP_Lbrace))
+            if (!parser::skip_until_one_of(p, false, {TOKEN_KW_Then, TOKEN_KW_Return, TOKEN_SEP_Lbrace}))
                 return false;
         }
 
@@ -174,7 +175,7 @@ Statement *parser::parse_return_statement(Parser *p)
     Token begin = next(p);
     Expression *expression = parser::parse_expression(p);
     if (expression->is_error()) {
-        if (!skip_until_one_of(p, false, TOKEN_SEP_Semicolon))
+        if (!parser::skip_until_one_of(p, false, {TOKEN_SEP_Semicolon}))
             return nullptr;
     }
     expect(p, TOKEN_SEP_Semicolon);

@@ -77,5 +77,7 @@ namespace lir
         void put_label(lir::Label label);
         void jmp_if_eq(ValueId first, ValueId second, lir::Label label);
         void jmp_to_label(lir::Label label);
+
+        lir::Global *get_global(ValueId value);
     };
 } // namespace lir

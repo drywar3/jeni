@@ -21,8 +21,11 @@ enum Expression_Kind {
     EXPR_Address_Of,
     EXPR_Dereference,
     EXPR_Subscript,
+    EXPR_Eval,
     EXPR_Error,
     EXPR_Typehint,
+    EXPR_Namespace,
+    EXPR_Use,
 };
 
 struct Expression : Statement {

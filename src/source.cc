@@ -62,3 +62,15 @@ const SourceFile *sourcemgr_get_source(const SourceManager *sm, SourceId id)
 {
     return &sm->sources.at_index((usize)id);
 }
+
+const SourceFile *sourcemgr_find_source_file_at_path(SourceManager *sm, mini::StringView path)
+{
+    if (sm->sources.contains(path)) return sm->sources.find(path);
+    return nullptr;
+}
+
+Opt<SourceId> sourcemgr_find_source_id_at_path(SourceManager *sm, mini::StringView path)
+{
+    if (sm->sources.contains(path)) return SourceId(*sm->sources.get_id(path));
+    return None;
+}

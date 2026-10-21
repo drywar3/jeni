@@ -5,6 +5,7 @@
 #include "parser/parsers/parse_struct.h"
 #include "parser/parsers/parse_function.h"
 #include "parser/parsers/parse_typehint.h"
+#include "parser/parsers/parse_namespace.h"
 
 #include <mini.cc/scope_guard.h>
 
@@ -17,6 +18,7 @@ Expression *parser::error_expr()
     return &ERROR_EXPR;
 }
 
+Expression *parse_unary(Parser *p, bool is_within_typehint_context = false);
 Expression *parse_relational(Parser *p, bool is_within_typehint_context = false);
 
 Expression *parse_primary(Parser *p, bool is_within_typehint_context = false)
@@ -25,6 +27,14 @@ Expression *parse_primary(Parser *p, bool is_within_typehint_context = false)
         Expression *typehint = parser_parse_typehint(p);
         typehint->kind       = EXPR_Typehint;
         return typehint;
+    }
+
+    if (!is_within_typehint_context && parser::try_expect(p, TOKEN_DR_Eval)) {
+        Token begin  = parser::previous(p);
+        Expression *expression = parser::parse_expression(p);
+        return ast::expr::alloc_expression(p->allocator, EXPR_Eval,
+                                           locus_merge(begin.locus, expression->locus),
+                                           ast::expr::Eval{.expr=expression});
     }
 
     if (!is_within_typehint_context && parser::equals(p, TOKEN_LIT_Int)) {
@@ -90,6 +100,28 @@ Expression *parse_primary(Parser *p, bool is_within_typehint_context = false)
             ast::expr::Identifier{.value = value});
     }
 
+    if (parser::try_expect(p, TOKEN_SEP_Lparen)) {
+        auto *expr = parser::parse_expression(p);
+        parser::expect(p, TOKEN_SEP_Rparen);
+        return expr;
+    }
+
+    if (!is_within_typehint_context && parser::equals(p, TOKEN_KW_Cast)) {
+        ast::expr::Cast cast{};
+        Token begin = parser::next(p);
+        if (parser::try_expect(p, TOKEN_OP_Less)) {
+            cast.typehint = parser::parse_typehint_expression(p);
+            cast.type_is_defined = true;
+            parser::expect(p, TOKEN_OP_Greater);
+        } else cast.type_is_defined = false;
+        cast.expr  = parse_unary(p, false);
+        if (cast.expr->is_error()) return cast.expr;
+        return ast::expr::alloc_expression(p->allocator, EXPR_Cast,
+                                           locus_merge(begin.locus,
+                                                       cast.expr->locus),
+                                          cast);
+    }
+
     if (!is_within_typehint_context && parser::equals(p, TOKEN_LIT_CString)) {
         Token token = parser::next(p);
         Mini_StringView value =
@@ -127,7 +159,8 @@ Expression *parse_dereference(Parser *p, bool is_within_typehint_context = false
 Expression *parse_member_access(Parser *p, bool is_within_typehint_context = false)
 {
     Expression *base = parse_dereference(p, is_within_typehint_context);
-    if (is_within_typehint_context) return base;
+
+    //if (is_within_typehint_context) return base;
 
     while (parser::equals(p, TOKEN_SEP_Dot)) {
         Token dot = parser::next(p);
@@ -149,10 +182,9 @@ Expression *parse_member_access(Parser *p, bool is_within_typehint_context = fal
     return base;
 }
 
-Expression *parse_postfix(Parser *p, bool is_within_typehint_context = false)
+Expression *parse_postfix(Parser *p, bool is_within_typehint_context)
 {
     Expression *base = parse_dereference(p, is_within_typehint_context);
-    if (is_within_typehint_context) return base;
     while (true) {
         if (parser::try_expect(p, TOKEN_SEP_Lparen) && !is_within_typehint_context) {
             ast::expr::Function_Call fcall;
@@ -217,7 +249,7 @@ Expression *parse_postfix(Parser *p, bool is_within_typehint_context = false)
     return base;
 }
 
-Expression *parse_unary(Parser *p, bool is_within_typehint_context = false)
+Expression *parse_unary(Parser *p, bool is_within_typehint_context)
 {
     if (parser::equals(p, TOKEN_OP_Star) && is_within_typehint_context) {
         Expression *typehint = parser_parse_typehint(p);
@@ -341,6 +373,22 @@ Expression *parse_relational(Parser *p, bool is_within_typehint_context)
     return left;
 }
 
+static Expression *parse_use_directive(Parser *p)
+{
+    Token begin = parser::next(p);
+    if (!parser::try_expect(p, TOKEN_LIT_String)) {
+        parser::report_error(p, begin.locus, "unexpected token; expected `string`", "expected file path after #use");
+        return parser::error_expr();
+    }
+
+    Token token = parser::previous(p);
+    mini::StringView value =
+        mini_string_substr(p->tokens.lexer.content, token.locus.first_byte + 1,
+                           locus_length(&token.locus) - 2);
+    return ast::expr::alloc_expression(p->allocator, EXPR_Use, locus_merge(begin.locus, token.locus),
+                                       ast::expr::Use{.path=value});
+}
+
 Expression *parser::parse_expression(Parser *p, bool is_within_typehint_context)
 {
     if (!is_within_typehint_context && parser::equals(p, TOKEN_KW_Struct))
@@ -348,6 +396,14 @@ Expression *parser::parse_expression(Parser *p, bool is_within_typehint_context)
 
     if (!is_within_typehint_context && parser::equals(p, TOKEN_KW_Func)) {
         return parse_function(p);
+    }
+
+    if (!is_within_typehint_context && parser::equals(p, TOKEN_KW_Namespace)) {
+        return parse_namespace(p);
+    }
+
+    if (!is_within_typehint_context && parser::equals(p, TOKEN_DR_Use)) {
+        return parse_use_directive(p);
     }
 
     return parse_relational(p, is_within_typehint_context);

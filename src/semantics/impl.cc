@@ -59,6 +59,7 @@ void sema::link_locus_to_type_at_locus(Semantic_Context *sema, Locus source, Loc
 
 sema::Type_Id sema::get_type_at_locus(Semantic_Context *sema, Locus locus)
 {
+    MINI_ASSERT(sema->store->types.contains(locus), "cannot retrieve type information");
     return (sema::Type_Id)*sema->store->types.get_id(locus);
 }
 
@@ -228,5 +229,10 @@ sema::Symbol_Proxy sema::get_symbol_by_id(Semantic_Context *sema,
 Mini_String sema::display_type(Semantic_Context *sema, sema::Type_Id type_id)
 {
     const auto &type = sema->types().at_index(usize(type_id));
-    return type.display(sema->allocator, sema->types());
+    return type.display(sema->allocator, *sema->store);
+}
+
+Opt<compeval::Value> sema::comptime_evaluate(Semantic_Context *sema, Expression *expression)
+{
+    return sema->vm->eval(sema, expression);
 }

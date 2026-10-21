@@ -25,6 +25,8 @@ namespace hir
 
         hir::Expression *create_true_expr();
 
+        HashMap<Locus, bool> deflated_programs;
+
         template <typename T>
         hir::Statement *new_stmt(hir::Statement::Kind kind, T obj)
         {
@@ -68,6 +70,7 @@ namespace hir
     hir::Expression *convert_expression(hir::Context *ctx,
                                         const ::Expression *expression);
     hir::Statement *convert_block(hir::Context *ctx, ast::stmt::Block *block);
+    hir::Statement *convert_namespace(hir::Context *ctx, ast::stmt::Variable *var);
     hir::Expression *
     convert_function_call(hir::Context *ctx,
                           const ast::expr::Function_Call *call);

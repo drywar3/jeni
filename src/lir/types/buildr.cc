@@ -248,3 +248,15 @@ void lir::Buildr::member_ptr(lir::ValueId dst,
     function->add_instruction(
                               lir::Instruction{dst, InstructionKind::Member_Ptr(member_type, receiver, member_name)});
 }
+
+lir::Global *lir::Buildr::get_global(lir::ValueId value_id)
+{
+    auto &value = mod->context->values[usize(value_id)];
+    if (value.kind == lir::Value::Kind::GlobalRef) {
+        auto name = value.ident;
+        for (auto &global : mod->globals.iter()) {
+            if (global.name == name) return &global;
+        }
+    }
+    return nullptr;
+}

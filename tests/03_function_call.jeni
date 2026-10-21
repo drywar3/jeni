@@ -1,20 +1,11 @@
 main :: func () -> int {
-     puts        :: func (b : *const char) ---
-     printf      :: func (b : *const char, ...) -> int ---
-     putchar     :: func (c : int) ---
-     atoi        :: func (d: *const char) -> int ---
-
-     InitWindow   :: func (a : int, b: int, c : *const char) ---
-     LoadFileText :: func (file_path: *const char) -> *char ---
-     SetTraceLogLevel  :: func (x : int) ---
-
      puts(c"Hello World");
      x := atoi(c"720100000");
      printf(c"x = %d\n", x);
 
-     SetTraceLogLevel(LOG_NONE);
+     set_log_level(LOG_NONE);
      printf(c"----------------------------------------------------\n");
-     data := LoadFileText(c"./tests/02_hello_world.jeni");
+     data := load_file_text(c"./tests/02_hello_world.jeni");
      puts(data);
      printf(c"----------------------------------------------------\n");
 }
@@ -27,3 +18,12 @@ LOG_WARNING :: 4;
 LOG_ERROR   :: 5;
 LOG_FATAL   :: 6;
 LOG_NONE    :: 7;
+
+puts        :: func (b : *const char)               #canon_name "puts"    ---
+printf      :: func (b : *const char, ...) -> int   #canon_name "printf"  ---
+putchar     :: func (c : int)                       #canon_name "putchar" ---
+atoi        :: func (d: *const char) -> int         #canon_name "atoi"    ---
+
+init_window    :: func (a : int, b: int, c : *const char) #canon_name "InitWindow"       ---
+load_file_text :: func (file_path: *const char) -> *char  #canon_name "LoadFileText"     ---
+set_log_level  :: func (x : int)                          #canon_name "SetTraceLogLevel" ---

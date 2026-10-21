@@ -39,48 +39,48 @@ Statement *parser_parse_statement(Parser *parser)
     if (equals_sequence(parser, TOKEN_Identifier, TOKEN_SEP_Colon)) {
         if (auto variable = parser::parse_variable_declaration(parser))
             return variable;
-        skip_until_one_of(parser, false, STMT_HEAD);
+        parser::skip_until_one_of(parser, false, STMT_HEAD);
         return nullptr;
     }
 
     if (parser::equals(parser, TOKEN_SEP_Lbrace)) {
         if (auto block = parser::parse_block(parser))
             return block;
-        skip_until_one_of(parser, false, STMT_HEAD);
+        parser::skip_until_one_of(parser, false, STMT_HEAD);
         return nullptr;
     }
 
     if (parser::equals(parser, TOKEN_KW_If)) {
         if (auto if_ = parser::parse_if_statement(parser))
             return if_;
-        skip_until_one_of(parser, false, STMT_HEAD);
+        parser::skip_until_one_of(parser, false, STMT_HEAD);
         return nullptr;
     }
 
     if (parser::equals(parser, TOKEN_KW_Return)) {
         if (auto ret = parser::parse_return_statement(parser))
             return ret;
-        skip_until_one_of(parser, false, STMT_HEAD);
+        parser::skip_until_one_of(parser, false, STMT_HEAD);
         return nullptr;
     }
 
     if (parser::equals(parser, TOKEN_KW_For)) {
         if (auto for_loop = parser::parse_for_loop(parser))
             return for_loop;
-        skip_until_one_of(parser, false, STMT_HEAD);
+        parser::skip_until_one_of(parser, false, STMT_HEAD);
         return nullptr;
     }
 
     if (parser::equals(parser, TOKEN_KW_Break)) {
         if (auto break_ = parser::parse_break(parser))
             return break_;
-        skip_until_one_of(parser, false, STMT_HEAD);
+        parser::skip_until_one_of(parser, false, STMT_HEAD);
         return nullptr;
     }
 
     Expression *expr = parser::parse_expression(parser);
     if (!expr || expr->kind == EXPR_Error) {
-        skip_until_one_of(parser, false, STMT_HEAD);
+        parser::skip_until_one_of(parser, false, STMT_HEAD);
         return nullptr;
     }
 

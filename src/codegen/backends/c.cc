@@ -65,7 +65,7 @@ static void emit_function_fwd_declaration(CBackend *bk,
                                           const lir::Global::Function *function)
 {
     write_type(bk, &bk->fwd_decl, function->prototype.return_type);
-    writef(bk, " %.*s (", SVARG(function->name.base()));
+    writef(bk, " %s (", function->profile.canonical_name);
     usize n = 0;
     for (const auto &param_type : function->prototype.parameters.iter()) {
         if (n != 0)
@@ -160,6 +160,7 @@ static void emit_forward_declarations(CBackend *bk)
         case lir::Global::Kind::Type:
             emit_type_definition(bk, global.type_id);
             break;
+        case lir::Global::Kind::Nil: break;
         default:
             MINI_UNREACHABLE();
         }
@@ -344,7 +345,7 @@ void emit_function_definition(CBackend *bk,
                               const lir::Global::Function *function)
 {
     write_type(bk, &bk->code, function->prototype.return_type);
-    writec(bk, " %.*s (", SVARG(function->name.base()));
+    writec(bk, " %s (", function->profile.canonical_name);
     usize n = 0;
     for (const auto &param_type : function->prototype.parameters.iter()) {
         if (n != 0)
@@ -483,60 +484,62 @@ void write_instruction(CBackend *bk, Mini_String *out, lir::Instruction inst_)
     }
 }
 
-bool codegen::c_backend_finalize(Mini_String blob, const char *output_name)
-{
-    TCCState *s = tcc_new();
-    if (!s) {
-        fprintf(stderr, "error: failed to initialize tcc\n");
-        return false;
-    }
-    //printf("%s", blob);
-
-    auto scope_guard = mini::ScopeGuard([&]() { tcc_delete(s); });
-    tcc_set_lib_path(s, "./vendor/libtcc");
-    tcc_set_output_type(s, TCC_OUTPUT_EXE);
-    tcc_set_options(s, "-w");
-
-    tcc_add_include_path(s, "./vendor/libtcc/include");
-    tcc_add_library_path(s, "./vendor/libtcc/");
-
-    tcc_add_include_path(s, "/usr/include");
-    tcc_add_include_path(s, "/usr/local/include");
-
-    tcc_add_library(s, "raylib");
-
-    if (tcc_compile_string(s, blob) < 0) {
-        fprintf(stderr, "error: tcc compilation failed\n");
-        return false;
-    }
-
-    if (tcc_output_file(s, output_name) < 0) {
-        fprintf(stderr, "error: failed to write executable '%s'\n",
-                output_name);
-        return false;
-    }
-
-    return true;
-}
-
-
 // bool codegen::c_backend_finalize(Mini_String blob, const char *output_name)
 // {
-//     #define TEMP_FILE_NAME "jeni_tmp.c"
-//     FILE *temp = fopen(TEMP_FILE_NAME, "w");
-//     fprintf(temp, "%s", blob);
-//     fclose(temp);
+//     TCCState *s = tcc_new();
+//     if (!s) {
+//         fprintf(stderr, "error: failed to initialize tcc\n");
+//         return false;
+//     }
+//     printf("%s", blob);
+//     auto scope_guard = mini::ScopeGuard([&]() { tcc_delete(s); });
+//     tcc_set_lib_path(s, "./vendor/libtcc");
+//     tcc_set_output_type(s, TCC_OUTPUT_EXE);
+//     tcc_set_options(s, "-w");
 //
-//     Mini_String cmd = mini_string_build(mini_default_allocator(), "clang -w " TEMP_FILE_NAME " -o %s", output_name);
-//     auto scope_guard = mini::ScopeGuard([&] () { mini_string_destroy(&cmd); });
+//     tcc_add_include_path(s, "./vendor/libtcc/include");
+//     tcc_add_library_path(s, "./vendor/libtcc/");
 //
-//     mini_string_append_string(&cmd, " -L./build");
+//     tcc_add_include_path(s, "/usr/include");
+//     tcc_add_include_path(s, "/usr/local/include");
 //
-//     printf("[info] running '%s'\n", cmd);
-//     if (system(cmd)) return false;
+//     tcc_add_library(s, "raylib");
+//     tcc_add_library(s, "SDL2");
 //
-//     printf("[info] running 'rm " TEMP_FILE_NAME"'\n");
-//     if (system("rm " TEMP_FILE_NAME)) return false;
+//     if (tcc_compile_string(s, blob) < 0) {
+//         fprintf(stderr, "error: tcc compilation failed\n");
+//         return false;
+//     }
+//
+//     if (tcc_output_file(s, output_name) < 0) {
+//         fprintf(stderr, "error: failed to write executable '%s'\n",
+//                 output_name);
+//         return false;
+//     }
 //
 //     return true;
 // }
+
+
+bool codegen::c_backend_finalize(Mini_String blob, const char *output_name)
+{
+    #define TEMP_FILE_NAME "jeni_tmp.c"
+    FILE *temp = fopen(TEMP_FILE_NAME, "w");
+    fprintf(temp, "%s", blob);
+    fclose(temp);
+
+    Mini_String cmd = mini_string_build(mini_default_allocator(), "clang -w " TEMP_FILE_NAME " -o %s", output_name);
+    auto scope_guard = mini::ScopeGuard([&] () { mini_string_destroy(&cmd); });
+
+    mini_string_append_string(&cmd, " -L./build -lraylib");
+
+    printf("[=======================================================]\n");
+    printf("[info] running '%s'\n", cmd);
+    if (system(cmd)) return false;
+
+    printf("[info] running 'rm " TEMP_FILE_NAME"'\n");
+    if (system("rm " TEMP_FILE_NAME)) return false;
+    printf("[=======================================================]\n");
+
+    return true;
+}

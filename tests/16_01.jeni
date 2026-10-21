@@ -1,0 +1,7 @@
+
+write_to_stdout :: func (msg: *const char) -> int
+    #canon_name "puts" ---
+
+write_to_stdout_formatted
+    :: func (fmt: *const char, ...) -> int
+            #canon_name "printf" ---

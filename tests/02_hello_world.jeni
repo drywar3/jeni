@@ -14,4 +14,5 @@ print_number :: func (x : int) {
     printf(c"%d ", x);
 }
 
-printf :: func (fmt: *const char, x : int, ...) ---
+printf :: func (fmt: *const char, x : int, ...)
+    #canon_name "printf" ---

@@ -1,0 +1,5 @@
+test_ns :: ns {
+    FOO :: 10000;
+    BAZ :: BAR;
+    BAR :: 20;
+}

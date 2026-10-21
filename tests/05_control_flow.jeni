@@ -68,4 +68,4 @@ main :: func () -> int {
     return 0;
 }
 
-printf :: func (fmt: *const char, ...) ---
+printf :: func (fmt: *const char, ...) #canon_name "printf" ---

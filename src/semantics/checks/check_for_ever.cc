@@ -9,6 +9,7 @@ Worker_Status sema::check_for_ever_stmt(Semantic_Context *sema, void *data)
     auto *for_ever = (ast::stmt::For_Ever *)data;
     sema::enter_scope(sema, sema::Scope_Kind::Loop);
     Worker_Status status = sema::check_statement(sema, for_ever->body);
+    status.at_scope(sema->current_scope);
     sema::leave_scope(sema);
     return status;
 }
@@ -38,6 +39,7 @@ Worker_Status sema::check_while_loop(Semantic_Context *sema, void *data)
 
     sema::enter_scope(sema, sema::Scope_Kind::Loop);
     status = sema::check_statement(sema, loop->body);
+    status.at_scope(sema->current_scope);
     sema::leave_scope(sema);
     return status;
 }

@@ -26,6 +26,13 @@ hir::convert_function_call(hir::Context *ctx,
             hir::convert_expression(ctx, argument.argument));
     }
 
+    if (auto *sym = ctx->symbols().find(callee->locus)) {
+        MINI_ASSERT(sym->kind == sema::Symbol_Kind::Function, );
+        function_call.callee = ctx->new_expr(hir::Expression::Kind::Identifier, function_call.callee->type_id,
+                                             hir::expr::Identifier{mini::StringView(sym->profile.canonical_name,
+                                                                                    mini_string_count(sym->profile.canonical_name))});
+    }
+
     return ctx->new_expr(hir::Expression::Kind::Function_Call, type_id,
                          function_call);
 }

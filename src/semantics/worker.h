@@ -1,5 +1,8 @@
 #pragma once
 
+#include "ast/expr.h"
+#include "ast/stmt.h"
+#include "semantics/store.h"
 #include "semantics/entities/symbol.h"
 
 struct Semantic_Context;
@@ -84,15 +87,33 @@ struct Worker_Status {
     bool is_failed() const { return kind == V::Failed; }
 };
 
-typedef Worker_Status (*Worker_Func)(Semantic_Context *ctx, void *data,
-                                    bool is_resumption);
+struct Worker_Payload {
+    enum Kind {
+        Stmt,
+        Expr,
+    };
+
+    Kind kind;
+    Statement  **stmt;
+    Expression **expr;
+
+    Worker_Payload(Statement *&stmt)  : kind(Stmt), stmt(&stmt) {}
+    Worker_Payload(Expression *&expr) : kind(Expr), expr(&expr) {}
+
+    Statement *&as_stmt()  { return *stmt; }
+    Expression *&as_expr() { return *expr; }
+};
+
+typedef Worker_Status (*Worker_Func)(Semantic_Context *ctx, Worker_Payload data,
+                                     bool is_resumption);
 
 struct Worker {
-    void *data;
+    Worker_Payload data;
     Worker_Func func;
-    sema::Scope_Id scope_Id;
+    sema::Scope_Id scope_id;
+    sema::Semantic_Id sema_id;
 
-    Worker(void *data, Worker_Func func, sema::Scope_Id current_scope);
+    Worker(Worker_Payload data, Worker_Func func, sema::Scope_Id current_scope, sema::Semantic_Id sema_id);
 
-    Worker_Status resume(Semantic_Context *sema);
+    Worker_Status resume(Semantic_Storage *store);
 };

@@ -1,11 +1,11 @@
 #pragma once
 
 #include "expr.h"
-#include "mini.c/string_view.h"
 #include "misc.h"
-#include "parser/token.h"
 #include "stmt.h"
-#include "type.h"
+#include "parser/token.h"
+#include "ast/attribute.h"
+#include "mini.c/string_view.h"
 
 #include <mini.cc/array.h>
 
@@ -39,6 +39,7 @@ namespace ast
         Sub               = TOKEN_OP_Minus,
         Mul               = TOKEN_OP_Star,
         Div               = TOKEN_OP_Div,
+
         Equals            = TOKEN_OP_Equals,
         NotEquals         = TOKEN_OP_NotEquals,
         Not               = TOKEN_OP_Bang,
@@ -64,6 +65,8 @@ namespace ast
         bool              has_default_value;
     };
 
+    using Generic_Parameters = mini::Array<Function_Parameter>;
+
     namespace expr
     {
         struct Integer : Expression {
@@ -83,7 +86,9 @@ namespace ast
         };
 
         struct Function : Expression {
+            ast::Generic_Parameters generic_params;
             ast::Function_Prototype prototype;
+            ast::Attributes         attributes;
             Statement *body;
             bool body_is_defined;
         };
@@ -133,7 +138,22 @@ namespace ast
 
         struct Cast : Expression {
             Expression *typehint;
-            Expression *value;
+            Expression *expr;
+            bool        type_is_defined;
+        };
+
+        struct Eval : Expression {
+            Expression *expr;
+        };
+
+        struct Namespace : Expression {
+            Expression *parent;
+            Statement  *definitions;
+            bool        parent_is_specified;
+        };
+
+        struct Use : Expression {
+            mini::StringView path;
         };
 
         template <typename Derived_Expresssion>
@@ -148,6 +168,5 @@ namespace ast
             expression->locus = locus;
             return expression;
         }
-
     } // namespace expr
 } // namespace ast

@@ -1,0 +1,39 @@
+
+factorial :: func (x: int) -> int {
+   a := x;
+   b := x - 1;
+   c := a;
+
+   for b > 0 {
+       c = a * b;
+       a = c;
+       b = b - 1;
+   }
+
+   return c;
+}
+
+get_int :: func (a: int) -> int {
+   return a;
+}
+
+add :: func (a: int, b: int) -> int {
+  return get_int(a) + b;
+}
+
+main :: func () -> int {
+    PI    :: 3.142;
+    COUNT :: cast<int> PI;
+
+    numbers : [COUNT]int;
+
+    numbers[1] = cast (20 + 20);
+
+    x := #eval add(10, 10);
+
+    printf(c"x            = %d\n", x);
+    printf(c"numbers  [1] = %d\n", numbers[1]);
+    printf(c"factorial(4) = %d\n", factorial(4));
+}
+
+printf :: func (fmt: *const char, ...) -> int ---

@@ -17,5 +17,5 @@ hir::Statement *hir::convert_struct_decl(hir::Context *ctx, const ast::stmt::Var
     }
 
     return ctx->new_stmt(hir::Statement::Kind::Struct,
-                         hir::stmt::Struct{variable->name.value, fields});
+                         hir::stmt::Struct{symbol->profile.canonical_name, fields, symbol->profile});
 }

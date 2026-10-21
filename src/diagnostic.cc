@@ -455,7 +455,7 @@ void diag_report(const Diagnostic *diagnostic, const SourceManager *sm)
         if (first.locus.source_id != current_source) {
             const SourceFile *file =
                 sourcemgr_get_source(sm, first.locus.source_id);
-            printf(" %*s--> %s:%zu:%zu\n", (int)gutter, "", file->path,
+            printf("note: %s:%zu:%zu\n", /*(int)gutter, "", */ file->path,
                    first.locus.line, first.locus.begin);
             current_source = first.locus.source_id;
         } else if (i != 0) {
@@ -496,10 +496,11 @@ Diagnostic diag_add_label(Diagnostic diagnostic, Label label)
     return diagnostic;
 }
 
-Diagnostic_Pool diagpool_create()
+Diagnostic_Pool diagpool_create(usize w_max, usize e_max,
+                                Mini_Allocator allocator)
 {
-    Diagnostic_Pool pool{};
-    pool.diagnostics = MINI_ARRAY_INIT(mini_default_allocator(), Diagnostic);
+    Diagnostic_Pool pool{.w_max = w_max, .e_max = e_max};
+    pool.diagnostics = MINI_ARRAY_INIT(allocator, Diagnostic);
     mini_array_set_dtor(pool.diagnostics, diag_destroy);
     return pool;
 }
@@ -517,7 +518,19 @@ void diagpool_destroy(Diagnostic_Pool *pool)
 
 void diagpool_report_diag(Diagnostic_Pool *pool, Diagnostic diagnostic)
 {
+    if (diagnostic.severity == Severity::Error) {
+        if (pool->e_count >= pool->e_max) return;
+        pool->e_count += 1;
+    } else if (diagnostic.severity == Severity::Warning) {
+        if (pool->w_count >= pool->w_max) return;
+        pool->w_count += 1;
+    }
     mini_array_append(pool->diagnostics, diagnostic);
+}
+
+bool diagpool_has_errors(Diagnostic_Pool *pool)
+{
+    return pool->e_count > 0;
 }
 
 bool diagpool_is_empty(Diagnostic_Pool *pool)

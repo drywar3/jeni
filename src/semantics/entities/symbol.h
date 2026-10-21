@@ -1,18 +1,21 @@
 #pragma once
 
+#include "ast/stmt.h"
+#include "ast/expr.h"
 #include "misc/id.h"
+#include "compeval/value.h"
+#include "hir/types/profile.h"
 #include "semantics/entities/type.h"
+#include "semantics/entities/symbol_id.h"
 
 #include <mini.cc/string_view.h>
 #include <optional>
 
 namespace sema
 {
-    enum struct Scope_Id : usize {};
-    enum struct Symbol_Id : usize {};
-
     enum struct Symbol_Kind {
         Variable,
+        Parameter,
         Function,
         Type,
         Namespace,
@@ -29,23 +32,39 @@ namespace sema
         sema::Type_Id type_id;
     };
 
+    struct Symbol_Function {
+        Statement *statement;
+    };
+
+    struct Symbol_Namespace {
+        sema::Scope_Id       scope_id;
+        Opt<sema::Symbol_Id> parent_namespace;
+    };
+
     struct Symbol_Variable {
-        bool is_initialized;
+        compeval::Value              value;
         std::optional<sema::Type_Id> type_id;
-        Mutability mutability;
+        Expression                  *expr;
+        Mutability                   mutability;
+        bool                         is_initialized;
     };
 
     struct Symbol {
         Symbol_Kind kind;
         mini::StringView name;
-        Scope_Id scope_Id;
+        Scope_Id scope_id;
+        /* points to the namespace it was defined in */
+        Opt<sema::Symbol_Id> def_ns;
         /* points to where the variable was defined */
         Locus locus;
+        hir::Profile profile;
         Symbol_State resolve_state{Symbol_State::Unresolved};
 
         union {
-            Symbol_Variable variable;
-            Symbol_Type     type;
+            Symbol_Variable   variable;
+            Symbol_Type       type;
+            Symbol_Function   function;
+            Symbol_Namespace  ns;
         };
 
         void set_state(Symbol_State state);
@@ -53,7 +72,4 @@ namespace sema
 
         bool is(Symbol_Kind kind) const;
     };
-
-    using Symbol_Storage = DenseMap<Locus, Symbol>;
-
 } // namespace sema

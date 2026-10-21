@@ -3,6 +3,23 @@
 #include "locus.h"
 
 typedef enum {
+    TOKEN_OP_Add = 0,
+    TOKEN_OP_Minus = 1,
+    TOKEN_OP_Star = 2,
+    TOKEN_OP_Div = 3,
+    TOKEN_OP_Inc,
+    TOKEN_OP_Dec,
+    TOKEN_OP_Assign,
+    TOKEN_OP_Greater,
+    TOKEN_OP_Less,
+    TOKEN_OP_GreaterEq,
+    TOKEN_OP_LessEq,
+    TOKEN_OP_Equals,
+    TOKEN_OP_NotEquals,
+    TOKEN_OP_Bang,
+    TOKEN_OP_Arrow,
+    TOKEN_OP_Caret,
+
     TOKEN_KW_If,
     TOKEN_KW_Then,
     TOKEN_KW_Else,
@@ -10,6 +27,7 @@ typedef enum {
     TOKEN_KW_While,
     TOKEN_KW_Do,
     TOKEN_KW_Break,
+    TOKEN_KW_In,
     TOKEN_KW_Continue,
     TOKEN_KW_Return,
     TOKEN_KW_Import,
@@ -19,6 +37,13 @@ typedef enum {
     TOKEN_KW_Const,
     TOKEN_KW_Cast,
     TOKEN_KW_Func,
+    TOKEN_KW_Namespace,
+
+    TOKEN_DIRECTIVES,
+    TOKEN_DR_Eval,
+    TOKEN_DR_Canon_Name,
+    TOKEN_DR_Use,
+    TOKEN_DIRECTIVES_END,
 
     TOKEN_TYPE_KEYWORDS,
     TOKEN_TK_Void,
@@ -37,23 +62,6 @@ typedef enum {
     TOKEN_TK_Usize,
     TOKEN_TK_Isize,
     TOKEN_TYPE_KEYWORDS_END,
-
-    TOKEN_OP_Add,
-    TOKEN_OP_Minus,
-    TOKEN_OP_Div,
-    TOKEN_OP_Star,
-    TOKEN_OP_Inc,
-    TOKEN_OP_Dec,
-    TOKEN_OP_Assign,
-    TOKEN_OP_Greater,
-    TOKEN_OP_Less,
-    TOKEN_OP_GreaterEq,
-    TOKEN_OP_LessEq,
-    TOKEN_OP_Equals,
-    TOKEN_OP_NotEquals,
-    TOKEN_OP_Bang,
-    TOKEN_OP_Arrow,
-    TOKEN_OP_Caret,
 
     TOKEN_SEP_Semicolon,
     TOKEN_SEP_Colon,
@@ -83,11 +91,13 @@ typedef enum {
     TOKEN_Endoffile,
 } TokenKind;
 
-typedef struct {
+struct Token {
     TokenKind kind;
     Locus locus;
     int   base;
-} Token;
+
+    bool is_directive() const { return kind > TOKEN_DIRECTIVES && kind < TOKEN_DIRECTIVES_END; }
+};
 
 Token token_create(TokenKind kind, Locus locus, int base = 10);
 

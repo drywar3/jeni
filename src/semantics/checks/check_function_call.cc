@@ -1,13 +1,14 @@
-#include "semantics/checks/check_function_call.h"
 #include "diagnostic.h"
-#include "semantics/checks/check_expr.h"
-#include "semantics/entities/type.h"
 #include "semantics/impl.h"
-#include "semantics/type/coercer.h"
-#include "semantics/type/ids.h"
 #include "semantics/worker.h"
+#include "semantics/type/ids.h"
+#include "semantics/type/coercer.h"
+#include "semantics/entities/type.h"
+#include "semantics/checks/check_expr.h"
+#include "semantics/checks/check_function_call.h"
 
 #include <mini.cc/array.h>
+#include <mini.cc/scope_guard.h>
 
 static bool ensure_argument_count_is_sufficient(
     Semantic_Context *sema, usize argument_count,
@@ -94,7 +95,7 @@ Worker_Status sema::check_function_call(Semantic_Context *sema,
                         mini_string_build(sema->allocator,
                                           "type `%s` is not callable",
                                           callee_type.display(sema->allocator,
-                                                              sema->types()))));
+                                                              *sema->store))));
         sema::link_locus_to_type(sema, call->locus, sema::type_id::Error);
         return Worker_Status::Failed;
     }
@@ -104,11 +105,14 @@ Worker_Status sema::check_function_call(Semantic_Context *sema,
 
     auto callee_sym_id_opt = sema->symbols().get_id(callee->locus);
     if (!callee_sym_id_opt.has_value()) {
+        MINI_UNREACHABLE("invalid callee");
         return Worker_Status::Failed;
     }
 
     sema::Symbol_Id callee_id         = sema::Symbol_Id(*callee_sym_id_opt);
-    sema::Function_Call_Schema schema = *sema->get_call_schema(callee_id);
+    auto *schema_ptr                  = sema->get_call_schema(callee_id);
+    MINI_ASSERT(schema_ptr != nullptr, "invalid schema: %d", callee_id);
+    sema::Function_Call_Schema schema = *schema_ptr;
 
     usize argument_count = arguments.count();
     if (!ensure_argument_count_is_sufficient(sema, argument_count, schema,
@@ -120,6 +124,16 @@ Worker_Status sema::check_function_call(Semantic_Context *sema,
         const auto &arg   = arguments[index];
         Expression *value = arg.argument;
 
+        bool is_within_param_range = index <= schema.arity.max && !schema.is_variadic;
+
+        auto save = sema->set_current_type_context(None);
+        auto scope_guard = mini::ScopeGuard([&]() {sema->set_current_type_context(save);});
+
+        if (is_within_param_range) {
+            auto expected_type = schema.get_parameter_at_index(index).type_id;
+            sema->set_current_type_context(expected_type);
+        }
+
         Worker_Status arg_status = sema::check_expression(sema, value);
         if (arg_status == Worker_Status::Pending) {
             return arg_status; // YIELD IMMEDIATELY without polluting status
@@ -128,6 +142,13 @@ Worker_Status sema::check_function_call(Semantic_Context *sema,
         if (arg_status == Worker_Status::Failed) {
             status = Worker_Status::Failed;
             continue;
+        }
+
+        if (!sema::expression_is_value_compatible(sema, value)) {
+            sema::report_error(sema, value->locus, "cannot use expression as value",
+                               mini_string_build(sema->allocator, "expression has type `%s`",
+                                                 sema::display_type(sema, sema::get_type_at_locus(sema, value->locus))));
+            return Worker_Status::Failed;
         }
 
         if (index <= schema.arity.max && !schema.is_variadic &&

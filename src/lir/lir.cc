@@ -70,7 +70,6 @@ static lir::Global lower_glob_variable(lir::Buildr *builder,
     g_variable.type = lir::lower_type(builder, variable.type_id);
     g_variable.initializer =
         lir::lower_expression(builder, variable.initializer);
-
     return lir::Global{
         .name     = variable.name,
         .kind     = lir::Global::Kind::Variable,
@@ -86,8 +85,10 @@ lir::Global lir::lower_glob_function(lir::Buildr *b, const hir::Statement *stmt)
         lir::lower_type(b, function.prototype.return_type);
 
     lir::Global::Function g_function = lir::function_init(
-        b, function.name, return_type, function.prototype.is_variadic);
+        b, function.name, return_type, function.prototype.is_variadic, function.profile);
     lir::Buildr new_builder = g_function.buildr(b->mod);
+
+    //printf("canon name = %s\n", function.profile.canonical_name);
 
     new_builder.new_block();
     for (const auto &parameter : mini::iterate(function.prototype.parameters)) {
@@ -141,7 +142,7 @@ static lir::Global lower_glob_statement(lir::Buildr *builder,
     case hir::Statement::Struct:
         return lower_struct_type(builder, stmt);
     default:
-        MINI_UNREACHABLE();
+        MINI_UNREACHABLE("%d", stmt->kind);
     }
 }
 
@@ -149,7 +150,20 @@ void lir::inflate_module(lir::Module *mod, const hir::Program program)
 {
     lir::Buildr buildr = mod->new_buildr();
 
+    const auto deflate_group = [&] (this auto &self, auto *stmt) -> bool {
+        if (stmt->kind == hir::Statement::Group) {
+            const auto &block = stmt->as.block;
+            for (auto &n_stmt : block.body.iter()) {
+                if (self(n_stmt)) continue;
+                mod->globals.append(lower_glob_statement(&buildr, n_stmt));
+            }
+            return true;
+        }
+        return false;
+    };
+
     for (const hir::Statement *stmt : mini::iterate(program)) {
+        if (deflate_group(stmt)) continue;
         if (stmt->kind == hir::Statement::Struct) {
             lir::Global global = lower_glob_statement(&buildr, stmt);
             mod->globals.append(global);
@@ -157,7 +171,9 @@ void lir::inflate_module(lir::Module *mod, const hir::Program program)
     }
 
     for (const hir::Statement *stmt : mini::iterate(program)) {
-        if (stmt->kind == hir::Statement::Struct) continue;
+        if (stmt->kind == hir::Statement::Struct ||
+            stmt->kind == hir::Statement::Nop ||
+            stmt->kind == hir::Statement::Group) continue;
         lir::Global global = lower_glob_statement(&buildr, stmt);
         mod->globals.append(global);
     }

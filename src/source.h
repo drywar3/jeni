@@ -25,5 +25,8 @@ void sourcemgr_destroy(SourceManager *sm);
 SourceId sourcemgr_open_file(SourceManager *sm, mini::StringView file_path,
                              Mini_Allocator allocator);
 
+const SourceFile *sourcemgr_find_source_file_at_path(SourceManager *sm, mini::StringView path);
+Opt<SourceId> sourcemgr_find_source_id_at_path(SourceManager *sm, mini::StringView path);
+
 const Mini_String &sourcemgr_get_content(SourceManager *sm, SourceId id);
 const SourceFile *sourcemgr_get_source(const SourceManager *sm, SourceId);

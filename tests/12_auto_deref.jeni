@@ -10,8 +10,8 @@ main :: func () -> int {
     thing_ptr   := *thing;
     thing_ptr.x = 10;
 
-    printf(c"thing.x = %d\n", thing.x);
+    C.Io.printf(c"thing.x = %d\n", thing.x);
     return 0;
 }
 
-printf :: func (fmt: *const char, ...) -> int ---
+#use "Basic/ffi.jeni";

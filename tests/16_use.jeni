@@ -1,0 +1,8 @@
+main :: func () -> int {
+    C.Io.printf(c"Hello World\n");
+
+    C.Io.printf(c"length of `Hello` = %zu\n", C.String.length(c"Hello"));
+    return 0;
+}
+
+#use "Basic/ffi.jeni";

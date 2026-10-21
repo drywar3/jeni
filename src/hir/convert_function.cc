@@ -37,15 +37,19 @@ hir::Statement *hir::convert_function_stmt(hir::Context *ctx,
     const auto initializer = var->initializer;
     const auto *function   = (const ast::expr::Function *)initializer;
 
+    auto *sym = ctx->symbols().find(var->name.locus);
+
     hir::stmt::Function hir_function{};
     hir_function.prototype =
         convert_function_prototype(ctx, &function->prototype);
     hir_function.name            = var->name.value;
     hir_function.body_is_defined = function->body_is_defined;
+    hir_function.profile = sym->profile;
 
     if (function->body_is_defined) {
         hir_function.body = convert_statement(ctx, function->body);
     }
+
 
     return ctx->new_stmt(hir::Statement::Kind::Function, hir_function);
 }

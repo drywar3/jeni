@@ -1,8 +1,8 @@
 #pragma once
 
-#include "lir/types/type.h"
 #include "misc/map.h"
-// #include "lir/types/buildr.h"
+#include "lir/types/type.h"
+#include "hir/types/profile.h"
 #include "lir/types/instruction.h"
 
 #include <mini.cc/array.h>
@@ -35,6 +35,7 @@ namespace lir
             TypePtr return_type;
         };
 
+        hir::Profile profile;
         mini::StringView name;
         Prototype prototype;
         BlockId block;
@@ -49,5 +50,6 @@ namespace lir
     };
 
     Function function_init(lir::Buildr *b, mini::StringView name,
-                           TypePtr return_type, bool is_variadic);
+                           TypePtr return_type, bool is_variadic,
+                           hir::Profile profile);
 } // namespace lir

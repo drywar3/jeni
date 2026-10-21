@@ -35,7 +35,7 @@ main :: func () {
         update_motion(*box_x, *box_vx, 750.0);
         update_motion(*box_y, *box_vy, 550.0);
 
-        SDL_SetRenderDrawColor(renderer, 20, 24, 33, 255);
+        SDL_SetRenderDrawColor(renderer, cast 20, cast 24, cast 33, cast 255);
         SDL_RenderClear(renderer);
 
 
@@ -45,7 +45,7 @@ main :: func () {
         rect.w = 50;
         rect.h = 50;
 
-        SDL_SetRenderDrawColor(renderer, 100, 200, 255, 255);
+        SDL_SetRenderDrawColor(renderer, cast 100, cast 200, cast 255, cast 255);
         SDL_RenderFillRect(renderer, *rect);
 
         SDL_RenderPresent(renderer);

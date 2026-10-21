@@ -27,7 +27,7 @@ namespace ast
         };
 
         struct Block : Statement {
-            using Body = MINI_ARRAY(StatementPointer);
+            using Body = mini::Array<Statement *>;
             Body body;
         };
 

@@ -11,7 +11,9 @@ lir::TypePtr lir::lower_type(Buildr *builder, sema::Type_Id type_id)
         type.kind = lir::Type::Kind::Int32;
         break;
     case sema::Type_Kind::Struct: {
-        auto type_id = builder->mod->context->get_id_of_type(type_layout.strukt.name.value);
+        auto &symbols = builder->mod->context->store->symbols;
+        auto *symbol  = symbols.at_index_ptr(usize(*type_layout.symbol_id));
+        auto type_id = builder->mod->context->get_id_of_type(symbol->profile.canonical_name);
         return lir::Type::Struct(builder->allocator(), type_id);
     } break;
     case sema::Type_Kind::Array: {

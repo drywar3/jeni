@@ -78,12 +78,12 @@ template <> struct Hash<Mini_StringView> {
     }
 };
 
-template <> struct std::hash<mini::StringView> {
-    std::size_t operator()(const mini::StringView &s) const noexcept
-    {
-        return mini_strview_hash(&s.base());
-    }
-};
+// template <> struct std::hash<mini::StringView> {
+//     std::size_t operator()(const mini::StringView &s) const noexcept
+//     {
+//         return mini_strview_hash(&s.base());
+//     }
+// };
 
 inline bool operator==(const Mini_StringView &a, const Mini_StringView &b)
 {
@@ -331,6 +331,7 @@ class HashMap {
             }
             current = current->next;
         }
+
         return nullptr;
     }
 

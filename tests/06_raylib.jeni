@@ -1,12 +1,12 @@
 
 Color :: struct {
-    r: uchar;
-    g: uchar;
-    b: uchar;
-    a: uchar;
+    r: uint8;
+    g: uint8;
+    b: uint8;
+    a: uint8;
 }
 
-make_color :: func (r: uchar, g: uchar, b: uchar, a: uchar) -> Color {
+make_color :: func (r: uint8, g: uint8, b: uint8, a: uint8) -> Color {
     x: Color;
     x.r = r;
     x.g = g;
@@ -19,65 +19,63 @@ SCREEN_WIDTH  :: 800;
 SCREEN_HEIGHT :: 600;
 
 main :: func () {
-    RED   :: make_color(0xff, 0, 0, 0xff);
-    BLUE  :: make_color(0, 0, 0xff, 0xff);
-    GREEN :: make_color(0, 0xff, 0, 0xff);
+    RED   := make_color(cast 255, cast 0,    cast 0,    cast 255);
+    BLUE  := make_color(cast 0,    cast 0,    cast 255, cast 255);
+    GREEN := make_color(cast 0,    cast 255, cast 0,    cast 255);
 
-    SetTraceLogLevel(LOG_NONE);
+    set_log_level(LOG_NONE);
 
-    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, c"06-raylib");
-    SetTargetFPS(60);
+    init_window(SCREEN_WIDTH, SCREEN_HEIGHT, c"06-raylib");
+    set_target_fps(60);
 
     printf(c"0xFF = %d\n", 0xFF);
     printf(c"0b11 = %d\n", 0b11);
     printf(c"0o17 = %d\n", 0o17);
 
-    x_pos : float = 400;
-    y_pos : float = 300;
+    x_pos : float = 400.;
+    y_pos : float = 300.;
 
     SIZE : int : 50;
     inc := 2;
 
-    for !WindowShouldClose() {
-        BeginDrawing();
-        ClearBackground(RED);
+    for !window_should_close() {
+        begin_drawing();
+        clear_background(RED);
 
-        DrawRectangle(x_pos, y_pos, SIZE, SIZE, GREEN);
+        draw_rectangle(cast x_pos, cast y_pos, SIZE, SIZE, GREEN);
 
-        x_pos = x_pos + inc;
+        x_pos = x_pos + cast inc;
         //y_pos = y_pos + inc;
 
-        if x_pos + SIZE >= SCREEN_WIDTH {
+        if cast<int> x_pos + SIZE >= SCREEN_WIDTH {
             inc = 0-inc;
             x_pos = SCREEN_WIDTH - SIZE - 10;
         }
 
-        if x_pos <= 0 {
+        if x_pos <= cast 0 {
             inc = 0-inc;
             x_pos = 10;
         }
 
-        EndDrawing();
+        end_drawing();
     }
 
-    CloseWindow();
+    close_window();
 }
 
+set_log_level  :: func (x : int) #canon_name "SetTraceLogLevel" ---
+printf :: func (fmt: *const char, ...) -> int #canon_name "printf" ---
 
-InitWindow        :: func (a : int, b: int, c : *const char) ---
-CloseWindow       :: func () ---
-BeginDrawing      :: func () ---
-WindowShouldClose :: func () -> bool ---
-EndDrawing        :: func () ---
-ClearBackground   :: func (color : Color) ---
-ColorFromHSV      :: func (hue: float, saturation: float, value: float) -> Color ---
-DrawRectangle     :: func (posX: int, posY: int, width: int, height: int, color: Color) ---
-DrawCircle        :: func (centerX: int, centerY: int, radius: float, color: Color) ---
-SetTargetFPS      :: func (fps: int) ---
-
-SetTraceLogLevel  :: func (x : int) ---
-printf :: func (fmt: *const char, ...) -> int ---
-
+init_window         :: func (a : int, b: int, c : *const char) #canon_name "InitWindow" ---
+close_window        :: func () #canon_name "CloseWindow"  ---
+begin_drawing       :: func () #canon_name "BeginDrawing" ---
+window_should_close :: func () -> bool #canon_name "WindowShouldClose" ---
+end_drawing         :: func () #canon_name "EndDrawing" ---
+clear_background    :: func (color : Color) #canon_name "ClearBackground" ---
+color_from_hsv      :: func (hue: float, saturation: float, value: float) -> Color #canon_name "ColorFromHsv" ---
+draw_rectangle      :: func (posX: int, posY: int, width: int, height: int, color: Color) #canon_name "DrawRectangle" ---
+draw_circle         :: func (centerX: int, centerY: int, radius: float, color: Color) #canon_name "DrawCircle" ---
+set_target_fps      :: func (fps: int) #canon_name "SetTargetFPS" ---
 
 LOG_ALL     :: 0;
 LOG_TRACE   :: 1;

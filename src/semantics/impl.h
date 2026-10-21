@@ -114,6 +114,57 @@ namespace sema
         sema::report(sema, diag);
     }
 
+    template<typename Something_With_Locus>
+    static inline
+    void report_warning(Semantic_Context *sema, const Something_With_Locus &at,
+                      const char *message, const char *tag = "here", Diag_Labels labels = {})
+    {
+        auto diag = diag_create(Severity::Warning, at.locus,
+                                message, tag);
+        for (const auto label : labels) {
+            diag = diag_add_label(diag, label);
+        }
+        sema::report(sema, diag);
+    }
+
+    template<>
+    void report_warning<Locus>(Semantic_Context *sema, const Locus &at,
+                             const char *message, const char *tag, Diag_Labels labels)
+    {
+        auto diag = diag_create(Severity::Warning, at,
+                                message, tag);
+        for (const auto label : labels) {
+            diag = diag_add_label(diag, label);
+        }
+        sema::report(sema, diag);
+    }
+
+
     Mini_String display_type(Semantic_Context *sema, sema::Type_Id type_id);
-    bool expression_is_lvalue(const Expression *expr);
+    bool expression_is_lvalue(Semantic_Context *sema, const Expression *expr);
+
+    Opt<compeval::Value> comptime_evaluate(Semantic_Context *sema, Expression *expression);
+
+
+    static inline void generate_canon_name(Semantic_Context *sema,
+                                           sema::Symbol_Id ns,
+                                           Mini_String *buffer)
+    {
+        auto &symbol = sema->symbols().at_index(usize(ns));
+        if (symbol.ns.parent_namespace) {
+            generate_canon_name(sema, *symbol.ns.parent_namespace, buffer);
+        }
+        mini_string_append_fmt(buffer, "_%zu%.*s", symbol.name.length(), SVARG(symbol.name.base()));
+    }
+
+    static inline void generate_repr_name(Semantic_Context *sema,
+                                          sema::Symbol_Id ns,
+                                          Mini_String *buffer)
+    {
+        auto &symbol = sema->symbols().at_index(usize(ns));
+        if (symbol.ns.parent_namespace) {
+            generate_repr_name(sema, *symbol.ns.parent_namespace, buffer);
+        }
+        mini_string_append_fmt(buffer, "%.*s.", SVARG(symbol.name.base()));
+    }
 } // namespace sema

@@ -23,9 +23,11 @@ typedef struct {
     MINI_ARRAY(Label) labels;
 } Diagnostic;
 
-typedef struct {
+struct Diagnostic_Pool {
     MINI_ARRAY(Diagnostic) diagnostics;
-} Diagnostic_Pool;
+    usize                  w_count = 0, e_count = 0;
+    usize                  w_max,   e_max;
+};
 
 #define DIAG_CTOR                                                              \
     Severity severity, Locus locus, const char *message, const char *text
@@ -35,7 +37,9 @@ Diagnostic diag_add_label(Diagnostic diagnostic, Label label);
 
 void diag_report(const Diagnostic *diagnostic, const SourceManager *sm);
 
-Diagnostic_Pool diagpool_create();
+Diagnostic_Pool diagpool_create(usize w_max, usize e_max,
+                                Mini_Allocator allocator = mini_default_allocator());
+bool diagpool_has_errors(Diagnostic_Pool *pool);
 void diagpool_report(Diagnostic_Pool *pool, DIAG_CTOR);
 void diagpool_report_diag(Diagnostic_Pool *pool, Diagnostic diagnostic);
 

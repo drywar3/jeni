@@ -34,7 +34,7 @@ int main(int argc, char **argv)
     SourceManager sources = sourcemgr_init(allocator);
     SourceId root_file = sourcemgr_open_file(&sources, input_path, allocator);
 
-    Diagnostic_Pool diagnostics = diagpool_create();
+    Diagnostic_Pool diagnostics = diagpool_create(10, 10);
     auto scope_guard_1 = mini::ScopeGuard([&]() {
         sourcemgr_destroy(&sources);
         diagpool_destroy(&diagnostics);
@@ -58,22 +58,32 @@ int main(int argc, char **argv)
             const Diagnostic *diagnostic = &diagnostics.diagnostics[n];
             diag_report(diagnostic, &sources);
         }
-        return 1;
+        if (diagpool_has_errors(&diagnostics)) return 1;
     }
 
     Semantic_Storage storage = semastore_init(allocator);
     semastore_init_builtin_types(&storage);
 
     {
-        Semantic_Context sema = semactx_init(allocator, allocator, &diagnostics, &storage);
-        semactx_resolve(&sema, &program);
+        compeval::Engine vm{allocator};
+        sema::Semantic_Id sema_id = storage.semantic_contexts.allocate(
+            semactx_init(
+                allocator,
+                allocator,
+                &diagnostics,
+                &storage,
+                &sources,
+                &vm, sema::Semantic_Id(0), root_file));
+        auto *sema = storage.semantic_contexts.get_ptr(sema_id);
+        sema->my_id = sema_id;
+        semactx_resolve(sema, &program);
 
         if (!diagpool_is_empty(&diagnostics)) {
             for (usize n = 0; n < mini_array_count(diagnostics.diagnostics); n++) {
                 const Diagnostic *diagnostic = &diagnostics.diagnostics[n];
                 diag_report(diagnostic, &sources);
             }
-            return 1;
+            if (diagpool_has_errors(&diagnostics)) return 1;
         }
     }
 

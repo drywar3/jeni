@@ -17,4 +17,4 @@ main :: func () -> int {
     printf(c".x = %d\n", one_thing.x);
 }
 
-printf :: func (fmt: *const char, ...) ---
+printf :: func (fmt: *const char, ...) -> int #canon_name "printf" ---

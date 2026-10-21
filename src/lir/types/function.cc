@@ -7,7 +7,7 @@ lir::Buildr lir::Function::buildr(Module *mod)
     return lir::Buildr{mod, this, .current_block = block, .loop_point_stack=lir::Loop_Point_Stack(mod->allocator())};
 }
 
-lir::Function lir::function_init(lir::Buildr *b, mini::StringView name, TypePtr return_type, bool is_variadic)
+lir::Function lir::function_init(lir::Buildr *b, mini::StringView name, TypePtr return_type, bool is_variadic, hir::Profile profile)
 {
     auto allocator = b->allocator();
 
@@ -22,6 +22,7 @@ lir::Function lir::function_init(lir::Buildr *b, mini::StringView name, TypePtr 
         .current_local_index = 0,
         .current_label_index = 0,
         .is_variadic = is_variadic,
+        .profile     = profile,
     };
     return function;
 }

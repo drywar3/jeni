@@ -1,6 +1,8 @@
 #include "lexer.h"
-
 #include "token.h"
+
+
+#include <initializer_list>
 #include <mini.c/string_view.h>
 
 typedef uint32 Codepoint;
@@ -22,16 +24,19 @@ static const TokenSpec KEYWORDS[] = {
     {"continue", TOKEN_KW_Continue},
     {"struct", TOKEN_KW_Struct},
     {"cast", TOKEN_KW_Cast},
+    {"in", TOKEN_KW_In},
+    {"ns", TOKEN_KW_Namespace},
+    {"namespace", TOKEN_KW_Namespace},
 
     {"int", TOKEN_TK_Int},
     {"int8", TOKEN_TK_Int8},
+    {"uint8", TOKEN_TK_Uchar},
     {"int16", TOKEN_TK_Int16},
     {"int32", TOKEN_TK_Int},
     {"int64", TOKEN_TK_Int64},
     {"uint", TOKEN_TK_Uint},
     {"bool", TOKEN_TK_Bool},
     {"char", TOKEN_TK_Char},
-    {"uchar", TOKEN_TK_Uchar},
     {"void", TOKEN_TK_Void},
     {"float", TOKEN_TK_Float32},
     {"float32", TOKEN_TK_Float32},
@@ -281,6 +286,22 @@ bool lexer_next_token(Lexer *lexer, Token *token, Diagnostic *diagnostic)
                                     lexer_get_locus(lexer), true);
     }
 
+    if (current(lexer) == '"') {
+        next(lexer);
+        while (!lexer_is_done(lexer) && current(lexer) != '"') {
+            next(lexer);
+        }
+        next(lexer);
+        return set_token_and_return(token, TOKEN_LIT_String,
+                                    lexer_get_locus(lexer), true);
+    }
+
+    if (current(lexer) == '#') {
+        if (eat_prefix(lexer, "#eval")) return set_token_and_return(token, TOKEN_DR_Eval, lexer_get_locus(lexer), true);
+        if (eat_prefix(lexer, "#canon_name")) return set_token_and_return(token, TOKEN_DR_Canon_Name, lexer_get_locus(lexer), true);
+        if (eat_prefix(lexer, "#use")) return set_token_and_return(token, TOKEN_DR_Use, lexer_get_locus(lexer), true);
+        MINI_UNREACHABLE("TODO: report invalid directive");
+    }
 
     /* lex an identifier or keyword */
     if (codepoint_isalpha(current(lexer))) {
@@ -297,7 +318,6 @@ bool lexer_next_token(Lexer *lexer, Token *token, Diagnostic *diagnostic)
                                             lexer_get_locus(lexer), true);
             }
         }
-
         return set_token_and_return(token, TOKEN_Identifier,
                                     lexer_get_locus(lexer), true);
     }
@@ -347,7 +367,8 @@ bool lexer_next_token(Lexer *lexer, Token *token, Diagnostic *diagnostic)
         }
     }
 
-    MINI_UNREACHABLE("%d - '%c'", current(lexer), current(lexer));
+    printf("%zu:%zu: %d - '%c'\n", lexer->line, lexer->prev_offset, current(lexer), current(lexer));
+    MINI_UNREACHABLE();
 }
 
 bool lexer_is_done(const Lexer *lexer)

@@ -13,16 +13,38 @@
 #include "semantics/checks/check_member_access.h"
 #include "semantics/checks/check_function_call.h"
 
+#include <mini.cc/scope_guard.h>
+
 static Worker_Status check_dereference(Semantic_Context *sema, Expression *expr);
 static Worker_Status check_addr_of(Semantic_Context *sema, Expression *expr);
 static Worker_Status check_typehint(Semantic_Context *sema, Expression *expr);
 static Worker_Status check_subscript(Semantic_Context *sema, Expression *expr);
 static Worker_Status check_unary(Semantic_Context *sema, Expression *expr);
+static Worker_Status check_eval(Semantic_Context *sema, Expression* &expr);
+static Worker_Status check_cast(Semantic_Context *sema, Expression* &expr, bool is_resumption);
+
+bool sema::expression_is_value_compatible(Semantic_Context *sema, Expression *expr)
+{
+    auto type_id = sema::get_type_at_locus(sema, expr->locus);
+    auto *layout = sema::get_type_by_id(sema, type_id);
+
+    switch (layout->kind) {
+    case sema::Type_Kind::Namespace:
+        return false;
+    default: return true;
+    }
+}
 
 static void check_integer(Semantic_Context *sema, ast::expr::Integer *integer)
 {
     Locus locus = integer->locus;
-    sema::link_locus_to_type(sema, locus, sema::type_id::Int);
+    auto value  = integer->value;
+
+    auto type_context = sema->get_current_type_context();
+
+    if (type_context && sema::try_coerce_type_into(sema, *type_context, sema::type_id::Int, false)) {
+        sema::link_locus_to_type(sema, locus, *type_context);
+    } else sema::link_locus_to_type(sema, locus, sema::type_id::Int);
 }
 
 static void check_float(Semantic_Context *sema, ast::expr::Float *float_)
@@ -32,9 +54,8 @@ static void check_float(Semantic_Context *sema, ast::expr::Float *float_)
 }
 
 
-Worker_Status sema::check_expression(Semantic_Context *sema, void *data)
+Worker_Status sema::check_expression(Semantic_Context *sema, Expression *&expr, bool is_resumption)
 {
-    auto *expr = (Expression *)data;
     switch (expr->kind) {
     case EXPR_Integer: {
         check_integer(sema, (ast::expr::Integer *)expr);
@@ -64,6 +85,9 @@ Worker_Status sema::check_expression(Semantic_Context *sema, void *data)
     case EXPR_Address_Of:    return check_addr_of(sema, expr);
     case EXPR_Subscript:     return check_subscript(sema, expr);
     case EXPR_Unary:         return check_unary(sema, expr);
+    case EXPR_Eval:          return check_eval(sema, expr);
+    case EXPR_Cast:          return check_cast(sema, expr, is_resumption);
+    case EXPR_Use:           return Worker_Status::Done;
     default:
         MINI_UNREACHABLE("TODO: %d\n", expr->kind);
     }
@@ -95,6 +119,7 @@ Worker_Status sema::check_identifier(Semantic_Context *sema,
     if (symbol->is_state(sema::Symbol_State::Unresolved)) {
         Worker_Status status = Worker_Status::Pending;
         status.wait_for(sym_id); // wait specifically on THIS symbol's ID
+        status.at_scope(sema->current_scope);
         return status;
     }
 
@@ -159,7 +184,7 @@ Worker_Status check_addr_of(Semantic_Context *sema,
     auto status   = sema::check_expression(sema, addr_of->value);
     if (!status.is_done()) return status;
 
-    if (!sema::expression_is_lvalue(addr_of->value)) {
+    if (!sema::expression_is_lvalue(sema, addr_of->value)) {
         sema::report_error(sema, expr->locus, "expected an lvalue");
         return Worker_Status::Failed;
     }
@@ -227,5 +252,85 @@ Worker_Status check_unary(Semantic_Context *sema, Expression *expr)
     }
 
     sema::link_locus_to_type(sema, expr->locus, sema::type_id::Bool);
+    return Worker_Status::Done;
+}
+
+Expression *value_to_ast_expr(Semantic_Context *sema,
+                              Expression *old,
+                              compeval::Value value)
+{
+    switch (value.kind) {
+    case compeval::Value::Int:
+        return ast::expr::alloc_expression(sema->allocator, EXPR_Integer,
+                                           old->locus,
+                                           ast::expr::Integer{.value=value.integer});
+    case compeval::Value::Float:
+        return ast::expr::alloc_expression(sema->allocator, EXPR_Float,
+                                           old->locus,
+                                           ast::expr::Float{.value=value.floating});
+
+    default: MINI_UNREACHABLE();
+    }
+}
+
+Worker_Status check_eval(Semantic_Context *sema, Expression* &expr)
+{
+    auto *eval = (ast::expr::Eval *)expr;
+    auto status = sema::check_expression(sema, eval->expr);
+    if (!status.is_done()) return status;
+    auto result = sema::comptime_evaluate(sema, eval->expr);
+    if (!result) return Worker_Status::Failed;
+    expr = value_to_ast_expr(sema, expr, *result);
+    sema::link_locus_to_type_at_locus(sema, eval->expr->locus, expr->locus);
+    return status;
+}
+
+Worker_Status check_cast(Semantic_Context *sema, Expression* &expr, bool is_resumption)
+{
+    auto *cast = (ast::expr::Cast *)expr;
+
+    auto type_context = sema->get_current_type_context();
+
+    if (!cast->type_is_defined && !type_context) {
+        sema::report_error(sema, *expr, "cannot infer type to cast to");
+        return Worker_Status::Failed;
+    }
+
+    sema::Type_Id expected_type;
+    sema::Type_Id recieved_type;
+
+    if (cast->type_is_defined) {
+        auto status = sema::resolve_typehint(sema, cast->typehint, cast->typehint->locus);
+        if (!status.is_done()) return status;
+        expected_type = sema::get_type_at_locus(sema, cast->typehint->locus);
+    } else if (type_context) {
+        expected_type = *type_context;
+    } else MINI_UNREACHABLE();
+
+
+    sema->set_current_type_context(None);
+    auto scope_guard = mini::ScopeGuard([&]() {sema->set_current_type_context(type_context);});
+
+    auto status = sema::check_expression(sema, cast->expr);
+    if (!status.is_done()) return status;
+
+    recieved_type = sema::get_type_at_locus(sema, cast->expr->locus);
+
+    if (expected_type != recieved_type) {
+        if (!sema::try_coerce_type_into(sema, expected_type, recieved_type, false)) {
+            sema::report_error(sema, *expr,
+                               "cast is invalid",
+                               mini_string_build(sema->allocator,
+                                                 "cannot cast from `%s` to `%s`",
+                                                 sema::display_type(sema, recieved_type),
+                                                 sema::display_type(sema, expected_type)));
+            return Worker_Status::Failed;
+        }
+    } else {
+        sema::report_warning(sema, *expr,
+                           "redundant cast");
+    }
+
+    sema::link_locus_to_type(sema, expr->locus, expected_type);
     return Worker_Status::Done;
 }

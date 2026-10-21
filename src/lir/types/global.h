@@ -12,6 +12,7 @@ namespace lir
         };
 
         enum struct Kind {
+            Nil,
             Variable,
             Function,
             Type,

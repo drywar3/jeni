@@ -6,12 +6,12 @@
 Worker_Status sema::check_if_stmt(Semantic_Context *sema, void *data)
 {
     const auto check_if_header = [](Semantic_Context *sema,
-                                    const auto &header) -> Worker_Status {
+                                    auto &header) -> Worker_Status {
         Worker_Status status = sema::check_expression(sema, header.condition);
         if (status != Worker_Status::Done)
             return status;
 
-        status = check_statement(sema, header.then);
+        status = check_statement(sema, Worker_Payload(header.then));
         if (status != Worker_Status::Done)
             return status;
         return status;
@@ -28,7 +28,7 @@ Worker_Status sema::check_if_stmt(Semantic_Context *sema, void *data)
     if (auto status = check_if_header(sema, *if_stmt); !status.is_done())
         return status;
 
-    for (const auto &branch : if_stmt->branches.iter()) {
+    for (auto &branch : if_stmt->branches.iter()) {
         if (auto status = check_if_header(sema, branch); !status.is_done())
             return status;
     }

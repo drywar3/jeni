@@ -6,13 +6,16 @@
 #include "ast/expressions.h"
 #include "semantics/worker.h"
 #include "semantics/type/ids.h"
+#include "semantics/type/coercer.h"
 #include "semantics/entities/type.h"
 #include "semantics/type/resolver.h"
 #include "semantics/checks/check_expr.h"
+#include "semantics/checks/check_member_access.h"
 
 sema::Type_Id sema::register_or_get_type(Semantic_Context *sema,
-                                         sema::Type type)
+                                         sema::Type type, Opt<sema::Symbol_Id> symbol_id)
 {
+    type.symbol_id = symbol_id;
     usize index = 0;
     for (const auto &_type : sema->store->types) {
         if (_type == type) {
@@ -30,36 +33,46 @@ static Worker_Status
 resolve_array_typehint(Semantic_Context *sema, const Typehint *typehint,
                           std::optional<Locus> resolve_location)
 {
-    const auto is_valid_element_count_expr = [&] (const auto *expr) -> bool {
+    const auto is_valid_element_count_expr = [&] (auto *expr) -> Opt<usize> {
         switch (expr->kind) {
         case EXPR_Integer:
-            return true;
-        case EXPR_Identifier: {
-            MINI_UNREACHABLE();
-            auto symbol = *sema::get_symbol_at_locus(sema, expr->locus);
-            if (symbol->kind != sema::Symbol_Kind::Variable) return false;
-            if (!symbol->variable.mutability) return false;
-        } break;
-        default: return false;
+            return ((ast::expr::Integer *)(expr))->value;
+        case EXPR_Float:
+            return ((ast::expr::Float *)(expr))->value;
+        case EXPR_Identifier:
+        case EXPR_Binop:
+            {
+                if (auto val = sema::comptime_evaluate(sema, expr);
+                    val.has_value()) {
+                    if (val->kind == compeval::Value::Float) {
+                        auto type_id = sema::get_type_at_locus(sema, expr->locus);
+                        if (!sema::try_coerce_type_into(sema, sema::type_id::Int, type_id)) return None;
+                        return (usize)val->floating;
+                    }
+                    if (val->kind != compeval::Value::Int) return None;
+                    return val->integer;
+                } else MINI_UNREACHABLE();
+            } break;
+        default: return None;
         }
     };
 
-    const auto *array = (const ast::type::Array *)typehint;
+    auto &array = (ast::type::Array *&)typehint;
     auto status       = sema::check_expression(sema, array->element_type);
     if (!status.is_done()) return status;
 
     status       = sema::check_expression(sema, array->element_count);
     if (!status.is_done()) return status;
 
-
-    if (!is_valid_element_count_expr(array->element_count)) {
+    auto count_opt = is_valid_element_count_expr(array->element_count);
+    if (!count_opt.has_value()) {
         sema::report_error(sema, *array->element_count,
                            "invalid expression",
                            "expected an integer literal or constant variable");
         return Worker_Status::Failed;
     }
 
-    usize element_count = ((ast::expr::Integer *)(array->element_count))->value;
+    usize element_count = *count_opt;
     auto  element_type  = sema::get_type_at_locus(sema, array->element_type->locus);
     auto type_id        = sema::register_or_get_type(sema, sema::Type::Array(element_count, element_type));
 
@@ -104,6 +117,26 @@ Worker_Status sema::resolve_typehint(Semantic_Context *sema,
         Worker_Status status = check_identifier(sema, ident);
         if (status != Worker_Status::Done) return status;
         if (auto sym_opt = sema::eagerly_lookup_symbol(sema, sema->current_scope, ident->value);
+            sym_opt.has_value()) {
+            auto symbol = *sym_opt;
+            if (!symbol->is(sema::Symbol_Kind::Type)) {
+                sema::report_error(sema,
+                                   *ty_expr,
+                                   "expected a type",
+                                   "this symbol does not refer to a type");
+                return Worker_Status::Failed;
+            }
+
+            if (resolve_location.has_value()) {
+                sema::link_locus_to_type(sema, *resolve_location, symbol->type.type_id);
+            }
+        }
+        return Worker_Status::Done;
+    } else if (ty_expr->kind == EXPR_Member_Access) {
+        auto *mem = (ast::expr::Member_Access *)ty_expr;
+        Worker_Status status = check_member_access(sema, mem);
+        if (!status.is_done()) return status;
+        if (auto sym_opt = sema::get_symbol_at_locus(sema, mem->member.locus);
             sym_opt.has_value()) {
             auto symbol = *sym_opt;
             if (!symbol->is(sema::Symbol_Kind::Type)) {

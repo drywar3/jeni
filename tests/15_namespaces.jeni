@@ -1,0 +1,48 @@
+
+math :: ns {
+    PI  :: 3.14;
+    add :: func (a: int, b: int) -> int {
+        return a + b;
+    }
+
+    foo :: ns {
+       BAR :: 10;
+
+       baz :: ns {
+           QUUX :: BAR;
+           BAR  :: 100;
+       }
+    }
+
+    Thing :: struct {}
+}
+
+utils :: ns {
+      add :: func (x: int, y: int) -> int {
+          return 1000000;
+      }
+
+      Thing :: struct {
+         x: int;
+         y: int;
+      }
+}
+
+main :: func () -> int {
+    x := math.add(math.foo.BAR, cast<int> (math.PI + 10.));
+    bar := math.foo.BAR;
+
+    thing_1 : utils.Thing;
+    thing_1.x = 10;
+
+    printf(c"math.foo.BAR      = %d\n", math.foo.BAR);
+    printf(c"math.foo.baz.BAR  = %d\n", math.foo.baz.BAR);
+    printf(c"PI  = %f\n", math.PI);
+    printf(c"x   = %d\n", x);
+    printf(c"bar = %d\n", bar);
+    printf(c"QUUX= %d\n", math.foo.baz.QUUX);
+    return 0;
+}
+
+printf :: func (fmt: *const char, ...) -> int
+       #canon_name "printf" ---

@@ -1,6 +1,5 @@
 
-
-/* Hello World */
+// Hello World
 main :: func (argc : int) -> int {
     putchar(72);
     putchar(69);
@@ -18,4 +17,4 @@ main :: func (argc : int) -> int {
     x := 10;
 }
 
-putchar :: func (c: int) ---
+putchar :: func (c: int) #canon_name "putchar" ---

@@ -52,17 +52,13 @@ namespace parser
         return true;
     }
 
-#define skip_until_one_of(p, skip_past, ...)                        \
-    parser::skip_until_one_of_impl(p, skip_past,                    \
-                           sizeof((TokenKind[]){__VA_ARGS__}) /     \
-                           sizeof(((TokenKind[]){__VA_ARGS__})[0]), \
-                           (TokenKind[]){__VA_ARGS__})
+    using Token_Pack = std::initializer_list<TokenKind>;
 
-    INLINE bool skip_until_one_of_impl(Parser *p, bool skip_past, int count, TokenKind *kinds)
+    INLINE bool skip_until_one_of(Parser *p, bool skip_past, Token_Pack kinds)
     {
         while (!parser_is_done(p)) {
-            for (usize n = 0; n < (usize)count; ++n) {
-                if (equals(p, kinds[n])) {
+            for (const auto kind : kinds) {
+                if (equals(p, kind)) {
                     if (skip_past) {
                         next(p);
                         return true;

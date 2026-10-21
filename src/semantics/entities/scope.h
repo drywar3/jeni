@@ -4,6 +4,8 @@
 #include "misc/id.h"
 #include "parser/locus.h"
 #include "semantics/entities/symbol.h"
+#include "semantics/entities/symbol_id.h"
+#include "semantics/entities/symbol_id.h"
 
 #include <mini.c/string_view.h>
 #include <optional>
@@ -17,6 +19,7 @@ namespace sema
         Function,
         Block,
         Loop,
+        Namespace,
         Invalid,
     };
 
@@ -25,16 +28,14 @@ namespace sema
     };
 
     struct Scope {
-        using Map    = ::Map<Mini_StringView, Symbol_Id>;
-        using Parent = std::optional<Scope_Id>;
+        using Map     = ::Map<Mini_StringView, Symbol_Id>;
+        using Parent  = std::optional<Scope_Id>;
 
         Scope_Function function;
         Scope_Kind kind;
         Map symbols;
         Scope::Parent parent;
     };
-
-    using Scope_Storage = DenseMap<Locus, Scope>;
 
     Scope scope_init(Scope_Kind kind, Scope::Parent parent,
                      Mini_Allocator allocator = mini_default_allocator());

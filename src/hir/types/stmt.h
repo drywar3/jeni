@@ -1,6 +1,7 @@
 #pragma once
 
 #include "hir/types/expr.h"
+#include "hir/types/profile.h"
 #include "semantics/entities/type.h"
 
 #include <mini.cc/array.h>
@@ -12,6 +13,8 @@ namespace hir
 
     namespace stmt
     {
+        struct Nop {};
+
         struct Variable {
             mini::StringView name;
             Mutability mutability;
@@ -33,10 +36,11 @@ namespace hir
                 bool is_variadic = false;
             };
 
-            mini::StringView name;
+            hir::Profile        profile;
+            mini::StringView    name;
             Function::Prototype prototype;
-            hir::Statement *body;
-            bool body_is_defined;
+            hir::Statement     *body;
+            bool                body_is_defined;
         };
 
         struct Block {
@@ -78,6 +82,7 @@ namespace hir
 
             mini::StringView   name;
             mini::Array<Field> fields;
+            hir::Profile       profile;
         };
     } // namespace stmt
 
@@ -92,6 +97,8 @@ namespace hir
             Loop,
             Break,
             Struct,
+            Nop,
+            Group,
         };
 
         Kind kind;
@@ -104,6 +111,7 @@ namespace hir
             stmt::Break  break_;
             stmt::Loop loop;
             stmt::Struct strukt;
+            stmt::Nop nop;
             hir::Expression *expr;
         } as;
     };

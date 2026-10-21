@@ -22,11 +22,12 @@ target_link_directories(JeniCompiler PRIVATE
 target_compile_options(JeniCompiler PRIVATE
   -Wno-c99-designator
   -Wno-c++20-extensions
+  -Wno-nontrivial-memcall
   #-ftime-trace
-  -Wall
-  -Wextra
-  -Wno-unused-function
-  -Wno-missing-designated-field-initializers
+  #-Wall
+  #-Wextra
+  #-Wno-unused-function
+  #-Wno-missing-designated-field-initializers
   # -fsanitize=address -fno-omit-frame-pointer -g
 )
 target_link_libraries(JeniCompiler PRIVATE mini.cc tcc asan)

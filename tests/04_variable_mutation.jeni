@@ -15,4 +15,4 @@ main :: func () -> int {
     test_consecutive_assignment();
 }
 
-printf :: func (fmt : *const char, ...) -> int ---
+printf :: func (fmt : *const char, ...) -> int #canon_name "printf" ---

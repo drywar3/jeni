@@ -39,7 +39,10 @@ hir::Expression *hir::convert_expression(hir::Context *ctx,
         const ast::expr::Identifier *ident =
             (const ast::expr::Identifier *)expression;
         hir::expr::Identifier hir_ident;
-        hir_ident.value = ident->value;
+        auto *symbol    = ctx->symbols().find(ident->locus);
+        MINI_ASSERT(symbol != nullptr, );
+        hir_ident.value = mini::StringView(symbol->profile.canonical_name,
+                                           mini_string_count(symbol->profile.canonical_name));
         return ctx->new_expr(
             hir::Expression::Kind::Identifier,
             sema::Type_Id(*ctx->types().get_id(expression->locus)), hir_ident);
@@ -78,19 +81,25 @@ hir::Expression *hir::convert_expression(hir::Context *ctx,
         return ctx->new_expr(hir::Expression::Kind::AddressOf,
                              type_id, hir::expr::AddressOf{value});
     };
+    case EXPR_Cast: return hir::convert_expression(ctx, ((ast::expr::Cast*)expression)->expr);
     case EXPR_Unary: {
         auto *unary  = (ast::expr::Unary_Operation *)expression;
         auto *value  = hir::convert_expression(ctx, unary->expression);
         auto type_id = sema::Type_Id(*ctx->types().get_id(expression->locus));
 
         if (unary->op == ast::Operator::Not) {
-            return ctx->new_expr(hir::Expression::Kind::Binary_Operation,
-                                 type_id, hir::expr::Binary_Operation{.op = ast::Operator::NotEquals,
-                                                                      .left = value, .right = ctx->create_true_expr()});
+            return ctx->new_expr(
+                hir::Expression::Kind::Binary_Operation, type_id,
+                hir::expr::Binary_Operation{.op    = ast::Operator::NotEquals,
+                                            .left  = value,
+                                            .right = ctx->create_true_expr()});
         }
 
         MINI_UNREACHABLE();
     };
+    case EXPR_Use: {
+        MINI_UNREACHABLE();
+    } break;
     default:
         MINI_UNREACHABLE();
     }

@@ -1,24 +1,18 @@
 #pragma once
 
-#include "ast/ast.h"
-#include "diagnostic.h"
-#include "misc/map.h"
-#include "semantics/entities/call_schema.h"
-#include "semantics/entities/scope.h"
-#include "semantics/entities/type.h"
 #include "worker.h"
+#include "source.h"
+#include "ast/ast.h"
+#include "misc/map.h"
+#include "diagnostic.h"
+#include "compeval/engine.h"
+#include "semantics/entities/type.h"
+#include "semantics/entities/scope.h"
+#include "semantics/entities/call_schema.h"
+#include "semantics/store.h"
 
 #include <mini.c/array.h>
 #include <mini.c/mini_def.h>
-
-struct Semantic_Storage {
-    using Call_Schemas = HashMap<sema::Symbol_Id, sema::Function_Call_Schema>;
-
-    sema::Scope_Storage scopes;
-    sema::Symbol_Storage symbols;
-    sema::Type_Storage types;
-    Call_Schemas call_schemas;
-};
 
 struct Semantic_Context {
     /* maps [symbol id] -> pending workers */
@@ -32,6 +26,15 @@ struct Semantic_Context {
     Mini_Allocator persistent_allocator;
 
     Semantic_Storage *store;
+    SourceManager *sources;
+    compeval::Engine *vm;
+
+    Opt<sema::Type_Id>   type_context = None;
+    Opt<sema::Symbol_Id> current_namespace = None;
+
+    sema::Semantic_Id           my_id;
+    SourceId                    source_id;
+    HashMap<mini::StringView, Locus> loaded_programs;
 
     sema::Scope_Id global_scope;
     sema::Scope_Id current_scope;
@@ -48,6 +51,28 @@ struct Semantic_Context {
     sema::Function_Call_Schema *get_call_schema(sema::Symbol_Id symbol_id);
     void set_call_schema(sema::Symbol_Id symbol_id,
                          sema::Function_Call_Schema schema);
+
+    Opt<sema::Type_Id> get_current_type_context() const;
+    Opt<sema::Type_Id> set_current_type_context(Opt<sema::Type_Id> context);
+
+    Opt<sema::Symbol_Id> get_current_namespace() const;
+    Opt<sema::Symbol_Id> set_current_namespace(Opt<sema::Symbol_Id> ns);
+
+
+    template<typename RT, typename Fn>
+    RT perform_with_type_context_with_result(Opt<sema::Type_Id> context, Fn fn) {
+        auto save = set_current_type_context(context);
+        RT result = fn();
+        set_current_type_context(save);
+        return result;
+    }
+
+    template<typename Fn>
+    void perform_with_type_context(Opt<sema::Type_Id> context, Fn fn) {
+        auto save = set_current_type_context(context);
+        fn();
+        set_current_type_context(save);
+    }
 
     bool block_has_save_point(Locus locus) const
     {
@@ -83,7 +108,7 @@ struct Semantic_Context {
         auto &workers = *pending_workers.find(symbol_id);
         for (usize n = 0; n < workers.count(); ++n) {
             Worker worker            = workers[n];
-            Worker_Status new_status = worker.resume(this);
+            Worker_Status new_status = worker.resume(store);
             if (new_status == Worker_Status::Done ||
                 new_status == Worker_Status::Failed) {
                 workers.remove(n);
@@ -102,5 +127,10 @@ void semastore_init_builtin_types(Semantic_Storage *store);
 Semantic_Context semactx_init(Mini_Allocator allocator,
                               Mini_Allocator persistent_allocator,
                               Diagnostic_Pool *diagnostics,
-                              Semantic_Storage *store);
+                              Semantic_Storage *store,
+                              SourceManager *sources,
+                              compeval::Engine *vm,
+                              sema::Semantic_Id sema_id,
+                              SourceId source_id);
+
 void semactx_resolve(Semantic_Context *sema, Program *program);

@@ -1,10 +1,15 @@
 #pragma once
 
 #include "ast/misc.h"
-#include "mini.c/array.h"
-#include "mini.c/string.h"
-#include "mini.cc/array.h"
 #include "parser/locus.h"
+#include "semantics/store.h"
+#include "hir/types/profile.h"
+#include "semantics/entities/type_id.h"
+#include "semantics/entities/symbol_id.h"
+
+#include <mini.c/array.h>
+#include <mini.cc/array.h>
+#include <mini.c/string.h>
 
 namespace sema
 {
@@ -27,6 +32,7 @@ namespace sema
             Pointer,
             Slice,
             Function,
+            Namespace,
             Struct,
             Float32,
             Float64,
@@ -45,12 +51,11 @@ namespace sema
         {
             return kind > V::_UnsignedInt && kind < V::_UnsignedIntEnd;
         }
+
+        bool is_some_type() const;
     };
 
     struct Type;
-    using Type_Storage = DenseMap<Locus, Type>;
-
-    enum class Type_Id : usize {};
 
     struct Pointer_Type {
         Mutability mutability;
@@ -85,6 +90,7 @@ namespace sema
 
     struct Type {
         Type_Kind kind;
+        Opt<sema::Symbol_Id> symbol_id;
 
         union {
             Function_Type function;
@@ -92,6 +98,7 @@ namespace sema
             Struct_Type   strukt;
             Array_Type    array;
         };
+
 
         bool operator==(const Type &other) const
         {
@@ -154,6 +161,7 @@ namespace sema
             type.array = Array_Type{element_type, element_count};
             return type;
         }
-        Mini_String display(Mini_Allocator a, Type_Storage &types) const;
+
+        Mini_String display(Mini_Allocator a, Semantic_Storage &store) const;
     };
 } // namespace sema

@@ -19,5 +19,8 @@ namespace sema::type_id
     constexpr auto Float32 = (Type_Id)9;
     constexpr auto Float64 = (Type_Id)10;
 
-    constexpr auto _LAST_ = (Type_Id)11;
+    /* builtin namespace type */
+    constexpr auto BT_Namespace = (Type_Id)11;
+
+    constexpr auto _LAST_ = (Type_Id)12;
 } // namespace sema::type_id

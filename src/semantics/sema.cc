@@ -11,6 +11,8 @@ Semantic_Storage semastore_init(Mini_Allocator allocator)
         .symbols      = sema::Symbol_Storage(allocator),
         .types        = sema::Type_Storage(allocator),
         .call_schemas = Semantic_Storage::Call_Schemas(allocator),
+        .semantic_contexts = sema::Semantic_Contexts(allocator),
+        .programs = sema::Program_Storage(allocator),
     };
     /* invalid scope */
     storage.scopes.add_value(
@@ -21,17 +23,26 @@ Semantic_Storage semastore_init(Mini_Allocator allocator)
 Semantic_Context semactx_init(Mini_Allocator allocator,
                               Mini_Allocator persistent_allocator,
                               Diagnostic_Pool *diagnostics,
-                              Semantic_Storage *store)
+                              Semantic_Storage *store,
+                              SourceManager *sources,
+                              compeval::Engine *vm,
+                              sema::Semantic_Id sema_id,
+                              SourceId source_id)
 {
     Semantic_Context sema{
         .pending_workers =
             HashMap<sema::Symbol_Id, mini::Array<Worker>>(allocator),
         .current_scope     = {},
-        .block_save_points = Semantic_Context::Block_Save_Points(allocator)};
+        .block_save_points = Semantic_Context::Block_Save_Points(allocator),
+        .loaded_programs   = HashMap<mini::StringView, Locus>(allocator)};
     sema.allocator            = allocator;
     sema.persistent_allocator = persistent_allocator;
     sema.diagnostics          = diagnostics;
     sema.store                = store;
+    sema.vm                   = vm;
+    sema.my_id                = sema_id;
+    sema.source_id            = source_id;
+    sema.sources              = sources;
     sema.global_scope         = (sema::Scope_Id)sema.store->scopes.add_value(
         scope_init(sema::Scope_Kind::Global, std::nullopt, allocator));
     sema.current_scope = sema.global_scope;
@@ -40,19 +51,21 @@ Semantic_Context semactx_init(Mini_Allocator allocator,
 
 void semactx_resolve(Semantic_Context *sema, Program *program)
 {
+    bool good = true;
     for (usize n = 0; n < mini_array_count(program->ast); ++n) {
         StatementPointer stmt = program->ast[n];
-        sema::discover_statement(sema, stmt);
+        if (!sema::discover_statement(sema, stmt, sema->global_scope)) good = false;
     }
 
-    for (usize n = 0; n < mini_array_count(program->ast); ++n) {
-        StatementPointer stmt = program->ast[n];
-        Worker_Status status  = sema::check_statement(sema, (void *)stmt);
+    if (!good) return;
 
+    for (usize n = 0; n < mini_array_count(program->ast); ++n) {
+        auto &stmt = program->ast[n];
+        Worker_Status status  = sema::check_statement(sema, Worker_Payload(stmt));
         if (status == Worker_Status::Pending) {
             for (sema::Symbol_Id id : mini::iterate(status.waiting_on)) {
                 sema->register_worker(id, Worker(stmt, sema::check_statement,
-                                                 sema->current_scope));
+                                                 status.working_scope.value_or(sema->current_scope), sema->my_id));
             }
         }
     }
@@ -63,7 +76,7 @@ void semactx_resolve(Semantic_Context *sema, Program *program)
             if (symbol->is_state(sema::Symbol_State::Resolved)) {
                 for (usize n = 0; n < workers.count(); ++n) {
                     Worker worker        = workers[n];
-                    Worker_Status status = worker.resume(sema);
+                    Worker_Status status = worker.resume(sema->store);
                     if (status == Worker_Status::Done ||
                         status == Worker_Status::Failed) {
                         workers.remove(n);
@@ -95,6 +108,31 @@ void Semantic_Context::set_call_schema(sema::Symbol_Id symbol_id,
     store->call_schemas[symbol_id] = schema;
 }
 
+
+Opt<sema::Type_Id> Semantic_Context::get_current_type_context() const
+{
+    return type_context;
+}
+
+Opt<sema::Type_Id> Semantic_Context::set_current_type_context(Opt<sema::Type_Id> context)
+{
+    auto save = get_current_type_context();
+    type_context = context;
+    return save;
+}
+
+Opt<sema::Symbol_Id> Semantic_Context::get_current_namespace() const
+{
+    return current_namespace;
+}
+
+Opt<sema::Symbol_Id> Semantic_Context::set_current_namespace(Opt<sema::Symbol_Id> ns)
+{
+    auto save = get_current_namespace();
+    current_namespace = ns;
+    return save;
+}
+
 using namespace sema::type_id;
 
 constexpr sema::Type TYPES[] = {
@@ -109,6 +147,7 @@ constexpr sema::Type TYPES[] = {
     [(int)Int64]  = sema::Type(sema::Type_Kind::Int64),
     [(int)Float32]  = sema::Type(sema::Type_Kind::Float32),
     [(int)Float64]  = sema::Type(sema::Type_Kind::Float64),
+    [(int)BT_Namespace]  = sema::Type(sema::Type_Kind::Namespace),
 };
 
 void semastore_init_builtin_types(Semantic_Storage *store)

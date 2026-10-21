@@ -5,7 +5,7 @@
 
 namespace sema
 {
-    bool discover_statement(Semantic_Context *sema, StatementPointer stmt);
-    Worker_Status check_statement(Semantic_Context *sema, void *data,
+    bool discover_statement(Semantic_Context *sema, StatementPointer stmt, sema::Scope_Id scope_id);
+    Worker_Status check_statement(Semantic_Context *sema, Worker_Payload data,
                                   bool is_resumption = false);
 } // namespace sema

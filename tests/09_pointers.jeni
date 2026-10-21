@@ -24,11 +24,11 @@ main :: func () -> int {
 
     x_ptr^ = intw_init(69);
 
-    printf(c"x before mutation = %d\n", x.x.inner);
+    C.Io.printf(c"x before mutation = %d\n", x.x.inner);
     mutate_thing(*x);
-    printf(c"x after mutation  = %d\n", x.x.inner);
+    C.Io.printf(c"x after mutation  = %d\n", x.x.inner);
 
     return 0;
 }
 
-printf :: func (fmt: *const char, ...) -> int ---
+#use "Basic/ffi.jeni";
